@@ -5,6 +5,7 @@ import {walk} from "https://deno.land/std@0.170.0/fs/walk.ts";
 import {ensureFile} from "https://deno.land/std@0.170.0/fs/ensure_file.ts";
 import {exists} from "https://deno.land/std@0.170.0/fs/exists.ts";
 import { parseFeed } from "https://deno.land/x/rss/mod.ts";
+import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import * as yaml from "https://deno.land/std@0.170.0/encoding/yaml.ts";
 
 const DEFAULT_CONFIG_FILE = "./feeds.yaml";
@@ -44,7 +45,11 @@ async function fetchParse(url: string) {
 		}
 		const xmlText = await response.text();
 
-		return await parseFeed(xmlText);
+		let data = await parseFeed(xmlText);
+
+		data.rss_url = url;
+
+		return data;
 	} catch (error) {
 		console.error(`Error fetching or parsing ${url}:`, error);
 		return null;
@@ -52,25 +57,33 @@ async function fetchParse(url: string) {
 }
 
 async function fetchRSSLinks({urls, limit=12}) {
+	if (!urls) return [];
+
 	const feedUrls = (urls ? urls.split(',') : (await loadFeedsConfig())?.feeds.map(feed => feed.url)) ?? [];
 
-	console.dir({urls, feedUrls})
+	// console.dir({urls, feedUrls})
 
 	const feedResults = await Promise.all(feedUrls.map(fetchParse));
 
-	const finalResult = feedResults.filter((result) => result !== null).map(data => {
+	const finalResult = feedResults.filter(x => x).map(data => {
 		const items = data.entries.slice(0, limit);
 
 		// console.dir(data)
 
+		const SPLIT = /[\:\,\.\-\/\|\~]/;
+
 		let head = {
 			title: data.description || data.title.value,
-			link: data.links?.[0],
+			link: data.links?.[0] || data.rss_url,
+			rss_url: data.rss_url,
 			image: data.image?.url,
 		};
 
-		head.short = head.title.split(/[\:\,\.\-\/\|\~]/)[0].substr(0, 100).trim();
+		head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
+		head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
 
+		// console.dir({head});
+		
 		let result = {
 			...head,
 			items: items.map(item => {
@@ -83,18 +96,20 @@ async function fetchRSSLinks({urls, limit=12}) {
 					images.push(...(item?.attachments?.filter?.(x => x.mimeType.includes('image')).map(x => x.url) || []));
 					images.push(...(item?.['media:content']?.filter?.(x => x.medium == 'image').map(x => x.url) || []));
 					images.push(item['media:thumbnail']?.url);
+					images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
 					images.push(head.image);
-					images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=128`)
 
 					let x = {
 						title: item?.title?.value,
-						author: item?.author?.name,
-						link: item?.links?.[0]?.href,
+						author: item?.author?.name || item?.['dc:subject'] || item?.id?.split(SPLIT).filter(x=>x).pop() || '',
 						description: item?.description?.value || item?.content?.value || item?.['media:description']?.value,
 						published: item?.published,
 						updated: item?.updated,
 						images: images.filter(x => x),
-						categories: item.categories?.map(x => x.label || x.term),
+						categories: item?.categories?.map?.(x => x.label || x.term),
+						link: item?.links?.[0]?.href,
+						link_author: item?.author?.url || item?.author?.uri,
+						statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
 					};
 
 					if (x.description?.includes('>') && x.description?.includes('<')) {
@@ -159,7 +174,6 @@ async function handleRequest(req: Request): Promise < Response > {
 	return new Response(JSON.stringify({error: 'E404'}), {status: 404});
 }
 
-console.log('Server starting in port:8000')
-serve(handleRequest, {
-	port: 8000
-});
+const port = process.env.PORT || 17385;
+
+serve(handleRequest, {port});

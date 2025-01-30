@@ -15,22 +15,69 @@
 		</header>
 		<main class="container mx-auto p-4 flex-1">
 			<div class="flex gap-4 items-center mb-4">
-				<!-- <button @click="loadFeeds()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Load Feeds</button> -->
 				<div x-show="loading" class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
 
-<!-- 
-			<template x-if="feeds.length === 0 && !loading && !error">
-				<div class="bg-gray-200 p-4 rounded text-center">
-					<span>No feeds loaded. Press 'Load Feeds' to get news</span>
+			<template x-if="!params.urls">
+				<div class="w-full">
+					<div class="m-auto my-4 max-w-auto shadow-lg rounded-md">
+						<!-- Input -->
+						<div class="bg-blue-400 p-4 rounded-t-md">
+							<form @submit.prevent="addNewTask">
+								<input
+									x-model="input"
+									class="w-full bg-blue-400 text-white placeholder-gray-200 focus:outline-none border-b-2"
+									placeholder="Add new feed url..."
+								/>
+							</form>
+						</div>
+
+						<!-- List -->
+						<div class="p-3">
+							<span x-show="tasks.length <= 0" class="center italic text-gray-300">No feed</span>
+
+							<template x-for="(item, index) in tasks" :key="index">
+								<div class="flex items-center">
+									<input class="m-2" type="checkbox" x-model="item.checked"/>
+									<div x-text="item.url" :class="{ 'line-through': item.checked }"></div>
+								</div>
+							</template>
+						</div>
+
+						<!-- Buttons -->
+						<div class="bg-blue-400 p-3 flex justify-end rounded-b-md space-x-4">
+							<button
+								class="focus:outline-none uppercase text-xs text-blue-100 border-none bg-gray-700 p-2 font-bold rounded shadow"
+								x-show="tasks.length > 0"
+								@click="clearAll()"
+							>
+								Clear
+							</button>
+							<button
+								class="focus:outline-none uppercase text-xs text-blue-100 border-none bg-gray-700 p-2 font-bold rounded shadow"
+								x-show="tasks.length > 0"
+								@click="clearChecked()"
+							>
+								Delete
+							</button>
+							<button
+								class="focus:outline-none uppercase text-xs text-blue-100 border-none bg-gray-700 p-2 font-bold rounded shadow"
+								x-show="tasks.length > 0"
+								@click="render()"
+							>
+								RENDER
+							</button>
+						</div>
+					</div>
 				</div>
 			</template>
 
- -->
 			<template x-for="(feed, index) in feeds" :key="index">
 				<section class="bg-white shadow rounded mb-4">
-					<h2 class="text-xl font-bold mx-auto p-5 sm:p-4 md:p-8" x-text="feed.title"></h2>
+					<a :href="feed.rss_url || feed.link">
+						<h2 class="text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>	
+					</a>
 					<div class="max-w-screen-xl mx-auto p-5 sm:p-8 md:p-10">
 						<div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
 							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex"><div class="rounded overflow-hidden shadow-lg">
@@ -47,16 +94,16 @@
 									</a>
 									<a :href="item.link">
 										<div
-											class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="feed.short.substr(0, 100).trim()">
+											class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="(item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
 											
 										</div>
 									</a>
 
-									<a :href="item.link">
+									<a :href="item.link_author || item.link">
 										<div
 											class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 text-white rounded-full h-16 w-16 flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
 											<!-- <span class="font-bold" x-html="feed.slug"></span> -->
-											<small class="break-all" x-html="item.author"></small>
+											<small class="break-all text-center" x-html="item.author?.substr(0, 12).trim()"></small>
 										</div>
 									</a>
 								</div>
@@ -64,7 +111,7 @@
 
 									<a :href="item.link"
 										class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
-									<p class="text-gray-500 text-sm whitespace-pre-line" x-html="item.description.substr(0, 400)"></p>
+									<p class="text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.substr(0, 400)"></p>
 								</div>
 								<div class="px-6 py-2 flex flex-row items-center">
 									<span href="#" class="py-1 text-sm font-regular text-gray-900 mr-1 flex flex-row items-center">
@@ -86,21 +133,6 @@
 				</section>
 			</template>
 
-<!-- 
-			<template x-for="(feed, index) in feeds" :key="index">
-				<section class="bg-white shadow rounded mb-4 p-4">
-					<h2 class="text-xl font-bold mb-2" x-text="feed.title"></h2>
-					<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
-						<div class="border-b border-gray-200 py-2 last:border-b-0">
-							<h3 class="font-semibold"><a :href="item.link" target="_blank" class="text-blue-600 hover:underline" x-text="item.title"></a></h3>
-							<p class="text-sm text-gray-700" x-html="item.description"></p>
-							<p class="text-xs text-gray-500" x-text="new Date(item.pubDate).toLocaleString()"></p>
-						</div>
-					</template>
-				</section>
-			</template>
- -->
-
 		</main>
 		<footer class="bg-gray-300 p-2 text-center text-sm">
 			© Ishosta RSS Feed Render
@@ -120,6 +152,9 @@
 			loading: false,
 			error: null,
 			params: {},
+
+			input: '',
+			tasks: [],
 
 			async loadFeeds() {
 				if (this.loading) return;
@@ -145,10 +180,53 @@
 				}
 			},
 
+			addNewTask() {
+				try {
+					this.input?.split(',').forEach(x => {
+						let url = new URL(x).toString();
+
+						let found = this.tasks.find(x => x?.url == url);
+
+						if (found) return;
+
+						this.tasks.push({ url, checked: false });
+					});
+
+					localStorage.setItem('feeds', JSON.stringify(this.tasks));
+
+					this.input = '';
+				} catch (ex) {
+					alert(ex.message);
+				}
+			},
+
+			clearAll() {
+				this.input = '';
+				this.tasks = [];
+				localStorage.setItem('feeds', '');
+			},
+
+			clearChecked() {
+				this.input = '';
+				this.tasks = this.tasks.filter(x => !x.checked);
+
+				localStorage.setItem('feeds', JSON.stringify(this.tasks));
+			},
+
+			render() {
+				let urls = this.tasks?.map?.(x => x.url).join(',');
+				
+				window.open(`/?urls=${encodeURIComponent(urls)}`, '_blank');
+			},
+
 			async init() {
 				this.params = Object.fromEntries(new URLSearchParams(location.search));
 
-				await this.loadFeeds()
+				await this.loadFeeds();
+
+				if (localStorage.getItem('feeds')?.length) {
+					this.tasks = JSON.parse(localStorage.getItem('feeds'));
+				}
 			}
 		}
 	}
