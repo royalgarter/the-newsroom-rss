@@ -1,0 +1,5 @@
+feeds:
+  - name: nytimes
+    url: https://rss.nytimes.com/services/xml/rss/nyt/World.xml
+  - name: vnexpress
+    url: https://vnexpress.net/rss/tin-moi-nhat.rss

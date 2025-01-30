@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>RSS Reader</title>
+		<link rel="stylesheet" href="./style.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+	</head>
+	<body x-data="dataRSS()" class="bg-gray-100 min-h-screen flex flex-col">
+		<header class="bg-blue-500 p-4 text-white text-center">
+			<h1 class="text-2xl font-bold">Ishosta RSS Feed Reader</h1>
+		</header>
+		<main class="container mx-auto p-4 flex-1">
+			<div class="flex gap-4 items-center mb-4">
+				<!-- <button @click="loadFeeds()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Load Feeds</button> -->
+				<div x-show="loading" class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+				<span x-show="error" class="text-red-500" x-text="error"></span>
+			</div>
+
+
+			<template x-if="feeds.length === 0 && !loading && !error">
+				<div class="bg-gray-200 p-4 rounded text-center">
+					<span>No feeds loaded. Press 'Load Feeds' to get news</span>
+				</div>
+			</template>
+
+
+			<template x-for="(feed, index) in feeds" :key="index">
+				<section class="bg-white shadow rounded mb-4">
+					<h2 class="text-xl font-bold mx-auto p-5 sm:p-4 md:p-8" x-text="feed.title"></h2>
+					<div class="max-w-screen-xl mx-auto p-5 sm:p-8 md:p-10">
+						<div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
+							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex"><div class="rounded overflow-hidden shadow-lg">
+
+								<a :href="item.link"></a>
+								<div class="relative">
+									<a :href="item.link">
+										<img class="w-full"
+											:src="item.images[0]"
+											:alt="item.title">
+										<div
+											class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+										</div>
+									</a>
+									<a :href="item.link">
+										<div
+											class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="feed.short.substr(0, 100).trim()">
+											
+										</div>
+									</a>
+
+									<a :href="item.link">
+										<div
+											class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 text-white rounded-full h-16 w-16 flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+											<!-- <span class="font-bold" x-html="feed.slug"></span> -->
+											<small class="break-all" x-html="item.author"></small>
+										</div>
+									</a>
+								</div>
+								<div class="px-6 py-4">
+
+									<a :href="item.link"
+										class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
+									<p class="text-gray-500 text-sm whitespace-pre-line" x-html="item.description.substr(0, 400)"></p>
+								</div>
+								<div class="px-6 py-2 flex flex-row items-center">
+									<span href="#" class="py-1 text-sm font-regular text-gray-900 mr-1 flex flex-row items-center">
+										<svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+											xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512"
+											style="enable-background:new 0 0 512 512;" xml:space="preserve">
+											<g>
+												<g>
+													<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
+												</g>
+											</g>
+										</svg>
+										<span class="ml-1" x-text="new Date(item.published).toLocaleString()"></span>
+									</span>
+								</div>
+							</div></template>
+						</div>
+					</div>
+				</section>
+			</template>
+
+<!-- 
+			<template x-for="(feed, index) in feeds" :key="index">
+				<section class="bg-white shadow rounded mb-4 p-4">
+					<h2 class="text-xl font-bold mb-2" x-text="feed.title"></h2>
+					<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
+						<div class="border-b border-gray-200 py-2 last:border-b-0">
+							<h3 class="font-semibold"><a :href="item.link" target="_blank" class="text-blue-600 hover:underline" x-text="item.title"></a></h3>
+							<p class="text-sm text-gray-700" x-html="item.description"></p>
+							<p class="text-xs text-gray-500" x-text="new Date(item.pubDate).toLocaleString()"></p>
+						</div>
+					</template>
+				</section>
+			</template>
+ -->
+
+		</main>
+		<footer class="bg-gray-300 p-2 text-center text-sm">
+			© Ishosta RSS Feed Reader
+		</footer>
+	</body>
+</html>
+
+
+<style type="text/tailwindcss">
+
+</style>
+
+<script>
+	function dataRSS() {
+		return {
+			feeds: [],
+			loading: false,
+			error: null,
+			params: {},
+
+			async loadFeeds() {
+				if (this.loading) return;
+
+				this.loading = true;
+				this.error = null;
+
+				try {
+					let urls = this.params?.urls ? encodeURIComponent(this.params.urls) : '';
+
+					const response = await fetch(`/api/feeds?urls=${urls}`);
+
+					if(!response.ok){
+						throw new Error(`Failed to fetch feeds ${response.status}`)
+					}
+			
+					this.feeds = await response.json();
+					this.loading = false
+				} catch(error){
+					console.error("Error fetching feeds:", error);
+					this.error = "Failed to load feeds. Please check the server logs for more details";
+					this.loading = false;
+				}
+			},
+
+			async init() {
+				this.params = Object.fromEntries(new URLSearchParams(location.search));
+
+				await this.loadFeeds()
+			}
+		}
+	}
+</script>
