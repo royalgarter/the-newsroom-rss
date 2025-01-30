@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>RSS Reader</title>
+		<title>RSS Feed Render</title>
 		<link rel="stylesheet" href="./style.css">
 		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 		<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
@@ -11,7 +11,7 @@
 	</head>
 	<body x-data="dataRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-500 p-4 text-white text-center">
-			<h1 class="text-2xl font-bold">Ishosta RSS Feed Reader</h1>
+			<h1 class="text-2xl font-bold">Ishosta RSS Feed Render</h1>
 		</header>
 		<main class="container mx-auto p-4 flex-1">
 			<div class="flex gap-4 items-center mb-4">
@@ -20,14 +20,14 @@
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
 
-
+<!-- 
 			<template x-if="feeds.length === 0 && !loading && !error">
 				<div class="bg-gray-200 p-4 rounded text-center">
 					<span>No feeds loaded. Press 'Load Feeds' to get news</span>
 				</div>
 			</template>
 
-
+ -->
 			<template x-for="(feed, index) in feeds" :key="index">
 				<section class="bg-white shadow rounded mb-4">
 					<h2 class="text-xl font-bold mx-auto p-5 sm:p-4 md:p-8" x-text="feed.title"></h2>
@@ -103,7 +103,7 @@
 
 		</main>
 		<footer class="bg-gray-300 p-2 text-center text-sm">
-			© Ishosta RSS Feed Reader
+			© Ishosta RSS Feed Render
 		</footer>
 	</body>
 </html>
