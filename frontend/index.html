@@ -8,7 +8,7 @@
 		<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 		
-		<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+		<script defer src="https://unpkg.com/@tailwindcss/browser@4"></script>
 	</head>
 	<body x-data="dataRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-500 p-4 text-white text-center">
@@ -41,7 +41,7 @@
 							<template x-for="(item, index) in tasks" :key="index">
 								<div class="flex items-center">
 									<input class="m-2" type="checkbox" x-model="item.checked"/>
-									<div x-text="item.url" :class="{ 'line-through': item.checked }"></div>
+									<div x-text="item.url" class="break-all" :class="{ 'line-through': item.checked }"></div>
 								</div>
 							</template>
 						</div>
@@ -49,25 +49,25 @@
 						<!-- Buttons -->
 						<div class="bg-blue-400 p-3 flex justify-end rounded-b-md space-x-4">
 							<button
-								class="focus:outline-none uppercase text-xs text-blue-100 border-none bg-gray-700 p-2 font-bold rounded shadow"
+								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-700 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
-								@click="clearAll()"
+								@click="clearAllTasks()"
 							>
-								Clear
+								Clear All
 							</button>
 							<button
-								class="focus:outline-none uppercase text-xs text-blue-100 border-none bg-gray-700 p-2 font-bold rounded shadow"
+								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-stone-700 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
-								@click="clearChecked()"
+								@click="deleteTask()"
 							>
-								Delete
+								Delete Selected
 							</button>
 							<button
-								class="focus:outline-none uppercase text-xs text-blue-100 border-none bg-gray-700 p-2 font-bold rounded shadow"
+								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-700 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
 								@click="render()"
 							>
-								RENDER
+								View Feeds
 							</button>
 						</div>
 					</div>
@@ -75,7 +75,7 @@
 			</template>
 
 			<template x-for="(feed, index) in feeds" :key="index">
-				<section class="bg-white shadow rounded mb-4">
+				<section x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4">
 					<a :href="feed.rss_url || feed.link">
 						<h2 class="text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>	
 					</a>
@@ -86,6 +86,7 @@
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
+									:class="item.viewed && 'opacity-50 italic'"
 								>
 									<a :href="item.link"></a>
 									<div class="relative">
@@ -113,21 +114,23 @@
 										</a>
 									</div>
 									<div class="px-6 py-4">
-
+										<span x-show="item.viewed" class="py-1 text-xs font-regular text-gray-400 mr-1 flex flex-row items-center">
+											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+											</svg>
+											<span class="ml-1" x-text="item.viewed"></span>
+										</span>
+										
 										<a :href="item.link"
 											class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
 										<p class="text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.substr(0, 400)"></p>
 									</div>
 									<div class="px-6 py-2 flex flex-row items-center">
-										<span href="#" class="py-1 text-sm font-regular text-gray-900 mr-1 flex flex-row items-center">
+										<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
 											<svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
 												xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512"
 												style="enable-background:new 0 0 512 512;" xml:space="preserve">
-												<g>
-													<g>
-														<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
-													</g>
-												</g>
+												<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
 											</svg>
 											<span class="ml-1" x-text="new Date(item.published).toLocaleString()"></span>
 										</span>
@@ -162,6 +165,14 @@
 			input: '',
 			tasks: [],
 
+			K: {
+				LIMIT: 6,
+
+				viewed: 'v1_viewed_',
+				tasks: 'v1_tasks',
+				feeds: 'v1_feeds',
+			},
+
 			TRIGGER: {
 				LIMIT: 8e3,
 			},
@@ -172,8 +183,6 @@
 				this.TRIGGER[link] = this.TRIGGER[link] || {};
 
 				let now = new Date();
-
-				// console.log(link, type, now);
 
 				switch (type) {
 					case 'full'://case 'enter':
@@ -192,10 +201,17 @@
 							// console.log('delta', delta)
 
 							if (this.TRIGGER[link].sum > this.TRIGGER.LIMIT) {
-								console.log(' > viewed', link);
+								// console.log(' > viewed', link);
 
-								localStorage.setItem('v1_viewed_' + link, now);
+								localStorage.setItem(this.K.viewed + link, now.toLocaleString());
 
+								this.feeds.forEach(feed => {
+									let found = feed.items.find(x => x.link == link);
+
+									if (!found) return;
+									
+									found.viewed = localStorage.getItem(this.K.viewed + link);
+								});
 							} else {
 								this.TRIGGER[link].tic = this.TRIGGER[link].toc;
 								// console.log(' > reset', link);
@@ -203,8 +219,6 @@
 						}
 					break;
 				}
-
-				
 			},
 
 			async fetchFeedUrl(url) {
@@ -226,43 +240,26 @@
 				}
 			},
 
-			/*async loadFeeds() {
+			async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=0}) {
 				if (this.loading) return;
 
 				this.loading = true;
 				this.error = null;
 
 				try {
-					let urls = this.params?.urls ? encodeURIComponent(this.params.urls) : '';
+					let urls = this.params?.urls?.split(',');
 
-					const response = await fetch(`/api/feeds?limit=${this.params.limit || 12}&urls=${urls}`);
-
-					if (!response.ok) throw new Error(`Failed to fetch feeds ${response.status}`)
-			
-					this.feeds = await response.json();
-					this.loading = false;
-					localStorage.setItem('v1_feeds', JSON.stringify(this.feeds));
-				} catch (error) {
-					console.error("Error API Feeds:", error);
-					this.error = "Failed to load feeds from API. Please check the server logs for more details";
-					this.loading = false;
-				}
-			},*/
-
-			async loadFeedsWithContent() {
-				if (this.loading) return;
-
-				this.loading = true;
-				this.error = null;
-
-				try {
-					let urls = this.params?.urls.split(',');
+					if (!urls?.length) {
+						console.log('no urls');
+						this.loading = false;
+						return;
+					}
 
 					let data = await Promise.all(urls.map(this.fetchFeedUrl));
 
 					// console.dir({data});
 
-					const response = await fetch(`/api/feeds?limit=${this.params.limit || 12}`, {
+					const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}`, {
 						method: 'POST', 
 						headers: {"content-type": "application/json"},
 						body: JSON.stringify(data),
@@ -272,9 +269,16 @@
 			
 					this.feeds = await response.json();
 					this.loading = false;
-					localStorage.setItem('v1_feeds', JSON.stringify(this.feeds));
 
-					this.filterViewedFeeds();
+					if (!this.feeds) return console.log("EEMPTYFEEDS");
+
+					localStorage.setItem(this.K.feeds, JSON.stringify(this.feeds));
+
+					let adjust = this.filterViewedFeeds({limit});
+					
+					if (limit_adjust == 0 && adjust > 0) {
+						this.loadFeedsWithContent({limit, limit_adjust: adjust});
+					}
 				} catch (error) {
 					console.error("Error fetching feeds:", error);
 					this.error = "Failed to load feeds. Please check the server logs for more details";
@@ -282,20 +286,33 @@
 				}
 			},
 
-			filterViewedFeeds() {
+			filterViewedFeeds({limit=this.K.LIMIT}) {
+				let count = 0;
 				this.feeds.forEach(feed => {
+					if (!feed?.items?.length) return;
+
+					let len_full = feed.items.length;
+
 					feed.items = feed.items.filter(item => {
 						let {link} = item;
 
-						let viewed = localStorage.getItem('v1_viewed_' + link);
+						let viewed = localStorage.getItem(this.K.viewed + link);
 
 						if (!viewed) return true;
 
-						console.log(' > skip', link)
+						// console.log(' > skip', link)
 
 						return false;
 					});
+
+					let len_filter = feed.items.length;
+					let delta = Math.abs(len_full - len_filter);
+					count = Math.max(count, delta);
+
+					feed.items = feed.items.slice(0, limit);
 				});
+
+				return count;
 			},
 
 			addNewTask() {
@@ -310,7 +327,7 @@
 						this.tasks.push({ url, checked: false });
 					});
 
-					localStorage.setItem('v1_tasks', JSON.stringify(this.tasks));
+					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 
 					this.input = '';
 				} catch (ex) {
@@ -318,47 +335,50 @@
 				}
 			},
 
-			clearAll() {
+			clearAllTasks() {
 				this.input = '';
 				this.tasks = [];
-				localStorage.setItem('v1_tasks', '');
+				localStorage.setItem(this.K.tasks, '');
 			},
 
-			clearChecked() {
+			deleteTask() {
 				this.input = '';
 				this.tasks = this.tasks.filter(x => !x.checked);
 
-				localStorage.setItem('v1_tasks', JSON.stringify(this.tasks));
+				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 			},
 
 			render() {
 				let urls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 				
-				window.open(`/?urls=${urls}`, '_blank');
+				let limit = this.params?.limit || this.K.LIMIT;
+
+				window.open(`/?limit=${limit}&urls=${urls}`, '_self');
 			},
 
 			async init() {
 				this.params = Object.fromEntries(new URLSearchParams(location.search));
 
-				if (localStorage.getItem('v1_tasks')?.length) {
-					this.tasks = JSON.parse(localStorage.getItem('v1_tasks'));
+				let limit = this.params?.limit || this.K.LIMIT;
+
+				if (localStorage.getItem(this.K.tasks)?.length) {
+					this.tasks = JSON.parse(localStorage.getItem(this.K.tasks));
 				}
 
-				if (localStorage.getItem('v1_feeds')?.length) {
-					this.feeds = JSON.parse(localStorage.getItem('v1_feeds'));
-					this.filterViewedFeeds();
+				if (this.params.urls && localStorage.getItem(this.K.feeds)?.length) {
+					this.feeds = JSON.parse(localStorage.getItem(this.K.feeds));
+					this.filterViewedFeeds({limit});
 				}
 				
-				// await this.loadFeeds();
-				await this.loadFeedsWithContent();
+				this.loadFeedsWithContent({limit});
 
 				Object.entries({...localStorage})
 					.filter(
-						([k, v]) => k.includes('v1_viewed_') 
-									&& (new Date(v) < new Date(Date.now() - 7*24*60*60e3))
+						([k, v]) => k.includes(this.K.viewed) 
+									&& (new Date(v) < new Date(Date.now() - 24*60*60e3))
 					)
 					.forEach( ([k, v]) => localStorage.removeItem(k) )
-
+				;
 			}
 		}
 	}
