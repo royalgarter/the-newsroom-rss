@@ -35,23 +35,32 @@ async function loadFeedsConfig() {
 	}
 }
 
-async function fetchParse(url: string) {
+async function fetchParse(url: string, content: string) {
 	try {
-		if (!url.includes('http')) url = 'https://' + url;
+		if (!url) return null;
 
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error(`HTTP error! Status: ${response.status}`);
+		if (!content) {
+			url = url.replaceAll(' ', '+');
+			// console.log('fetchParse.content.server-side', url);
+
+			if (!url.includes('http')) url = 'https://' + url;
+
+			const response = await fetch(url);
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			content = await response.text();	
 		}
-		const xmlText = await response.text();
 
-		let data = await parseFeed(xmlText);
+		// console.log('fetchParse.content', content.length);
+
+		let data = await parseFeed(content);
 
 		data.rss_url = url;
 
 		return data;
 	} catch (error) {
-		console.error(`Error fetching or parsing ${url}:`, error);
+		// console.error(`Error fetching or parsing ${url}:`, error.message);
 		return null;
 	}
 }
@@ -59,18 +68,35 @@ async function fetchParse(url: string) {
 async function fetchRSSLinks({urls, limit=12}) {
 	if (!urls) return [];
 
-	const feedUrls = (urls ? urls.split(',') : (await loadFeedsConfig())?.feeds.map(feed => feed.url)) ?? [];
+	let feeds = [];
 
-	// console.dir({urls, feedUrls})
+	if (Array.isArray(urls)) {
+		feeds = await Promise.all(
+			urls.map(async ({url, content}) => {
+				if (!url) return null;
 
-	const feedResults = await Promise.all(feedUrls.map(fetchParse));
+				return await fetchParse(url, content);
+			})
+		);
 
-	const finalResult = feedResults.filter(x => x).map(data => {
+		feeds = feeds.filter(x => x);
+	}
+
+	if (typeof urls == 'string') {
+		// const feedUrls = (urls ? urls.split(',') : (await loadFeedsConfig())?.feeds.map(feed => feed.url)) ?? [];
+		const feedUrls = urls.split(',');
+
+		// console.dir({urls, feedUrls})
+
+		feeds = await Promise.all(feedUrls.map(fetchParse));	
+	}
+
+	const render = feeds.filter(x => x).map(data => {
 		const items = data.entries.slice(0, limit);
 
 		// console.dir(data)
 
-		const SPLIT = /[\:\,\.\-\/\|\~]/;
+		const SPLIT = /[\:\,\.\-\_\/\|\~]/;
 
 		let head = {
 			title: data.description || data.title.value,
@@ -131,19 +157,30 @@ async function fetchRSSLinks({urls, limit=12}) {
 		return result;
 	})
 
-	return finalResult;
+	return render;
 }
 
 async function handleRequest(req: Request): Promise < Response > {
 	const {pathname, searchParams} = new URL(req.url);
+
 	let params = Object.fromEntries(searchParams);
+	let {urls='', limit} = params;
+	
 
 	if (pathname === "/api/feeds") {
-		let {urls, limit} = params;
+		let finalResult = [];
 
-		urls = urls && decodeURIComponent(urls).replaceAll(' ', '+');
+		if (req.method == 'GET') {
+			urls = decodeURIComponent(urls);
 
-		const finalResult = await fetchRSSLinks({urls, limit});
+			finalResult = await fetchRSSLinks({urls, limit});
+		}
+
+		if (req.method == 'POST') {
+			let data = await req.json();
+
+			finalResult = await fetchRSSLinks({urls: data, limit});
+		}
 
 		return new Response(JSON.stringify(finalResult), {
 			headers: {

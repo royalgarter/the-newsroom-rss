@@ -4,17 +4,18 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>RSS Feed Render</title>
-		<link rel="stylesheet" href="./style.css">
-		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-		<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
 
+		<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		
+		<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
 	</head>
 	<body x-data="dataRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-500 p-4 text-white text-center">
 			<h1 class="text-2xl font-bold">Ishosta RSS Feed Render</h1>
 		</header>
 		<main class="container mx-auto p-4 flex-1">
-			<div class="flex gap-4 items-center mb-4">
+			<div class="flex gap-4 items-center mb-4 justify-self-center">
 				<div x-show="loading" class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
@@ -80,54 +81,59 @@
 					</a>
 					<div class="max-w-screen-xl mx-auto p-5 sm:p-8 md:p-10">
 						<div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
-							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex"><div class="rounded overflow-hidden shadow-lg">
+							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
+								<div class="rounded overflow-hidden shadow-lg" 
+									x-intersect:enter="triggerIntersect('enter', item.link)"
+									x-intersect:leave="triggerIntersect('leave', item.link)"
+									x-intersect.full="triggerIntersect('full', item.link)"
+								>
+									<a :href="item.link"></a>
+									<div class="relative">
+										<a :href="item.link">
+											<img class="w-full max-h-[320px]"
+												:src="item.images[0]"
+												:alt="item.title">
+											<div
+												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+											</div>
+										</a>
+										<a :href="item.link">
+											<div
+												class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="(item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
+												
+											</div>
+										</a>
 
-								<a :href="item.link"></a>
-								<div class="relative">
-									<a :href="item.link">
-										<img class="w-full max-h-[320px]"
-											:src="item.images[0]"
-											:alt="item.title">
-										<div
-											class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
-										</div>
-									</a>
-									<a :href="item.link">
-										<div
-											class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="(item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
-											
-										</div>
-									</a>
+										<a :href="item.link_author || item.link">
+											<div
+												class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 text-white rounded-full h-16 w-16 flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
+												<small class="break-all text-center" x-html="item.author?.substr(0, 12).trim()"></small>
+											</div>
+										</a>
+									</div>
+									<div class="px-6 py-4">
 
-									<a :href="item.link_author || item.link">
-										<div
-											class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 text-white rounded-full h-16 w-16 flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
-											<!-- <span class="font-bold" x-html="feed.slug"></span> -->
-											<small class="break-all text-center" x-html="item.author?.substr(0, 12).trim()"></small>
-										</div>
-									</a>
-								</div>
-								<div class="px-6 py-4">
-
-									<a :href="item.link"
-										class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
-									<p class="text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.substr(0, 400)"></p>
-								</div>
-								<div class="px-6 py-2 flex flex-row items-center">
-									<span href="#" class="py-1 text-sm font-regular text-gray-900 mr-1 flex flex-row items-center">
-										<svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
-											xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512"
-											style="enable-background:new 0 0 512 512;" xml:space="preserve">
-											<g>
+										<a :href="item.link"
+											class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
+										<p class="text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.substr(0, 400)"></p>
+									</div>
+									<div class="px-6 py-2 flex flex-row items-center">
+										<span href="#" class="py-1 text-sm font-regular text-gray-900 mr-1 flex flex-row items-center">
+											<svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+												xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512"
+												style="enable-background:new 0 0 512 512;" xml:space="preserve">
 												<g>
-													<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
+													<g>
+														<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
+													</g>
 												</g>
-											</g>
-										</svg>
-										<span class="ml-1" x-text="new Date(item.published).toLocaleString()"></span>
-									</span>
+											</svg>
+											<span class="ml-1" x-text="new Date(item.published).toLocaleString()"></span>
+										</span>
+									</div>
 								</div>
-							</div></template>
+							</template>
 						</div>
 					</div>
 				</section>
@@ -156,7 +162,71 @@
 			input: '',
 			tasks: [],
 
-			async loadFeeds() {
+			TRIGGER: {
+				LIMIT: 8e3,
+			},
+
+			triggerIntersect(type, link) {
+				if (!link) return console.log('ELINK');
+
+				this.TRIGGER[link] = this.TRIGGER[link] || {};
+
+				let now = new Date();
+
+				// console.log(link, type, now);
+
+				switch (type) {
+					case 'full'://case 'enter':
+						this.TRIGGER[link].tic = Math.min(now, this.TRIGGER[link].tic || now);
+					break;
+					case 'leave':
+						this.TRIGGER[link].toc = Math.max(now, this.TRIGGER[link].toc || now);
+						// this.TRIGGER[link].tic = Math.min(this.TRIGGER[link].toc, this.TRIGGER[link].tic || now);
+
+						if (this.TRIGGER[link].tic && this.TRIGGER[link].toc) {
+							let delta = this.TRIGGER[link].toc - this.TRIGGER[link].tic;
+
+							this.TRIGGER[link].sum = this.TRIGGER[link].sum || 0; 
+							this.TRIGGER[link].sum += delta;
+
+							// console.log('delta', delta)
+
+							if (this.TRIGGER[link].sum > this.TRIGGER.LIMIT) {
+								console.log(' > viewed', link);
+
+								localStorage.setItem('v1_viewed_' + link, now);
+
+							} else {
+								this.TRIGGER[link].tic = this.TRIGGER[link].toc;
+								// console.log(' > reset', link);
+							}
+						}
+					break;
+				}
+
+				
+			},
+
+			async fetchFeedUrl(url) {
+				try {
+					// console.log('fetchFeedUrl', url);
+					const response = await fetch(url.replaceAll(' ', '+'), {redirect: 'follow'});
+
+					if (!response.ok || response.status >= 400) return {url};
+
+					const content = await response.text();
+
+					// console.log('fetchFeedUrl', content.length);
+
+					return {url, content};
+				} catch (error) {
+					// console.warn("Error client fetching feed url:", url/*, error.message*/);
+
+					return {url};
+				}
+			},
+
+			/*async loadFeeds() {
 				if (this.loading) return;
 
 				this.loading = true;
@@ -165,19 +235,67 @@
 				try {
 					let urls = this.params?.urls ? encodeURIComponent(this.params.urls) : '';
 
-					const response = await fetch(`/api/feeds?urls=${urls}`);
+					const response = await fetch(`/api/feeds?limit=${this.params.limit || 12}&urls=${urls}`);
 
-					if(!response.ok){
-						throw new Error(`Failed to fetch feeds ${response.status}`)
-					}
+					if (!response.ok) throw new Error(`Failed to fetch feeds ${response.status}`)
 			
 					this.feeds = await response.json();
-					this.loading = false
-				} catch(error){
+					this.loading = false;
+					localStorage.setItem('v1_feeds', JSON.stringify(this.feeds));
+				} catch (error) {
+					console.error("Error API Feeds:", error);
+					this.error = "Failed to load feeds from API. Please check the server logs for more details";
+					this.loading = false;
+				}
+			},*/
+
+			async loadFeedsWithContent() {
+				if (this.loading) return;
+
+				this.loading = true;
+				this.error = null;
+
+				try {
+					let urls = this.params?.urls.split(',');
+
+					let data = await Promise.all(urls.map(this.fetchFeedUrl));
+
+					// console.dir({data});
+
+					const response = await fetch(`/api/feeds?limit=${this.params.limit || 12}`, {
+						method: 'POST', 
+						headers: {"content-type": "application/json"},
+						body: JSON.stringify(data),
+					});
+
+					if (!response.ok) throw new Error(`Failed to fetch feeds ${response.status}`)
+			
+					this.feeds = await response.json();
+					this.loading = false;
+					localStorage.setItem('v1_feeds', JSON.stringify(this.feeds));
+
+					this.filterViewedFeeds();
+				} catch (error) {
 					console.error("Error fetching feeds:", error);
 					this.error = "Failed to load feeds. Please check the server logs for more details";
 					this.loading = false;
 				}
+			},
+
+			filterViewedFeeds() {
+				this.feeds.forEach(feed => {
+					feed.items = feed.items.filter(item => {
+						let {link} = item;
+
+						let viewed = localStorage.getItem('v1_viewed_' + link);
+
+						if (!viewed) return true;
+
+						console.log(' > skip', link)
+
+						return false;
+					});
+				});
 			},
 
 			addNewTask() {
@@ -192,7 +310,7 @@
 						this.tasks.push({ url, checked: false });
 					});
 
-					localStorage.setItem('feeds', JSON.stringify(this.tasks));
+					localStorage.setItem('v1_tasks', JSON.stringify(this.tasks));
 
 					this.input = '';
 				} catch (ex) {
@@ -203,30 +321,44 @@
 			clearAll() {
 				this.input = '';
 				this.tasks = [];
-				localStorage.setItem('feeds', '');
+				localStorage.setItem('v1_tasks', '');
 			},
 
 			clearChecked() {
 				this.input = '';
 				this.tasks = this.tasks.filter(x => !x.checked);
 
-				localStorage.setItem('feeds', JSON.stringify(this.tasks));
+				localStorage.setItem('v1_tasks', JSON.stringify(this.tasks));
 			},
 
 			render() {
-				let urls = this.tasks?.map?.(x => x.url).join(',');
+				let urls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 				
-				window.open(`/?urls=${encodeURIComponent(urls)}`, '_blank');
+				window.open(`/?urls=${urls}`, '_blank');
 			},
 
 			async init() {
 				this.params = Object.fromEntries(new URLSearchParams(location.search));
 
-				await this.loadFeeds();
-
-				if (localStorage.getItem('feeds')?.length) {
-					this.tasks = JSON.parse(localStorage.getItem('feeds'));
+				if (localStorage.getItem('v1_tasks')?.length) {
+					this.tasks = JSON.parse(localStorage.getItem('v1_tasks'));
 				}
+
+				if (localStorage.getItem('v1_feeds')?.length) {
+					this.feeds = JSON.parse(localStorage.getItem('v1_feeds'));
+					this.filterViewedFeeds();
+				}
+				
+				// await this.loadFeeds();
+				await this.loadFeedsWithContent();
+
+				Object.entries({...localStorage})
+					.filter(
+						([k, v]) => k.includes('v1_viewed_') 
+									&& (new Date(v) < new Date(Date.now() - 7*24*60*60e3))
+					)
+					.forEach( ([k, v]) => localStorage.removeItem(k) )
+
 			}
 		}
 	}
