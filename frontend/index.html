@@ -20,7 +20,75 @@
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
 
-			<template x-if="!params.urls">
+			<template x-cloak x-for="(feed, index) in feeds" :key="index">
+				<section x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4">
+					<a :href="feed.rss_url || feed.link">
+						<h2 class="text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>	
+					</a>
+					<div class="max-w-screen-xl mx-auto p-5 sm:p-8 md:p-10">
+						<div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
+							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
+								<div class="rounded overflow-hidden shadow-lg" 
+									x-intersect:enter="triggerIntersect('enter', item.link)"
+									x-intersect:leave="triggerIntersect('leave', item.link)"
+									x-intersect.full="triggerIntersect('full', item.link)"
+									:class="item.viewed && 'opacity-75 italic'"
+								>
+									<a :href="item.link"></a>
+									<div class="relative">
+										<a :href="item.link">
+											<img class="w-full max-h-[320px]"
+												:src="item.images[0]"
+												:alt="item.title">
+											<div
+												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+											</div>
+										</a>
+										<a :href="item.link">
+											<div
+												class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="(item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
+												
+											</div>
+										</a>
+
+										<a x-show="item.author?.length" :href="item.link_author || item.link">
+											<div
+												class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 text-white rounded-full h-16 w-16 flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
+												<small class="break-all text-center" x-html="item.author?.substr(0, 12).trim()"></small>
+											</div>
+										</a>
+									</div>
+									<div class="px-6 py-4">
+										<span x-show="item.viewed" class="py-1 text-xs font-regular text-gray-400 mr-1 flex flex-row items-center">
+											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+											</svg>
+											<span class="ml-1" x-text="item.viewed"></span>
+										</span>
+										
+										<a :href="item.link"
+											class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
+										<p class="text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.trim().substr(0, 400)"></p>
+									</div>
+									<div class="px-6 py-2 flex flex-row items-center">
+										<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
+											<svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+												xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512"
+												style="enable-background:new 0 0 512 512;" xml:space="preserve">
+												<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
+											</svg>
+											<span class="ml-1" x-text="new Date(item.published).toLocaleString()"></span>
+										</span>
+									</div>
+								</div>
+							</template>
+						</div>
+					</div>
+				</section>
+			</template>
+
+			<template x-if="true || !feeds.length">
 				<div class="w-full">
 					<div class="m-auto my-4 max-w-auto shadow-lg rounded-md">
 						<!-- Input -->
@@ -74,74 +142,6 @@
 				</div>
 			</template>
 
-			<template x-for="(feed, index) in feeds" :key="index">
-				<section x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4">
-					<a :href="feed.rss_url || feed.link">
-						<h2 class="text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>	
-					</a>
-					<div class="max-w-screen-xl mx-auto p-5 sm:p-8 md:p-10">
-						<div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
-							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
-								<div class="rounded overflow-hidden shadow-lg" 
-									x-intersect:enter="triggerIntersect('enter', item.link)"
-									x-intersect:leave="triggerIntersect('leave', item.link)"
-									x-intersect.full="triggerIntersect('full', item.link)"
-									:class="item.viewed && 'opacity-50 italic'"
-								>
-									<a :href="item.link"></a>
-									<div class="relative">
-										<a :href="item.link">
-											<img class="w-full max-h-[320px]"
-												:src="item.images[0]"
-												:alt="item.title">
-											<div
-												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
-											</div>
-										</a>
-										<a :href="item.link">
-											<div
-												class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="(item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
-												
-											</div>
-										</a>
-
-										<a :href="item.link_author || item.link">
-											<div
-												class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 text-white rounded-full h-16 w-16 flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
-												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
-												<small class="break-all text-center" x-html="item.author?.substr(0, 12).trim()"></small>
-											</div>
-										</a>
-									</div>
-									<div class="px-6 py-4">
-										<span x-show="item.viewed" class="py-1 text-xs font-regular text-gray-400 mr-1 flex flex-row items-center">
-											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
-											</svg>
-											<span class="ml-1" x-text="item.viewed"></span>
-										</span>
-										
-										<a :href="item.link"
-											class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
-										<p class="text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.substr(0, 400)"></p>
-									</div>
-									<div class="px-6 py-2 flex flex-row items-center">
-										<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
-											<svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
-												xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512"
-												style="enable-background:new 0 0 512 512;" xml:space="preserve">
-												<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
-											</svg>
-											<span class="ml-1" x-text="new Date(item.published).toLocaleString()"></span>
-										</span>
-									</div>
-								</div>
-							</template>
-						</div>
-					</div>
-				</section>
-			</template>
-
 		</main>
 		<footer class="bg-gray-300 p-2 text-center text-sm">
 			© Ishosta RSS Feed Render
@@ -151,7 +151,7 @@
 
 
 <style type="text/tailwindcss">
-
+[x-cloak] { display: none; }
 </style>
 
 <script>
@@ -174,7 +174,7 @@
 			},
 
 			TRIGGER: {
-				LIMIT: 8e3,
+				LIMIT: 20e3, // time to read article
 			},
 
 			triggerIntersect(type, link) {
@@ -247,19 +247,16 @@
 				this.error = null;
 
 				try {
-					let urls = this.params?.urls?.split(',');
+					let urls = this.params?.urls?.length ? this.params?.urls?.split(',') : [];
 
-					if (!urls?.length) {
-						console.log('no urls');
-						this.loading = false;
-						return;
+					let data = urls?.length ? await Promise.all(urls.map(this.fetchFeedUrl)) : [];
+
+					if (!this.params?.hash && data.length) {
+						let hash_local = await this.digest(JSON.stringify(data));
+						this.params.hash = hash_local.slice(0, 6);
 					}
 
-					let data = await Promise.all(urls.map(this.fetchFeedUrl));
-
-					// console.dir({data});
-
-					const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}`, {
+					const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
 						method: 'POST', 
 						headers: {"content-type": "application/json"},
 						body: JSON.stringify(data),
@@ -279,11 +276,27 @@
 					if (limit_adjust == 0 && adjust > 0) {
 						this.loadFeedsWithContent({limit, limit_adjust: adjust});
 					}
+
+					let hash_server = this.feeds?.[0]?.hash;
+					if (hash_server) {
+						const url = new URL(location);
+						url.searchParams.delete("urls");
+						url.searchParams.set("hash", hash_server);
+						history.pushState({}, "", url);
+					}
+
 				} catch (error) {
 					console.error("Error fetching feeds:", error);
 					this.error = "Failed to load feeds. Please check the server logs for more details";
 					this.loading = false;
 				}
+			},
+
+			async digest(txt, algo='SHA-256') {
+				return Array.from(
+					new Uint8Array(await crypto.subtle.digest(algo, new TextEncoder().encode(txt))),
+					(byte) => byte.toString(16).padStart(2, '0')
+				).join('');
 			},
 
 			filterViewedFeeds({limit=this.K.LIMIT}) {
@@ -353,7 +366,7 @@
 				
 				let limit = this.params?.limit || this.K.LIMIT;
 
-				window.open(`/?limit=${limit}&urls=${urls}`, '_self');
+				window.open(`/?limit=${limit}&hash=${this.params.hash||''}&urls=${urls}`, '_self');
 			},
 
 			async init() {
@@ -365,7 +378,7 @@
 					this.tasks = JSON.parse(localStorage.getItem(this.K.tasks));
 				}
 
-				if (this.params.urls && localStorage.getItem(this.K.feeds)?.length) {
+				if (localStorage.getItem(this.K.feeds)?.length) {
 					this.feeds = JSON.parse(localStorage.getItem(this.K.feeds));
 					this.filterViewedFeeds({limit});
 				}

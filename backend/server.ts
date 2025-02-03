@@ -8,6 +8,8 @@ import { parseFeed } from "https://deno.land/x/rss/mod.ts";
 import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import * as yaml from "https://deno.land/std@0.170.0/encoding/yaml.ts";
 
+const crypto = await import('node:crypto');
+
 const DEFAULT_CONFIG_FILE = "./feeds.yaml";
 
 const cors = {
@@ -15,6 +17,14 @@ const cors = {
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 	"Access-Control-Allow-Headers": "Content-Type",
 };
+
+const KV = await Deno.openKv();
+
+async function test() {
+	// await KV.set(['hello'], 'world');console.log(await KV.get(['hello']));
+	// const myUUID = crypto.randomUUID();
+	// console.log("Random UUID:", myUUID);
+}
 
 async function loadFeedsConfig() {
 	try {
@@ -127,7 +137,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 					let x = {
 						title: item?.title?.value,
-						author: item?.author?.name || item?.['dc:subject'] || item?.id?.split(SPLIT).filter(x=>x).pop() || '',
+						author: item?.author?.name || item?.['dc:subject'] || '',
 						description: item?.description?.value || item?.content?.value || item?.['media:description']?.value,
 						published: item?.published,
 						updated: item?.updated,
@@ -164,8 +174,9 @@ async function handleRequest(req: Request): Promise < Response > {
 	const {pathname, searchParams} = new URL(req.url);
 
 	let params = Object.fromEntries(searchParams);
-	let {urls='', limit} = params;
-	
+	let {urls='', limit, hash} = params;
+
+	// console.dir({params})
 
 	if (pathname === "/api/feeds") {
 		let finalResult = [];
@@ -179,7 +190,21 @@ async function handleRequest(req: Request): Promise < Response > {
 		if (req.method == 'POST') {
 			let data = await req.json();
 
+			if (hash && !data?.length) {
+				data = (await KV.get([pathname, hash]))?.value || [];
+			} 
+			
+			let keys = data.filter(x => x.url).map(x => ({url: x.url}));
+
+			if (!hash) {
+				hash = crypto.createHash('md5').update(JSON.stringify(keys)).digest("hex").slice(0, 6);
+			}
+
+			KV.set([pathname, hash], keys);
+
 			finalResult = await fetchRSSLinks({urls: data, limit});
+
+			finalResult?.forEach?.(x => x.hash = hash);
 		}
 
 		return new Response(JSON.stringify(finalResult), {
@@ -191,6 +216,7 @@ async function handleRequest(req: Request): Promise < Response > {
 	}
 
 	if (pathname === "/") {
+		console.log('pathname')
 		return new Response(await Deno.readTextFile("./frontend/index.html"), {
 			headers: {
 				"content-type": "text/html; charset=utf-8",
