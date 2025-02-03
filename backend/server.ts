@@ -216,7 +216,6 @@ async function handleRequest(req: Request): Promise < Response > {
 	}
 
 	if (pathname === "/") {
-		console.log('pathname')
 		return new Response(await Deno.readTextFile("./frontend/index.html"), {
 			headers: {
 				"content-type": "text/html; charset=utf-8",

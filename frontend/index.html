@@ -25,8 +25,8 @@
 					<a :href="feed.rss_url || feed.link">
 						<h2 class="text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>	
 					</a>
-					<div class="max-w-screen-xl mx-auto p-5 sm:p-8 md:p-10">
-						<div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
+					<div class="max-w-screen-2xl mx-auto p-5 sm:p-8 md:p-10">
+						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-10">
 							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
 								<div class="rounded overflow-hidden shadow-lg" 
 									x-intersect:enter="triggerIntersect('enter', item.link)"
@@ -36,22 +36,22 @@
 								>
 									<a :href="item.link"></a>
 									<div class="relative">
-										<a :href="item.link">
-											<img class="w-full max-h-[320px]"
+										<a class="rss-thumb" :href="item.link">
+											<img class="rss-thumb w-full max-h-[320px]"
 												:src="item.images[0]"
 												:alt="item.title">
 											<div
 												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
 											</div>
 										</a>
-										<a :href="item.link">
+										<a class="rss-tags" :href="item.link">
 											<div
 												class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="(item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
 												
 											</div>
 										</a>
 
-										<a x-show="item.author?.length" :href="item.link_author || item.link">
+										<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link">
 											<div
 												class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 text-white rounded-full h-16 w-16 flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
 												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
@@ -68,8 +68,10 @@
 										</span>
 										
 										<a :href="item.link"
-											class="font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title"></a>
-										<p class="text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.trim().substr(0, 400)"></p>
+											class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title">
+										</a>
+										<p class="rss-desc text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.trim().substr(0, 400)">
+										</p>
 									</div>
 									<div class="px-6 py-2 flex flex-row items-center">
 										<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
