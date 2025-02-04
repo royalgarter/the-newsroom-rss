@@ -152,6 +152,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 						x.description = x.description.replace(/\<\/?[^<>]+\>/g, '');
 					} 
 
+					x.description = x.description.replace(/\n+/g, '\n').replace(/\s+/g, ' ');
+
 					// console.dir({item, x});
 
 					return x;
