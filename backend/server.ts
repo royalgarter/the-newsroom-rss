@@ -148,10 +148,6 @@ async function fetchRSSLinks({urls, limit=12}) {
 						statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
 					};
 
-					if (x.description?.includes('>') && x.description?.includes('<'))
-						x.description = x.description.replace(/\<\/?[^>]*\>/g, '');
-					x.description = x.description.replace(/\n+/g, '\n').replace(/\s+/g, ' ');
-
 					// console.dir({item, x});
 
 					return x;

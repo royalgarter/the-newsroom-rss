@@ -35,7 +35,7 @@
 									:class="item.viewed && 'opacity-75 italic'"
 								>
 									<a :href="item.link"></a>
-									<div class="relative">
+									<div x-show="!params?.style?.includes?.('noimg')" class="rss-meta relative">
 										<a class="rss-thumb" :href="item.link">
 											<img class="rss-thumb w-full max-h-[320px]"
 												:src="item.images[0]"
@@ -70,7 +70,7 @@
 										<a :href="item.link"
 											class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title">
 										</a>
-										<p class="rss-desc text-gray-500 text-sm whitespace-pre-line break-all" x-html="item.description.trim().substr(0, 400)">
+										<p class="rss-desc text-gray-500 text-sm whitespace-pre-line break-words" x-html="item.description">
 										</p>
 									</div>
 									<div class="px-6 py-2 flex flex-row items-center">
@@ -310,6 +310,21 @@
 
 					feed.items = feed.items.filter(item => {
 						let {link} = item;
+
+						// var doc = new DOMParser().parseFromString(input, "text/html");
+  						// return doc.documentElement.textContent;
+						console.log(item.description);
+						if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
+							item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
+						}
+
+						item.description = item.description
+							?.replace(/\<\/?[^>]*\>/g, '\n\n')
+							.replace(/\n\n+/g, '\n\n')
+							.replace(/\s+/g, ' ')
+							.substr(0, 400)
+							.trim() 
+						|| '';
 
 						let viewed = localStorage.getItem(this.K.viewed + link);
 
