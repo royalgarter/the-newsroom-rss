@@ -308,6 +308,8 @@
 
 					let len_full = feed.items.length;
 
+					if (len_full <= limit) return;
+
 					feed.items = feed.items.filter(item => {
 						let {link} = item;
 
