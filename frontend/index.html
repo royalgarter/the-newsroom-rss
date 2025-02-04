@@ -308,8 +308,6 @@
 
 					let len_full = feed.items.length;
 
-					if (len_full <= limit) return;
-
 					feed.items = feed.items.filter(item => {
 						let {link} = item;
 
@@ -327,6 +325,8 @@
 							.substr(0, 400)
 							.trim() 
 						|| '';
+
+						if (len_full <= limit) return true;
 
 						let viewed = localStorage.getItem(this.K.viewed + link);
 
