@@ -166,7 +166,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 	return render;
 }
 
-async function handleRequest(req: Request): Promise < Response > {
+async function handleRequest(req: Request) {
 	const {pathname, searchParams} = new URL(req.url);
 
 	let params = Object.fromEntries(searchParams);
@@ -209,6 +209,33 @@ async function handleRequest(req: Request): Promise < Response > {
 				"content-type": "application/json; charset=utf-8",
 			},
 		});
+	}
+
+	if (pathname === "/html") {
+		if (!urls) return new Response(JSON.stringify({error: 'E_urls_missing'}));
+
+		urls = decodeURIComponent(urls);
+
+		try {
+			let response = await fetch(urls, {
+				headers: {"content-type": "text/html"},
+				cache: "force-cache",
+				redirect: "follow",
+				referrer: link,
+				referrerPolicy: "unsafe-url",
+			});
+			let html = await response?.text?.();
+
+			if (!html) return new Response(JSON.stringify({error: 'E403_html'}), {status: 403});
+
+			return new Response(html, {
+				headers: {
+					"content-type": "text/html",
+				}
+			});
+		} catch {
+			return new Response('', {status: 403});
+		}
 	}
 
 	if (pathname === "/") {

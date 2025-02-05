@@ -7,6 +7,8 @@
 
 		<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+		<script defer src="https://cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.js"></script>
 		
 		<script defer src="https://unpkg.com/@tailwindcss/browser@4"></script>
 	</head>
@@ -20,21 +22,20 @@
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
 
-			<template x-cloak x-for="(feed, index) in feeds" :key="index">
-				<section x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4">
+			<template x-for="(feed, index) in feeds" :key="index">
+				<section x-cloak x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4">
 					<a :href="feed.rss_url || feed.link">
-						<h2 class="text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>	
+						<h2 class="text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
 					</a>
 					<div class="max-w-screen-2xl mx-auto p-5 sm:p-8 md:p-10">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-10">
 							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
-								<div class="rounded overflow-hidden shadow-lg" 
+								<div class="rounded overflow-hidden shadow-md" 
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
-									:class="item.viewed && 'opacity-75 italic'"
+									:class="item.viewed && 'opacity-90 italic'"
 								>
-									<a :href="item.link"></a>
 									<div x-show="!params?.style?.includes?.('noimg')" class="rss-meta relative">
 										<a class="rss-thumb" :href="item.link">
 											<img class="rss-thumb w-full max-h-[320px]"
@@ -46,7 +47,7 @@
 										</a>
 										<a class="rss-tags" :href="item.link">
 											<div
-												class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="(item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
+												class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="new Date(item.published).toString().split(' GMT').shift() || (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
 												
 											</div>
 										</a>
@@ -68,23 +69,67 @@
 										</span>
 										
 										<a :href="item.link"
-											class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title">
+											class="rss-title pointer-events-none font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title">
 										</a>
 										<p class="rss-desc text-gray-500 text-sm whitespace-pre-line break-words" x-html="item.description">
 										</p>
 									</div>
-									<div class="px-6 py-2 flex flex-row items-center">
-										<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
-											<svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
-												xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512"
-												style="enable-background:new 0 0 512 512;" xml:space="preserve">
-												<path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256S397.163,0,256,0z M277.333,256c0,11.797-9.536,21.333-21.333,21.333h-85.333c-11.797,0-21.333-9.536-21.333-21.333s9.536-21.333,21.333-21.333h64v-128c0-11.797,9.536-21.333,21.333-21.333s21.333,9.536,21.333,21.333V256z"></path>
-											</svg>
-											<span class="ml-1" x-text="new Date(item.published).toLocaleString()"></span>
-										</span>
+									<div :id="'rss-item-article-' + index + '-' + itemIndex">
+										<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggle_read_more()" class="cursor-pointer px-6 py-2 flex flex-row items-center">
+											<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
+												<svg x-show="!item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+												  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
+												</svg>
+												<svg x-show="item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
+												</svg>
+												<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Expand'"></span>
+											</span>
+										</div>
+										<div :class="item.read_more ? 'block' : 'hidden'" class="block sm:hidden px-6 py-2 flex flex-row items-center">
+											<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
+												<p class="text-gray-500 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
+												</p>
+											</span>
+										</div>
 									</div>
 								</div>
 							</template>
+						</div>
+						
+						<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article" class="hidden sm:block pt-4 grid grid-cols-1 gap-10 shadow-md">
+							<div class="rounded overflow-hidden shadow-md">
+								<div @click="feed.read_more_item.toggle_read_more()" class="cursor-pointer px-6 py-2 flex flex-row items-center float-right">
+									<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
+										<!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+											<path stroke-linecap="round" stroke-linejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
+										</svg> -->
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+										</svg>
+									</span>
+								</div>
+								<div class="px-6 py-2 flex flex-row items-center">
+									<span class="py-1 text-xl font-bold mr-1 flex flex-row items-center">
+										<p class="text-gray-600 whitespace-pre-line break-words" x-html="feed.article.title">
+										</p>
+									</span>
+								</div>
+								<div class="px-6 py-2 flex flex-row items-center">
+									<span class="py-1 text-sm font-regular mr-1 flex flex-row items-center">
+										<p class="text-gray-500 whitespace-pre-line break-words" x-html="feed.article.content">
+										</p>
+									</span>
+								</div>
+								<div @click="feed.read_more_item.toggle_read_more()" class="cursor-pointer px-6 py-2 flex flex-row items-center float-right">
+									<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+										  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5" />
+										  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 7.5-7.5 7.5 7.5" />
+										</svg>
+									</span>
+								</div>
+							</div>					
 						</div>
 					</div>
 				</section>
@@ -153,7 +198,11 @@
 
 
 <style type="text/tailwindcss">
-[x-cloak] { display: none; }
+[x-cloak] { display: none !important; }
+
+p [id*="readability-page"] svg {
+	display: none;
+}
 </style>
 
 <script>
@@ -173,11 +222,14 @@
 				viewed: 'v1_viewed_',
 				tasks: 'v1_tasks',
 				feeds: 'v1_feeds',
+				cache: 'v1_cache',
 			},
 
 			TRIGGER: {
 				LIMIT: 20e3, // time to read article
 			},
+
+			CACHE: {},
 
 			triggerIntersect(type, link) {
 				if (!link) return console.log('ELINK');
@@ -205,7 +257,7 @@
 							if (this.TRIGGER[link].sum > this.TRIGGER.LIMIT) {
 								// console.log(' > viewed', link);
 
-								localStorage.setItem(this.K.viewed + link, now.toLocaleString());
+								localStorage.setItem(this.K.viewed + link, now.toString().split(' GMT').shift());
 
 								this.feeds.forEach(feed => {
 									let found = feed.items.find(x => x.link == link);
@@ -287,6 +339,10 @@
 						history.pushState({}, "", url);
 					}
 
+					if (!this.tasks.length) {
+						this.tasks = this.feeds.map(x => ({url: x.rss_url, checked: false}))
+					}
+
 				} catch (error) {
 					console.error("Error fetching feeds:", error);
 					this.error = "Failed to load feeds. Please check the server logs for more details";
@@ -303,7 +359,7 @@
 
 			filterViewedFeeds({limit=this.K.LIMIT}) {
 				let count = 0;
-				this.feeds.forEach(feed => {
+				this.feeds.forEach((feed, feedIdx) => {
 					if (!feed?.items?.length) return;
 
 					let len_full = feed.items.length;
@@ -311,9 +367,6 @@
 					feed.items = feed.items.filter(item => {
 						let {link} = item;
 
-						// var doc = new DOMParser().parseFromString(input, "text/html");
-  						// return doc.documentElement.textContent;
-						console.log(item.description);
 						if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
 							item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
 						}
@@ -330,11 +383,71 @@
 
 						let viewed = localStorage.getItem(this.K.viewed + link);
 
-						if (!viewed) return true;
+						if (viewed) return false;
 
 						// console.log(' > skip', link)
 
-						return false;
+						item.read_more = false;
+						item.toggle_read_more = () => { 
+							item.read_more = !item.read_more;
+
+							if (item.read_more) {
+								feed.read_more_item = item;
+								feed.read_more = true;
+								feed.article = item.article;
+
+								localStorage.setItem(this.K.viewed + item.link, new Date().toString().split(' GMT').shift());
+
+								setTimeout(() => {
+									console.log('#rss-feed-article-' + feedIdx)
+									let fa = document.querySelector('#rss-feed-article-' + feedIdx);
+									
+									if (window.getComputedStyle(fa).display == 'none') return;
+
+									fa.scrollIntoView(true)
+								}, 0.1e3)
+							} else {
+								feed.read_more = false;
+								feed.read_more_item.read_more = false;
+
+								setTimeout(() => {
+									let ia = document.querySelector(`a[href="${item.link}"]`);
+									
+									if (window.getComputedStyle(ia).display == 'none') return;
+
+									ia.scrollIntoView(true)
+								}, 0.1e3)
+							}
+						};
+
+						(async () => {
+							let resp = null;
+							let opts = {
+								cache: "force-cache",
+								redirect: "follow",
+								referrer: link,
+								referrerPolicy: "unsafe-url",
+							};
+
+							try {
+								resp = await fetch(link, opts);
+							} catch (ex) {
+								resp = await fetch(`/html?urls=${encodeURIComponent(link)}`, opts).catch(null);
+							}
+
+							if (resp.status >= 400) return console.log(link, resp);
+
+							let html = await resp?.text?.().catch(null);
+
+							if (!html) return;
+
+							let doc = new DOMParser().parseFromString(html, "text/html");
+							item.article = new Readability(doc).parse();
+
+							// console.dir({article});
+						})();
+
+						return true;
 					});
 
 					let len_filter = feed.items.length;
