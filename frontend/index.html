@@ -86,7 +86,10 @@
 												<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Expand'"></span>
 											</span>
 										</div>
-										<div :class="item.read_more ? 'block' : 'hidden'" class="block sm:hidden px-6 py-2 flex flex-row items-center">
+										<div :class="item.read_more ? 'block' : 'hidden'" 
+											class="block sm:hidden px-6 py-2 flex flex-row items-center"
+											x-intersect:leave="item.read_more = false"
+										>
 											<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
 												<p class="text-gray-500 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
 												</p>
@@ -97,13 +100,13 @@
 							</template>
 						</div>
 						
-						<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article" class="hidden sm:block pt-4 grid grid-cols-1 gap-10 shadow-md">
+						<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article" 
+							class="hidden sm:block pt-4 grid grid-cols-1 gap-10 shadow-md"
+							x-intersect:leave="feed.read_more && feed.article && feed.read_more_item?.toggle_read_more()"
+						>
 							<div class="rounded overflow-hidden shadow-md">
 								<div @click="feed.read_more_item.toggle_read_more()" class="cursor-pointer px-6 py-2 flex flex-row items-center float-right">
 									<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
-										<!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-											<path stroke-linecap="round" stroke-linejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
-										</svg> -->
 										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
 										</svg>
