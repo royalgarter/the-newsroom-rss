@@ -218,8 +218,6 @@ async function handleRequest(req: Request) {
 
 		try {
 			let response = await fetch(urls, {
-				headers: {"content-type": "text/html"},
-				cache: "force-cache",
 				redirect: "follow",
 			});
 			let html = await response?.text?.();
