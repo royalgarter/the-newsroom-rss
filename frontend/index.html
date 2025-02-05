@@ -387,6 +387,16 @@ p [id*="readability-page"] svg {
 
 						// console.log(' > skip', link)
 
+						return true;
+					});
+
+					let len_filter = feed.items.length;
+					let delta = Math.abs(len_full - len_filter);
+					count = Math.max(count, delta);
+
+					feed.items = feed.items.slice(0, limit);
+
+					feed.items.forEach(item => {
 						item.read_more = false;
 						item.toggle_read_more = () => { 
 							item.read_more = !item.read_more;
@@ -427,12 +437,12 @@ p [id*="readability-page"] svg {
 							};
 
 							try {
-								resp = await fetch(link, opts);
+								resp = await fetch(item.link, opts);
 							} catch (ex) {
-								resp = await fetch(`/html?urls=${encodeURIComponent(link)}`, opts).catch(null);
+								resp = await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null);
 							}
 
-							if (resp.status >= 400) return console.log(link, resp);
+							if (resp.status >= 400) return console.log(item.link, resp);
 
 							let html = await resp?.text?.().catch(null);
 
@@ -443,15 +453,7 @@ p [id*="readability-page"] svg {
 
 							// console.dir({article});
 						})();
-
-						return true;
-					});
-
-					let len_filter = feed.items.length;
-					let delta = Math.abs(len_full - len_filter);
-					count = Math.max(count, delta);
-
-					feed.items = feed.items.slice(0, limit);
+					})
 				});
 
 				return count;
