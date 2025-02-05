@@ -221,8 +221,6 @@ async function handleRequest(req: Request) {
 				headers: {"content-type": "text/html"},
 				cache: "force-cache",
 				redirect: "follow",
-				referrer: link,
-				referrerPolicy: "unsafe-url",
 			});
 			let html = await response?.text?.();
 
