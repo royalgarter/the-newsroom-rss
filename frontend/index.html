@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 	<head x-data="alpineHead()">
 		<title x-html="title"></title>
 
@@ -92,7 +92,7 @@
 
 										<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link">
 											<div
-												class="text-xs absolute top-0 right-0 bg-indigo-600 pt-2 px-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+												class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
 												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
 												<small class="break-words text-center" x-html="item.author?.substr(0, 12).trim()"></small>
 											</div>
@@ -164,7 +164,7 @@
 								</div>
 								<div @click="feed.read_more_item.toggle_read_more()" class="cursor-pointer px-6 py-2 flex flex-row items-center float-right">
 									<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
 										  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5" />
 										  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 7.5-7.5 7.5 7.5" />
 										</svg>
