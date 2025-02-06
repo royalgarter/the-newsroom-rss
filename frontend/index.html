@@ -504,6 +504,13 @@
 
 							let doc = new DOMParser().parseFromString(html, "text/html");
 							item.article = new Readability(doc).parse();
+
+							if (item.article.content.length) {
+								item.article.content = item.article.content
+									.replace(/<\s*[^>]*>/gi, '\n')
+									.replace(/\n\n+/gi, '\n')
+									.replace(/\s+/gi, ' ');
+							}
 						})();
 					})
 				});
