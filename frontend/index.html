@@ -153,13 +153,13 @@
 								</div>
 								<div class="px-6 py-2 flex flex-row items-center">
 									<span class="py-1 text-xl font-bold mr-1 flex flex-row items-center">
-										<p class="text-gray-600 whitespace-pre-line break-words" x-html="feed.article.title">
+										<p class="text-gray-600 whitespace-pre-line break-words" x-html="feed.article?.title || ''">
 										</p>
 									</span>
 								</div>
 								<div class="px-6 py-2 flex flex-row items-center">
 									<span class="py-1 text-sm font-regular mr-1 flex flex-row items-center">
-										<p class="text-gray-500 whitespace-pre-line break-words" x-html="feed.article.content">
+										<p class="text-gray-500 whitespace-pre-line break-words" x-html="feed.article?.content || ''">
 										</p>
 									</span>
 								</div>
@@ -236,7 +236,7 @@
 			<blockquote class="text-base italic font-semibold text-gray-900">
 				"In the Information Age, ignorance is a choice.", "It's not the news, it's how you get the news.", "We just decided to try to do it better."
 			</blockquote>
-			— <cite>The Newsroom</cite> by <cite>Will McAvoy</cite>
+			— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
 		</footer>
 	</body>
 </html>
@@ -378,7 +378,7 @@
 
 					localStorage.setItem(this.K.feeds, JSON.stringify(this.feeds));
 
-					let adjust = this.filterViewedFeeds({limit});
+					let adjust = this.filterViewedFeeds({limit, auto_fetch_content: true});
 					
 					if (limit_adjust == 0 && adjust > 0) {
 						this.loadFeedsWithContent({limit, limit_adjust: adjust});
@@ -411,7 +411,7 @@
 				).join('');
 			},
 
-			filterViewedFeeds({limit=this.K.LIMIT}) {
+			filterViewedFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
 				let count = 0;
 				this.feeds.forEach((feed, feedIdx) => {
 					if (!feed?.items?.length) return;
@@ -484,7 +484,7 @@
 							}
 						};
 
-						if (!item.article?.content) (async () => {
+						if (auto_fetch_content && !item.article?.content) (async () => {
 							let resp = null;
 							let opts = {
 								redirect: "follow",

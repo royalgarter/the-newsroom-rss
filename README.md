@@ -10,4 +10,4 @@
 
 ---
 
-> _"In the Information Age, ignorance is a choice.", "It's not the news, it's how you get the news.", "We just decided to try to do it better." — The Newsroom by Will McAvoy_
+> _"In the Information Age, ignorance is a choice.", "It's not the news, it's how you get the news.", "We just decided to try to do it better." — Will McAvoy, The Newsroom by Aaron Sorkin_
