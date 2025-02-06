@@ -74,7 +74,7 @@
 									x-intersect.full="triggerIntersect('full', item.link)"
 									:class="item.viewed && 'opacity-90 italic'"
 								>
-									<div x-show="!params?.style?.includes?.('noimg')" class="rss-meta relative">
+									<div x-show="!params?.style?.includes?.('noimg') && item.images?.[0]?.length" class="rss-meta relative">
 										<a class="rss-thumb" :href="item.link">
 											<img class="rss-thumb w-full max-h-[320px]"
 												:src="item.images[0]"
@@ -92,9 +92,9 @@
 
 										<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link">
 											<div
-												class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+												class="text-xs absolute top-0 right-0 bg-indigo-600 pt-2 px-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
 												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
-												<small class="break-all text-center" x-html="item.author?.substr(0, 12).trim()"></small>
+												<small class="break-words text-center" x-html="item.author?.substr(0, 12).trim()"></small>
 											</div>
 										</a>
 									</div>
