@@ -393,6 +393,7 @@
 
 					if (!this.tasks.length) {
 						this.tasks = this.feeds.map(x => ({url: x.rss_url, checked: false}))
+						localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 					}
 
 				} catch (error) {
