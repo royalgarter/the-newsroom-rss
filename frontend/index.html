@@ -12,7 +12,7 @@
 		
 		<script defer src="https://unpkg.com/@tailwindcss/browser@4"></script>
 	</head>
-	<body x-data="dataRSS()" class="bg-gray-100 min-h-screen flex flex-col">
+	<body x-data="alpineRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-500 p-2 text-white text-center">
 			<h1 class="text-2xl font-bold">Ishosta RSS Feed Render</h1>
 		</header>
@@ -201,15 +201,19 @@
 
 
 <style type="text/tailwindcss">
-[x-cloak] { display: none !important; }
+	[x-cloak] { display: none !important; }
 
-p [id*="readability-page"] svg {
-	display: none;
-}
+	p [id*="readability-page"] svg {
+		display: none;
+	}
 </style>
 
 <script>
-	function dataRSS() {
+	if (typeof navigator.serviceWorker !== 'undefined') {
+		navigator.serviceWorker.register('sw.js')
+	}
+
+	function alpineRSS() {
 		return {
 			feeds: [],
 			loading: false,
