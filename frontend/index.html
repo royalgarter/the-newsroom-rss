@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>The Newsroom RSS</title>
+	<head x-data="alpineHead()">
+		<title x-html="title"></title>
 
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width">
-		<meta name="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
+		<meta name="description" :content="description">
 		<meta name="keyworks" content="news, rss, feed, aggregator, reader, alpinejs, tailwindcss">
 
-		<link rel="canonical" href="https://rss.phamthanh.me/">
+		<link rel="canonical" :href="host">
 		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 		<link rel="manifest" href="/manifest.json">
 
@@ -19,36 +19,36 @@
 		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 
 		<meta name="theme-color" content="#2b7fff">
-		<meta name="application-name" content="The Newsroom RSS">
+		<meta name="application-name" :content="title">
 		<meta name="msapplication-TileColor" content="#fefefe">
 		<meta name="apple-mobile-web-app-status-bar-style" content="#2b7fff">
-		<meta name="apple-mobile-web-app-title" content="The Newsroom RSS">
+		<meta name="apple-mobile-web-app-title" :content="title">
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="mobile-web-app-capable" content="yes">
-		<meta property="og:title" content="The Newsroom RSS">
-		<meta property="og:description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
-		<meta property="og:image" content="https://rss.phamthanh.me/favicons/ios/512.png">
-		<meta property="og:image:secure_url" content="https://rss.phamthanh.me/favicons/ios/512.png">
-		<meta property="og:image:alt" content="https://rss.phamthanh.me/favicons/ios/512.png">
+		<meta property="og:title" :content="title">
+		<meta property="og:description" :content="description">
+		<meta property="og:image" :content="host + '/favicons/ios/512.png'">
+		<meta property="og:image:secure_url" :content="host + '/favicons/ios/512.png'">
+		<meta property="og:image:alt" :content="host + '/favicons/ios/512.png'">
 		<meta property="og:image:width" content="600">
 		<meta property="og:image:height" content="315">
-		<meta property="og:url" content="https://rss.phamthanh.me">
+		<meta property="og:url" :content="host + ''">
 		<meta property="og:type" content="website">
 		<meta property="og:locale" content="en_US">
-		<meta property="og:site_name" content="The Newsroom RSS">
-		<meta name="twitter:title" content="The Newsroom RSS">
-		<meta name="twitter:description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
-		<meta name="twitter:url" content="https://rss.phamthanh.me">
-		<meta name="twitter:image" content="https://rss.phamthanh.me/favicons/ios/512.png">
+		<meta property="og:site_name" :content="title">
+		<meta name="twitter:title" :content="title">
+		<meta name="twitter:description" :content="description">
+		<meta name="twitter:url" :content="host + ''">
+		<meta name="twitter:image" :content="host + '/favicons/ios/512.png'">
 		<meta name="twitter:card" content="summary">
 		<meta name="twitter:creator" content="@royalgarter">
 
-		<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
-		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-		<script defer src="https://cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.js"></script>
+		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.js"></script>
 		
-		<script defer src="https://unpkg.com/@tailwindcss/browser@4"></script>
+		<script defer src="//unpkg.com/@tailwindcss/browser@4"></script>
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-600 p-2 text-white text-center">
@@ -145,7 +145,7 @@
 							<div class="rounded overflow-hidden shadow">
 								<div @click="feed.read_more_item.toggle_read_more()" class="cursor-pointer px-6 py-2 flex flex-row items-center float-right">
 									<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
 										</svg>
 									</span>
@@ -164,7 +164,7 @@
 								</div>
 								<div @click="feed.read_more_item.toggle_read_more()" class="cursor-pointer px-6 py-2 flex flex-row items-center float-right">
 									<span class="py-1 text-xs font-regular text-gray-600 mr-1 flex flex-row items-center">
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
 										  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5" />
 										  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 7.5-7.5 7.5 7.5" />
 										</svg>
@@ -240,12 +240,16 @@
 	</body>
 </html>
 
-
 <style type="text/tailwindcss">
 	[x-cloak] { display: none !important; }
 
 	p [id*="readability-page"] svg {
 		display: none;
+	}
+
+	p [id*="readability-page"] img {
+		padding: 1rem 3rem;
+		place-self: center;
 	}
 </style>
 
@@ -574,4 +578,13 @@
 			}
 		}
 	}
+
+	function alpineHead() {
+		return {
+			title: 'The Newsroom RSS',
+			description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
+			host: '//rss.phamthanh.me',
+		}
+	}
+
 </script>
