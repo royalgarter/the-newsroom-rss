@@ -123,7 +123,6 @@ async function fetchRSSLinks({urls, limit=12}) {
 		let result = {
 			...head,
 			items: items.map(item => {
-
 				try {
 					if (item['media:group']) item = {...item, ...item['media:group']};
 
@@ -156,8 +155,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 					return null;
 				}
-				
-			}).filter(x => x)
+			}).filter(x => x).sort((a, b) => b.images?.length - a.images?.length)
 		};
 
 		return result;
