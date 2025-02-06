@@ -51,12 +51,12 @@
 		<script defer src="https://unpkg.com/@tailwindcss/browser@4"></script>
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-100 min-h-screen flex flex-col">
-		<header class="bg-blue-500 p-2 text-white text-center">
+		<header class="bg-blue-600 p-2 text-white text-center">
 			<h1 class="text-2xl font-bold">The Newsroom RSS</h1>
 		</header>
 		<main class="container mx-auto p-2 flex-1">
 			<div class="flex gap-4 items-center mb-4 justify-self-center">
-				<div x-show="loading" class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+				<div x-show="loading" class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-700"></div>
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
 
@@ -180,11 +180,11 @@
 				<div class="w-full">
 					<div class="m-auto my-4 max-w-auto shadow-lg rounded-md">
 						<!-- Input -->
-						<div class="bg-blue-400 p-4 rounded-t-md">
+						<div class="bg-blue-500 p-4 rounded-t-md">
 							<form @submit.prevent="addNewTask">
 								<input
 									x-model="input"
-									class="w-full bg-blue-400 text-white placeholder-gray-200 focus:outline-none border-b-2"
+									class="w-full bg-blue-500 text-white placeholder-gray-200 focus:outline-none border-b-2"
 									placeholder="Add new feed url..."
 								/>
 							</form>
@@ -203,7 +203,7 @@
 						</div>
 
 						<!-- Buttons -->
-						<div class="bg-blue-400 p-3 flex justify-end rounded-b-md space-x-4">
+						<div class="bg-blue-500 p-3 flex justify-end rounded-b-md space-x-4">
 							<button
 								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-700 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
@@ -232,7 +232,10 @@
 
 		</main>
 		<footer class="bg-gray-300 p-2 text-center text-sm">
-			© The Newsroom RSS
+			<blockquote class="text-base italic font-semibold text-gray-900">
+				"In the Information Age, ignorance is a choice.", "It's not the news, it's how you get the news.", "We just decided to try to do it better."
+			</blockquote>
+			— <cite>The Newsroom</cite> by <cite>Will McAvoy</cite>
 		</footer>
 	</body>
 </html>
