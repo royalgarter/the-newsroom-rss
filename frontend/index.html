@@ -49,6 +49,9 @@
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.js"></script>
 		
 		<script defer src="//unpkg.com/@tailwindcss/browser@4"></script>
+
+		<script defer src="//unpkg.com/turndown/dist/turndown.js"></script>
+
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-600 p-2 text-white text-center">
@@ -413,6 +416,9 @@
 
 			filterViewedFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
 				let count = 0;
+
+				const turndownService = TurndownService ? (new TurndownService()) : null;
+
 				this.feeds.forEach((feed, feedIdx) => {
 					if (!feed?.items?.length) return;
 
@@ -505,11 +511,20 @@
 							let doc = new DOMParser().parseFromString(html, "text/html");
 							item.article = new Readability(doc).parse();
 
-							if (item.article.content.length) {
-								item.article.content = item.article.content
-									.replace(/<\s*[^>]*>/gi, '\n')
-									.replace(/\n\n+/gi, '\n')
-									.replace(/\s+/gi, ' ');
+							let content = item.article.content;
+							if (content?.length) {
+								let clean = content;
+
+								if (turndownService) {
+									clean = turndownService.turndown(content);
+								} else {
+									clean = content
+										.replace(/<\s*[^>]*>/gi, '\n')
+										.replace(/\n\n+/gi, '\n')
+										.replace(/\s+/gi, ' ');
+								}
+								
+								item.article.content = clean;
 							}
 						})();
 					})
