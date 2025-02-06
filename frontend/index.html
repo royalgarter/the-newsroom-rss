@@ -483,7 +483,7 @@
 							}
 						};
 
-						(async () => {
+						if (!item.article?.content) (async () => {
 							let resp = null;
 							let opts = {
 								redirect: "follow",
@@ -503,8 +503,6 @@
 
 							let doc = new DOMParser().parseFromString(html, "text/html");
 							item.article = new Readability(doc).parse();
-
-							// console.dir({article});
 						})();
 					})
 				});
