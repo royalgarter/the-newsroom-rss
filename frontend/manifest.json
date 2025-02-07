@@ -1,18 +1,34 @@
 {
-  "id": "rss-feed-render",
-  "name": "RSS Feed Render",
-  "short_name": "RSS",
+  "id": "the-newsroom-rss",
+  "name": "The Newsroom RSS",
+  "short_name": "Newsroom",
   "theme_color": "#3498DB",
   "background_color": "#F5F5F5",
   "display" : "standalone",
   "dir" : "ltr",
   "lang" : "en",
   "scope" : "/",
+  "start_url": "https://rss.phamthanh.me",
   "url" : "https://rss.phamthanh.me/",
   "description" : "We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.",
   "orientation" : "any",
   "related_applications" : [],
   "prefer_related_applications" : false,
+  "iarc_rating_id": "e58c174a-81d2-5c3c-32cc-34b8de4a52e9",
+  "scope_extensions": [
+    {"origin": "rss.phamthanh.me"}
+  ],
+  "launch_handler": {
+    "client_mode": "auto"
+  },
+  "screenshots" : [
+    {
+      "src": "screenshots/rss.phamthanh.me_iPhone 14 Pro Max.png",
+      "sizes": "1290x2796",
+      "type": "image/png",
+      "label": "Home screen showing main navigation and featured content"
+    }
+  ],
   "categories": [
     "education",
     "magazines",
