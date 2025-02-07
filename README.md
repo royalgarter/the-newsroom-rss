@@ -1,16 +1,13 @@
- # RSS Feed Reader
- A simple RSS Feed Reader using Deno, Alpine.js and TailwindCSS.
+# The Newsroom RSS
 
- ## Features
- - Loads RSS feeds from searchParams ?urls=
- - Frontend uses AlpineJS and Tailwind
- - No Database
+**We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way.**
+`A super simple, fast, personalized RSS Feed Reader using Deno, Alpine.js and TailwindCSS.`
 
 ## How to run
 1. Clone the repository.
-2. Run `deno run --allow-net --allow-read --allow-env backend/server.ts`
+2. Run `deno task start`
 3. Open http://localhost:17385 on your browser
 
-http://localhost:17385/?urls=https://rss.nytimes.com/services/xml/rss/nyt/World.xml,https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml,https://feeds.content.dowjones.io/public/rss/RSSWorldNews,https://rss.dw.com/rdf/rss-en-all,https://www.reutersagency.com/feed/?taxonomy=best-sectors%26post_type=best,https://www.rfa.org/vietnamese/rss2.xml,https://www.youtube.com/feeds/videos.xml?channel_id=UC4QZ_LsYcvcq7qOsOhpAX4A,https://feeds.bbci.co.uk/vietnamese/rss.xml,https://www.reddit.com/r/askreddit+technology+youshouldknow+worldnews+news+vietnam+vietnamnation/.rss
+---
 
-https://rss-render.deno.dev/?urls=https://rss.nytimes.com/services/xml/rss/nyt/World.xml,https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml,https://feeds.content.dowjones.io/public/rss/RSSWorldNews,https://rss.dw.com/rdf/rss-en-all,https://www.reutersagency.com/feed/?taxonomy=best-sectors%26post_type=best,https://www.rfa.org/vietnamese/rss2.xml,https://www.youtube.com/feeds/videos.xml?channel_id=UC4QZ_LsYcvcq7qOsOhpAX4A,https://feeds.bbci.co.uk/vietnamese/rss.xml,https://www.reddit.com/r/askreddit+technology+youshouldknow+worldnews+news+vietnam+vietnamnation/.rss
+> _"In the Information Age, ignorance is a choice.", "It's not the news, it's how you get the news.", "We just decided to try to do it better." — Will McAvoy, The Newsroom by Aaron Sorkin_

@@ -19,6 +19,12 @@ const cors = {
 };
 
 const KV = await Deno.openKv();
+const CACHE = {
+	MAP: new Map(),
+	set: (k, v, e=60*60*24*7) => setTimeout(CACHE.MAP.delete, e*1e3, k) && CACHE.MAP.set(k, v),
+	get: (k) => CACHE.MAP.get(k),
+	del: (k) => CACHE.MAP.delete(k),
+}
 
 async function test() {
 	// await KV.set(['hello'], 'world');console.log(await KV.get(['hello']));
@@ -55,12 +61,22 @@ async function fetchParse(url: string, content: string) {
 
 			if (!url.includes('http')) url = 'https://' + url;
 
-			const response = await fetch(url);
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
-			}
-			content = await response.text();	
+			let key_rss = 'RSS:' + url;
+
+			content = await Promise.race([
+				new Promise((resolve, reject) => {
+					setTimeout(resolve, 20e3, CACHE.get(key_rss));
+				}),
+				new Promise((resolve, reject) => {
+					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(20e3)})
+						.then(resp => resp.text())
+						.then(text => CACHE.set(key_rss, text) && resolve(text))
+						.catch(ex => resolve(null));
+				}),
+			]);
 		}
+
+		if (!content) return null;
 
 		// console.log('fetchParse.content', content.length);
 
@@ -123,7 +139,6 @@ async function fetchRSSLinks({urls, limit=12}) {
 		let result = {
 			...head,
 			items: items.map(item => {
-
 				try {
 					if (item['media:group']) item = {...item, ...item['media:group']};
 
@@ -131,9 +146,10 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 					images.push(...(item?.attachments?.filter?.(x => x.mimeType.includes('image')).map(x => x.url) || []));
 					images.push(...(item?.['media:content']?.filter?.(x => x.medium == 'image').map(x => x.url) || []));
+					//images.push(item['media:content']?.url);
 					images.push(item['media:thumbnail']?.url);
-					images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
-					images.push(head.image);
+					// images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
+					// images.push(head.image);
 
 					let x = {
 						title: item?.title?.value,
@@ -156,8 +172,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 					return null;
 				}
-				
-			}).filter(x => x)
+			}).filter(x => x).sort((a, b) => b.images?.length - a.images?.length)
 		};
 
 		return result;
@@ -206,7 +221,7 @@ async function handleRequest(req: Request) {
 		return new Response(JSON.stringify(finalResult), {
 			headers: {
 				...cors,
-				"content-type": "application/json; charset=utf-8",
+				"Content-Type": "application/json; charset=utf-8",
 			},
 		});
 	}
@@ -214,19 +229,27 @@ async function handleRequest(req: Request) {
 	if (pathname === "/html") {
 		if (!urls) return new Response(JSON.stringify({error: 'E_urls_missing'}));
 
-		urls = decodeURIComponent(urls);
+		let link = decodeURIComponent(urls);
+		let key_link = 'HTML:' + link;
 
 		try {
-			let response = await fetch(urls, {
-				redirect: "follow",
-			});
-			let html = await response?.text?.();
+			let html = CACHE.get(key_link);
+
+			// if (html) console.log(' cached:', link);
+
+			if (!html) {
+				let response = await fetch(link, {redirect: 'follow', signal: AbortSignal.timeout(20e3)});
+				html = await response?.text?.();
+
+				CACHE.set(key_link, html);
+			}
 
 			if (!html) return new Response(JSON.stringify({error: 'E403_html'}), {status: 403});
 
 			return new Response(html, {
 				headers: {
-					"content-type": "text/html",
+					"Content-Type": "text/html",
+					"Cache-Control": "public, max-age=604800",
 				}
 			});
 		} catch {
@@ -237,7 +260,8 @@ async function handleRequest(req: Request) {
 	if (pathname === "/") {
 		return new Response(await Deno.readTextFile("./frontend/index.html"), {
 			headers: {
-				"content-type": "text/html; charset=utf-8",
+				"Content-Type": "text/html; charset=utf-8",
+				"Cache-Control": "public, max-age=604800",
 			}
 		});
 	}
@@ -247,7 +271,8 @@ async function handleRequest(req: Request) {
 		const fileExt = extname(filePath)
 		return new Response(await Deno.readFile(filePath), {
 			headers: {
-				"content-type": `${contentType(fileExt) ?? "text/plain"}; charset=utf-8`,
+				"Content-Type": `${contentType(fileExt) ?? "text/plain"}; charset=utf-8`,
+				"Cache-Control": "public, max-age=604800",
 			}
 		})
 	}
