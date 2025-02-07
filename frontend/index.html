@@ -180,14 +180,14 @@
 								<input
 									x-model="input"
 									class="w-full bg-blue-500 text-white placeholder-gray-200 focus:outline-none border-b-2"
-									placeholder="Add new feed url..."
+									placeholder="Enter new RSS feed URL..."
 								/>
 							</form>
 						</div>
 
 						<!-- List -->
 						<div class="p-3">
-							<span x-show="tasks.length <= 0" class="center italic text-gray-300">No feed</span>
+							<span x-show="tasks.length <= 0" class="center italic text-gray-300">RSS is Really Simple Syndication, allows to access updates to websites in a standardized format (e.g., http://feeds.bbci.co.uk/news/rss.xml)</span>
 
 							<template x-for="(item, index) in tasks" :key="index">
 								<div class="flex items-center">
@@ -200,25 +200,25 @@
 						<!-- Buttons -->
 						<div class="bg-blue-500 p-3 flex justify-end rounded-b-md space-x-4">
 							<button
-								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-700 p-2 font-bold rounded shadow"
+								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
 								@click="clearAllTasks()"
 							>
 								Clear All
 							</button>
 							<button
-								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-stone-700 p-2 font-bold rounded shadow"
+								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-stone-600 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
 								@click="deleteTask()"
 							>
 								Delete Selected
 							</button>
 							<button
-								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-700 p-2 font-bold rounded shadow"
+								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
 								@click="render()"
 							>
-								View Feeds
+								Build Feeds
 							</button>
 						</div>
 					</div>
