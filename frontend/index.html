@@ -62,9 +62,7 @@
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent())"
 				>
-					<a :name="feed.anchor" :href="feed.link || feed.rss_url"
-						x-intersect:enter="window.location.hash= '#' + feed.anchor"
-					>
+					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url">
 						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
 					</a>
 					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
