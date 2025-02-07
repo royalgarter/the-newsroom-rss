@@ -187,7 +187,7 @@
 
 						<!-- List -->
 						<div class="p-3">
-							<span x-show="tasks.length <= 0" class="center italic text-gray-300">RSS is Really Simple Syndication, allows to access updates to websites in a standardized format (e.g., http://feeds.bbci.co.uk/news/rss.xml)</span>
+							<span x-show="tasks.length <= 0" class="center italic text-gray-400 px-2">RSS is Really Simple Syndication, allows to access updates to websites in a standardized format (e.g., http://feeds.bbci.co.uk/news/rss.xml, https://news.google.com/rss)</span>
 
 							<template x-for="(item, index) in tasks" :key="index">
 								<div class="flex items-center">
@@ -480,6 +480,12 @@
 
 									fa.scrollIntoView(true)
 								}, 0.1e3)
+
+								setInterval(() => {
+									[...document.querySelectorAll('p.rss-article-content img')]
+										.filter(x => x.complete && (x.naturalHeight == 0))
+										.forEach(x => x.remove())
+								}, 1e3);
 							} else {
 								feed.read_more = false;
 								feed.read_more_item.read_more = false;
