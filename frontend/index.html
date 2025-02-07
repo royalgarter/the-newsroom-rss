@@ -58,7 +58,9 @@
 			</div>
 
 			<template x-for="(feed, index) in feeds" :key="index">
-				<section x-cloak x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4">
+				<section x-cloak x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4"
+					x-intersect:enter="feed.items.forEach(x => x.prefetchContent())"
+				>
 					<a :href="feed.rss_url || feed.link">
 						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
 					</a>
@@ -111,7 +113,7 @@
 										</p>
 									</div>
 									<div :id="'rss-item-article-' + index + '-' + itemIndex">
-										<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggle_read_more()" class="cursor-pointer px-4 py-2 flex flex-row items-center">
+										<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggleReadmore()" class="cursor-pointer px-4 py-2 flex flex-row items-center">
 											<span :class="item.read_more ? 'text-fuchsia-700' : 'text-teal-700'" class="py-1 text-xs font-regular flex flex-row items-center">
 												<svg x-show="!item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 												  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
@@ -141,7 +143,7 @@
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
 								class="hidden sm:block pt-4 grid grid-cols-1 gap-6 shadow"
-								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggle_read_more()"
+								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
 								<div class="rounded overflow-hidden shadow bg-amber-50">
 									<div class="px-4 py-2 flex flex-row items-center">
@@ -156,7 +158,7 @@
 											</p>
 										</span>
 									</div>
-									<div @click="feed.read_more_item.toggle_read_more()" class="cursor-pointer p2 flex flex-row items-center float-right">
+									<div @click="feed.read_more_item.toggleReadmore()" class="cursor-pointer p2 flex flex-row items-center float-right">
 										<span class="py-1 text-xs font-regular text-fuchsia-950 flex flex-row items-center">
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
 											  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5" />
@@ -501,7 +503,9 @@
 
 					feed.items.forEach(item => {
 						item.read_more = false;
-						item.toggle_read_more = () => { 
+						item.prefetching = false;
+
+						item.toggleReadmore = () => {
 							item.read_more = !item.read_more;
 
 							if (item.read_more) {
@@ -543,7 +547,11 @@
 							}
 						};
 
-						if (auto_fetch_content && !item.article?.content) (async () => {
+						item.prefetchContent = async () => {
+							if (!auto_fetch_content || item.article?.content || item.prefetching) return;
+
+							item.prefetching = true;
+
 							let resp = null;
 							let opts = {
 								redirect: "follow",
@@ -554,6 +562,8 @@
 							} catch (ex) {
 								resp = await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null);
 							}
+
+							item.prefetching = false;
 
 							if (resp.status >= 400) return console.log(item.link, resp);
 
@@ -574,7 +584,7 @@
 									.replace(/(\<br\>\s*\n*)+/gi, '<br>')
 									.replace(/\s+/gi, ' ');
 							}
-						})();
+						};
 					})
 				});
 
