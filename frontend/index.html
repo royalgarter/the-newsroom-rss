@@ -481,11 +481,14 @@
 									fa.scrollIntoView(true)
 								}, 0.1e3)
 
-								setInterval(() => {
-									[...document.querySelectorAll('p.rss-article-content img')]
-										.filter(x => x.complete && (x.naturalHeight == 0))
-										.forEach(x => x.remove())
-								}, 1e3);
+								let intervalImg = setInterval(() => {
+									let doms = [...document.querySelectorAll('p.rss-article-content img')]
+										.filter(x => x.complete && (x.naturalHeight == 0));
+
+									if (doms.length == 0) return clearInterval(intervalImg);
+
+									doms.forEach(x => x.remove())
+								}, 0.5e3);
 							} else {
 								feed.read_more = false;
 								feed.read_more_item.read_more = false;
