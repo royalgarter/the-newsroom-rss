@@ -58,8 +58,9 @@
 			</div>
 
 			<template x-for="(feed, index) in feeds" :key="index">
-				<section x-cloak x-show="feed?.items?.length > 0" class="bg-white shadow rounded mb-4"
-					x-intersect:enter="feed.items.forEach(x => x.prefetchContent())"
+				<section class="rss-feed bg-white shadow rounded mb-4"
+					x-cloak x-show="feed?.items?.length > 0"
+					x-intersect:once="feed.items.forEach(x => x.prefetchContent())"
 				>
 					<a :href="feed.rss_url || feed.link">
 						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
@@ -67,7 +68,7 @@
 					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
-								<div class="bg-slate-50 rounded overflow-hidden shadow"
+								<div class="rss-item bg-slate-50 rounded overflow-hidden shadow"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
@@ -461,6 +462,22 @@
 				).join('');
 			},
 
+			isElementInViewport(el) {
+				if (typeof jQuery === "function" && el instanceof jQuery) {
+					el = el[0];
+				}
+
+				let rect = el.getBoundingClientRect();
+
+				return (
+					rect.top >= 0 &&
+					rect.left >= 0 &&
+					rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /* or $(window).height() */
+					rect.right <= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
+				);
+			},
+
+
 			filterViewedFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
 				let count = 0;
 
@@ -586,6 +603,12 @@
 							}
 						};
 					})
+
+					let hrefsInViewport = [...document.querySelectorAll('.rss-feed a')]
+						.filter(x => this.isElementInViewport(x))
+						.map(a => a.href).filter(x => x);
+
+					feed.items.filter(item => hrefsInViewport.includes(item.link)).forEach(x => x.prefetchContent());
 				});
 
 				return count;
