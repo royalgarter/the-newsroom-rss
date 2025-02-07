@@ -19,6 +19,12 @@ const cors = {
 };
 
 const KV = await Deno.openKv();
+const CACHE = {
+	MAP: new Map(),
+	set: (k, v, e=60*60*24*7) => setTimeout(CACHE.MAP.delete, e*1e3, k) && CACHE.MAP.set(k, v),
+	get: (k) => CACHE.MAP.get(k),
+	del: (k) => CACHE.MAP.delete(k),
+}
 
 async function test() {
 	// await KV.set(['hello'], 'world');console.log(await KV.get(['hello']));
@@ -204,7 +210,7 @@ async function handleRequest(req: Request) {
 		return new Response(JSON.stringify(finalResult), {
 			headers: {
 				...cors,
-				"content-type": "application/json; charset=utf-8",
+				"Content-Type": "application/json; charset=utf-8",
 			},
 		});
 	}
@@ -212,19 +218,29 @@ async function handleRequest(req: Request) {
 	if (pathname === "/html") {
 		if (!urls) return new Response(JSON.stringify({error: 'E_urls_missing'}));
 
-		urls = decodeURIComponent(urls);
+		let link = decodeURIComponent(urls);
+		let key_link = 'HTML:' + link;
 
 		try {
-			let response = await fetch(urls, {
-				redirect: "follow",
-			});
-			let html = await response?.text?.();
+			let html = CACHE.get(key_link);
+
+			// if (html) console.log(' cached:', link);
+
+			if (!html) {
+				let response = await fetch(link, {
+					redirect: "follow",
+				});
+				html = await response?.text?.();
+
+				CACHE.set(key_link, html);
+			}
 
 			if (!html) return new Response(JSON.stringify({error: 'E403_html'}), {status: 403});
 
 			return new Response(html, {
 				headers: {
-					"content-type": "text/html",
+					"Content-Type": "text/html",
+					"Cache-Control": "public, max-age=604800",
 				}
 			});
 		} catch {
@@ -235,7 +251,8 @@ async function handleRequest(req: Request) {
 	if (pathname === "/") {
 		return new Response(await Deno.readTextFile("./frontend/index.html"), {
 			headers: {
-				"content-type": "text/html; charset=utf-8",
+				"Content-Type": "text/html; charset=utf-8",
+				"Cache-Control": "public, max-age=604800",
 			}
 		});
 	}
@@ -245,7 +262,8 @@ async function handleRequest(req: Request) {
 		const fileExt = extname(filePath)
 		return new Response(await Deno.readFile(filePath), {
 			headers: {
-				"content-type": `${contentType(fileExt) ?? "text/plain"}; charset=utf-8`,
+				"Content-Type": `${contentType(fileExt) ?? "text/plain"}; charset=utf-8`,
+				"Cache-Control": "public, max-age=604800",
 			}
 		})
 	}
