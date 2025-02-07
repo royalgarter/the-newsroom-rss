@@ -146,18 +146,18 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 					images.push(...(item?.attachments?.filter?.(x => x.mimeType.includes('image')).map(x => x.url) || []));
 					images.push(...(item?.['media:content']?.filter?.(x => x.medium == 'image').map(x => x.url) || []));
-					//images.push(item['media:content']?.url);
 					images.push(item['media:thumbnail']?.url);
+					images.push(item['media:content']?.url);
 					// images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
 					// images.push(head.image);
 
 					let x = {
 						title: item?.title?.value,
 						author: item?.author?.name || item?.['dc:subject'] || '',
-						description: item?.description?.value || item?.content?.value || item?.['media:description']?.value,
+						description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
 						published: item?.published,
 						updated: item?.updated,
-						images: images.filter(x => x),
+						images: images.filter(x => typeof x == 'string'),
 						categories: item?.categories?.map?.(x => x.label || x.term),
 						link: item?.links?.[0]?.href,
 						link_author: item?.author?.url || item?.author?.uri,

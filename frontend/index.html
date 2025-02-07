@@ -62,7 +62,9 @@
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent())"
 				>
-					<a :href="feed.rss_url || feed.link">
+					<a :name="feed.anchor" :href="feed.link || feed.rss_url"
+						x-intersect:enter="window.location.hash= '#' + feed.anchor"
+					>
 						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
 					</a>
 					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
@@ -84,9 +86,11 @@
 											</div>
 										</a>
 										<a class="rss-tags" :href="item.link">
-											<div
-												class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out" x-html="new Date(item.published).toString().split(' GMT').shift() || (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()">
-												
+											<div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out"
+												x-html="(timeSince(new Date(item.published)) + ' ago')
+													|| new Date(item.published).toString().split(' GMT').shift() 
+													|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()
+											">
 											</div>
 										</a>
 
@@ -122,7 +126,7 @@
 												<svg x-show="item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 													<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
 												</svg>
-												<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Expand'"></span>
+												<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Preview'"></span>
 											</span>
 										</div>
 										<template x-if="item.read_more">
@@ -220,12 +224,14 @@
 										style="overflow-wrap: anywhere;"
 										draggable="true" @dragstart="drag = index" @dragend="drag = null"
 									>
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" /></svg>
-										<div class="ml-2">
-											<span x-text="item.url"></span>
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+										</svg>
+										<div class="mx-2">
+											<a :href="item.url" target="_blank"><span x-text="item.url"></span></a>
 										</div>
 										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
-											class="m-2 size-3 cursor-pointer text-red-500"
+											class="size-3 cursor-pointer text-red-500"
 											@click="tasks.splice(index, 1);localStorage.setItem(K.tasks, JSON.stringify(tasks));"
 										>
 											<path stroke-linecap="round" stroke-linejoin="round" d="M13.181 8.68a4.503 4.503 0 0 1 1.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 0 0 6.364 6.365l3.129-3.129m5.614-5.615 1.757-1.757a4.5 4.5 0 0 0-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 0 1-1.242-.88 4.483 4.483 0 0 1-1.062-1.683m6.587 2.345 5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99 8.898 8.9" />
@@ -265,9 +271,9 @@
 			</template>
 
 		</main>
-		<footer class="bg-gray-300 p-2 text-center text-sm">
-			<blockquote class="text-base italic font-semibold text-gray-900">
-				"In the Information Age, ignorance is a choice.", "It's not the news, it's how you get the news.", "We just decided to try to do it better."
+		<footer class="bg-gray-300 p-4 text-center text-sm">
+			<blockquote class="m-2 text-base italic font-semibold text-stone-900">
+				"In the Information Age, ignorance is a choice.", "It's not the news, it's HOW you get the news.", "We just decided to try to do it better."
 			</blockquote>
 			— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
 		</footer>
@@ -443,11 +449,8 @@
 						history.pushState({}, "", url);
 					}
 
-					if (!this.tasks.length) {
-						this.tasks = this.feeds.map(x => ({url: x.rss_url, checked: false}))
-						localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
-					}
-
+					this.tasks = this.feeds.map(x => ({url: x.rss_url, checked: false}))
+					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 				} catch (error) {
 					console.error("Error fetching feeds:", error);
 					this.error = "Failed to load feeds. Please check the server logs for more details";
@@ -477,12 +480,41 @@
 				);
 			},
 
+			timeSince(date) {
+				let seconds = Math.floor((new Date() - date) / 1000);
+
+				let interval = seconds / 31536000;
+
+				if (interval > 1) {
+					return Math.floor(interval) + " yr";
+				}
+				interval = seconds / 2592000;
+				if (interval > 1) {
+					return Math.floor(interval) + " mth";
+				}
+				interval = seconds / 86400;
+				if (interval > 1) {
+					return Math.floor(interval) + " day";
+				}
+				interval = seconds / 3600;
+				if (interval > 1) {
+					return Math.floor(interval) + " hr";
+				}
+				interval = seconds / 60;
+				if (interval > 1) {
+					return Math.floor(interval) + " min";
+				}
+				return Math.floor(seconds) + " sec";
+			},
+
 
 			filterViewedFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
 				let count = 0;
 
 				this.feeds.forEach((feed, feedIdx) => {
 					if (!feed?.items?.length) return;
+
+					feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 
 					let len_full = feed.items.length;
 
@@ -566,7 +598,6 @@
 
 						item.prefetchContent = async () => {
 							if (!auto_fetch_content || item.article?.content || item.prefetching) return;
-
 							item.prefetching = true;
 
 							let resp = null;
@@ -580,9 +611,9 @@
 								resp = await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null);
 							}
 
-							item.prefetching = false;
+							// item.prefetching = false;
 
-							if (resp.status >= 400) return console.log(item.link, resp);
+							if (resp.status >= 400) return /*console.log(item.link, resp)*/;
 
 							let html = await resp?.text?.().catch(null);
 
@@ -603,13 +634,17 @@
 							}
 						};
 					})
-
-					let hrefsInViewport = [...document.querySelectorAll('.rss-feed a')]
-						.filter(x => this.isElementInViewport(x))
-						.map(a => a.href).filter(x => x);
-
-					feed.items.filter(item => hrefsInViewport.includes(item.link)).forEach(x => x.prefetchContent());
 				});
+
+				setTimeout(() => {
+					let hrefs = [...document.querySelectorAll('a.rss-thumb,a.rss-title')]
+						.filter(x => this.isElementInViewport(x))
+						.map(a => a.href)
+						.filter(x => x);
+					// console.log('hrefs', hrefs);
+
+					this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent()));
+				}, 0.5e3);
 
 				return count;
 			},
