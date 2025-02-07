@@ -146,6 +146,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 					images.push(...(item?.attachments?.filter?.(x => x.mimeType.includes('image')).map(x => x.url) || []));
 					images.push(...(item?.['media:content']?.filter?.(x => x.medium == 'image').map(x => x.url) || []));
+					images.push(item['media:content']?.url);
 					images.push(item['media:thumbnail']?.url);
 					// images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
 					// images.push(head.image);
