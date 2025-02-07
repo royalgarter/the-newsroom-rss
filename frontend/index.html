@@ -163,8 +163,8 @@
 											</p>
 										</span>
 									</div>
-									<div @click="feed.read_more_item.toggleReadmore()" class="cursor-pointer p2 flex flex-row items-center float-right">
-										<span class="py-1 text-xs font-regular text-fuchsia-950 flex flex-row items-center">
+									<div @click="feed.read_more_item.toggleReadmore()" class="cursor-pointer p-2 flex flex-row items-center float-right">
+										<span class="p-3 text-xs font-regular text-fuchsia-950 flex flex-row items-center">
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
 											  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5" />
 											  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 7.5-7.5 7.5 7.5" />
@@ -295,6 +295,12 @@
 	p [id*="readability-page"] img {
 		padding: 1rem 3rem;
 		place-self: center;
+	}
+
+	p.rss-article-content > * {
+		text-wrap: wrap;
+		overflow-wrap: anywhere;
+		max-width: 100%;
 	}
 
 	p.rss-article-content p {
