@@ -61,12 +61,22 @@ async function fetchParse(url: string, content: string) {
 
 			if (!url.includes('http')) url = 'https://' + url;
 
-			const response = await fetch(url);
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
-			}
-			content = await response.text();	
+			let key_rss = 'RSS:' + url;
+
+			content = await Promise.race([
+				new Promise((resolve, reject) => {
+					setTimeout(resolve, 20e3, CACHE.get(key_rss));
+				}),
+				new Promise((resolve, reject) => {
+					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(20e3)})
+						.then(resp => resp.text())
+						.then(text => CACHE.set(key_rss, text) && resolve(text))
+						.catch(ex => resolve(null));
+				}),
+			]);
 		}
+
+		if (!content) return null;
 
 		// console.log('fetchParse.content', content.length);
 
@@ -227,9 +237,7 @@ async function handleRequest(req: Request) {
 			// if (html) console.log(' cached:', link);
 
 			if (!html) {
-				let response = await fetch(link, {
-					redirect: "follow",
-				});
+				let response = await fetch(link, {redirect: 'follow', signal: AbortSignal.timeout(20e3)});
 				html = await response?.text?.();
 
 				CACHE.set(key_link, html);
