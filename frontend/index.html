@@ -519,9 +519,10 @@
 							if (content?.length) {
 								item.article.content = content
 									.trim()
-									.replace(/<(?!img|table|th|td|tr|p|i|a|ul|li)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
+									.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
 									.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')
 									.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
+									.replace(/(\<br\>\s*\n*)+/gi, '<br>')
 									.replace(/\s+/gi, ' ');
 							}
 						})();
