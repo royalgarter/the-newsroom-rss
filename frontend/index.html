@@ -180,19 +180,29 @@
 				<div class="w-full">
 					<div class="m-auto my-4 max-w-auto shadow-lg rounded-md">
 						<!-- Input -->
-						<div class="bg-blue-500 p-4 rounded-t-md">
-							<form @submit.prevent="addNewTask">
+						<div class="bg-blue-500 p-4 rounded-t-md flex relative">
+							<form @submit.prevent="addNewTask" class="min-w-9/10">
 								<input
 									x-model="input"
 									class="w-full bg-blue-500 text-white placeholder-gray-200 focus:outline-none border-b-2"
 									placeholder="Enter new RSS feed URL..."
 								/>
 							</form>
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-white mt-1 ml-3 cursor-pointer" @click="addNewTask">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+							</svg>
 						</div>
 
 						<!-- List -->
 						<div class="p-3">
-							<span x-show="tasks.length <= 0" class="center italic text-gray-400 px-2">RSS is Really Simple Syndication, allows to access updates to websites in a standardized format (e.g., http://feeds.bbci.co.uk/news/rss.xml, https://news.google.com/rss)</span>
+							<span x-show="tasks.length <= 0" class="center italic text-gray-400 px-2">
+								<p>RSS is <strong>Really Simple Syndication</strong>, allows to access updates to websites in a standardized format, e.g: </p>
+								<ul class="ml-6 my-2 list-disc">
+									<template x-for="(d, idxDf) in K.DEFAULTS" :key="idxDf">
+										<li><p x-html="d" class="break-words overflow-wrap text-wrap"></p></li>	
+									</template>
+								</ul>
+							</span>
 
 							<div @drop.prevent="
 								if (drag !== null && drop !== null) {
@@ -249,6 +259,13 @@
 
 						<!-- Buttons -->
 						<div class="bg-blue-500 p-3 flex justify-end rounded-b-md space-x-4">
+							<button
+								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-purple-600 p-2 font-bold rounded shadow"
+								x-show="tasks.length == 0"
+								@click="importDefaults()"
+							>
+								Import Sample RSS
+							</button>
 							<button
 								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 p-2 font-bold rounded shadow"
 								x-show="tasks.length > 0"
@@ -332,6 +349,13 @@
 
 			K: {
 				LIMIT: 6,
+
+				DEFAULTS: [
+					'https://feeds.bbci.co.uk/news/rss.xml',
+					'https://www.reddit.com/r/worldnews/.rss',
+					'https://feeds.nbcnews.com/feeds/worldnews',
+					'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
+				],
 
 				viewed: 'v1_viewed_',
 				tasks: 'v1_tasks',
@@ -668,6 +692,16 @@
 					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 
 					this.input = '';
+				} catch (ex) {
+					alert(ex.message);
+				}
+			},
+
+			importDefaults() {
+				try {
+					this.tasks.push(...this.K.DEFAULTS.map(x => ({url: x, checked: false})));
+
+					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 				} catch (ex) {
 					alert(ex.message);
 				}
