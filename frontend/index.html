@@ -49,8 +49,8 @@
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.js"></script>
 
-		<script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-		<script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script>
+		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
+		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-600 p-4 text-stone-200 text-center">
@@ -100,7 +100,7 @@
 											<div
 												class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
 												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
-												<small class="break-words text-center" x-html="item.author?.substr(0, 12).trim()"></small>
+												<small class="break-words text-center" x-html="item.author?.toString().substr(0, 12).trim()"></small>
 											</div>
 										</a>
 									</div>
@@ -112,11 +112,15 @@
 											<span class="ml-1" x-text="item.viewed"></span>
 										</span>
 										
-										<a :href="item.link"
-											:class="item.images?.[0]?.length && 'pointer-events-none'"
-											class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out" x-text="item.title">
+										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out"
+											:class="(item.images?.[0]?.length) ? 'pointer-events-none' : ''"
+											:href="item.link"
+											x-text="item.title"
+										>
 										</a>
-										<p class="rss-desc text-gray-500 text-sm whitespace-pre-line break-words" x-html="item.description || ''">
+										<p class="rss-desc text-gray-500 text-sm whitespace-pre-line break-words" 
+											x-html="item.description || ''"
+										>
 										</p>
 									</div>
 									<div :id="'rss-item-article-' + index + '-' + itemIndex">
@@ -550,6 +554,8 @@
 	// if (MobileDragDrop) MobileDragDrop.polyfill({holdToDrag: 300, dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride});
 
 	function alpineRSS() {
+		const version = 'v1';
+
 		return {
 			feeds: [],
 			loading: false,
@@ -561,6 +567,8 @@
 			drag: null,
 			drop: null,
 
+			persona: null,
+
 			K: {
 				LIMIT: 6,
 
@@ -571,10 +579,12 @@
 					'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
 				],
 
-				viewed: 'v1_viewed_',
-				tasks: 'v1_tasks',
-				feeds: 'v1_feeds',
-				cache: 'v1_cache',
+				viewed: version + '_viewed_',
+				tasks: version + '_tasks',
+				feeds: version + '_feeds',
+				cache: version + '_cache',
+
+				persona: version + '_persona',
 			},
 
 			TRIGGER: {
@@ -583,6 +593,32 @@
 
 			CACHE: {},
 
+			async testLLM() {
+				let list_sentences = [
+					'Will it snow tomorrow?',
+					'Recently a lot of hurricanes have hit the US',
+					'Global warming is real',
+
+					'An apple a day, keeps the doctors away',
+					'Eating strawberries is healthy',
+
+					'what is your age?',
+					'How old are you?',
+					'How are you?',
+
+					'The dog bit Johnny',
+					'Johnny bit the dog',
+
+					'The cat ate the mouse',
+					'The mouse ate the cat',
+				];
+				this.get_embeddings(list_sentences, (embeddings) => {
+					let matrix = this.cosine_similarity_matrix(embeddings);
+
+					console.log(embeddings)
+					console.log(matrix)
+				});
+			},
 			get_embeddings(list_sentences, callback) {
 				use.load().then(model => {
 					model.embed(list_sentences).then(embeddings => {
@@ -621,6 +657,71 @@
 					cosine_similarity_matrix.push(row);
 				}
 				return cosine_similarity_matrix;
+			},
+			calculateMeanVector(vectors) {
+				if (!vectors || vectors.length === 0) {
+					return null; // Handle empty input
+				}
+
+				const numVectors = vectors.length;
+				const vectorLength = vectors[0].length;
+
+				// Check for consistent vector lengths and valid data types
+				for (let i = 1; i < numVectors; i++) {
+					if (vectors[i].length !== vectorLength) {
+						return null; // Handle inconsistent vector lengths
+					}
+				}
+
+				for (let i = 0; i < numVectors; i++) {
+					for (let j = 0; j < vectorLength; j++) {
+						if (typeof vectors[i][j] !== 'number' || isNaN(vectors[i][j])) {
+							return null; // Handle non-numeric data
+						}
+					}
+				}
+
+				// Calculate the sum of each component
+				const sumVector = new Array(vectorLength).fill(0);
+				for (let i = 0; i < numVectors; i++) {
+					for (let j = 0; j < vectorLength; j++) {
+						sumVector[j] += vectors[i][j];
+					}
+				}
+
+				// Calculate the mean for each component
+				const meanVector = sumVector.map(sum => sum / numVectors);
+
+				return meanVector;
+			},
+			updateMeanVector(mean, numVectors, newVector, weight=1) {
+				if (!mean || numVectors <= 0 || !newVector ) {
+					console.log('Handle invalid input')
+					return null; 
+				}
+
+				const vectorLength = mean.length;
+
+				if (newVector.length !== vectorLength) {
+					console.log('Handle inconsistent vector lengths', newVector.length, vectorLength, mean)
+					return null;
+				}
+
+				// Check for valid data types (numbers) in mean and newVector
+				for (let i = 0; i < vectorLength; i++) {
+					if (typeof mean[i] !== 'number' || isNaN(mean[i]) 
+						|| typeof newVector[i] !== 'number' || isNaN(newVector[i])) {
+						console.log('Handle non-numeric data')
+						return null;
+					}
+				}
+
+				const newNumVectors = numVectors + weight;
+				const updatedMean = mean.map((meanComponent, index) => {
+					return ((meanComponent * numVectors) + (newVector[index] * weight)) / newNumVectors;
+				});
+
+				return updatedMean;
 			},
 
 			triggerIntersect(type, link) {
@@ -715,12 +816,11 @@
 
 					if (!this.feeds) return console.log("EEMPTYFEEDS");
 
+					let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
 					localStorage.setItem(this.K.feeds, JSON.stringify(this.feeds));
 
-					let adjust = this.filterViewedFeeds({limit, auto_fetch_content: true});
-					
-					if (limit_adjust == 0 && adjust > 0) {
-						this.loadFeedsWithContent({limit, limit_adjust: adjust});
+					if (limit_adjust == 0 && count > 0) {
+						this.loadFeedsWithContent({limit, limit_adjust: count});
 					}
 
 					let hash_server = this.feeds?.[0]?.hash;
@@ -789,7 +889,7 @@
 				return Math.floor(seconds) + " sec";
 			},
 
-			filterViewedFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
+			postProcessFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
 				let count = 0;
 
 				this.feeds.forEach((feed, feedIdx) => {
@@ -863,6 +963,8 @@
 
 									doms.forEach(x => x.remove())
 								}, 0.3e3);
+
+								item.updatePersona?.();
 							} else {
 								feed.read_more = false;
 								feed.read_more_item.read_more = false;
@@ -878,13 +980,13 @@
 						};
 
 						item.prefetchContent = async () => {
+							// console.log('prefetchContent', item.title);
+
 							if (!auto_fetch_content || item.article?.content || item.prefetching) return;
 							item.prefetching = true;
 
 							let resp = null;
-							let opts = {
-								redirect: "follow",
-							};
+							let opts = {redirect: 'follow'};
 
 							try {
 								resp = await fetch(item.link, opts);
@@ -916,6 +1018,46 @@
 						};
 
 						if (feedIdx <= 1) item.prefetchContent();
+
+						item.updatePersona = async () => {
+							item.vector = item.vector || await this.embedSentence(item.title);
+
+							// console.log('updatePersona', item.vector)
+
+							if (item.vector) {
+								// console.log('currentPersona', this.persona);
+
+								if (!Array.isArray(this.persona?.vector)) {
+									this.persona = {vector: item.vector, count: 1};
+									localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
+								} else {
+									let similarity = this.similarity(item.vector, this.persona.vector);
+									console.log('similarity', similarity);
+
+									let newVector = this.updateMeanVector(this.persona.vector, this.persona.count, item.vector);
+									// console.log('newVector', newVector);
+									
+									if (newVector) {
+										this.persona = 	{vector: newVector, count: this.persona.count + 1};
+										localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
+									}
+								}
+
+								// console.log('updatePersona', this.persona);
+							}
+						};
+
+						this.embedSentence(item.title).then(v => {
+							if (!v) return;
+							
+							item.vector = v;
+
+							if (Array.isArray(this.persona?.vector)) {
+								let similarity = this.similarity(item.vector, this.persona.vector);
+								
+								item.author = similarity ? Number(similarity).toFixed(2) : item.author;
+							}
+						});
 					})
 				});
 
@@ -929,7 +1071,7 @@
 					this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent()));
 				}, 0.5e3);
 
-				return count;
+				return {count};
 			},
 
 			addNewTask() {
@@ -976,10 +1118,23 @@
 				window.open(`/?limit=${limit}&hash=${this.params.hash||''}&urls=${urls}`, '_self');
 			},
 
+			async embedSentence(text) {
+				if (!window.embedder) return null;
+				const vector = await window.embedder(text, { pooling: 'mean', normalize: true });
+				return vector?.data;
+			},
+
 			async init() {
 				this.params = Object.fromEntries(new URLSearchParams(location.search));
 
 				let limit = this.params?.limit || this.K.LIMIT;
+
+				if (localStorage.getItem(this.K.persona)) {
+					this.persona = JSON.parse(localStorage.getItem(this.K.persona));
+					if (typeof this.persona.vector == 'object') {
+						this.persona.vector = Object.values(this.persona.vector);
+					}
+				}
 
 				if (localStorage.getItem(this.K.tasks)?.length) {
 					this.tasks = JSON.parse(localStorage.getItem(this.K.tasks));
@@ -987,7 +1142,7 @@
 
 				if (localStorage.getItem(this.K.feeds)?.length) {
 					this.feeds = JSON.parse(localStorage.getItem(this.K.feeds));
-					this.filterViewedFeeds({limit});
+					this.postProcessFeeds({limit});
 				}
 				
 				this.loadFeedsWithContent({limit});
@@ -1000,31 +1155,11 @@
 					.forEach( ([k, v]) => localStorage.removeItem(k) )
 				;
 
-				/*let list_sentences = [
-					'Will it snow tomorrow?',
-					'Recently a lot of hurricanes have hit the US',
-					'Global warming is real',
-
-					'An apple a day, keeps the doctors away',
-					'Eating strawberries is healthy',
-
-					'what is your age?',
-					'How old are you?',
-					'How are you?',
-
-					'The dog bit Johnny',
-					'Johnny bit the dog',
-
-					'The cat ate the mouse',
-					'The mouse ate the cat',
-				];
-				this.get_embeddings(list_sentences, (embeddings) => {
-					let matrix = this.cosine_similarity_matrix(embeddings);
-
-					console.log(embeddings)
-					console.log(matrix)
-				});*/
-			}
+				// setInterval(async () => {
+				// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
+				// 	console.log('vector2', vector2);
+				// }, 10e3);
+			},
 		}
 	}
 
@@ -1037,11 +1172,28 @@
 	}
 </script>
 
-<!-- 
+ 
 <script type="module">
 	import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-	let pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-	let features = await pipe('this is text', { pooling: 'mean', normalize: true });
-	console.log('features', features); // of shape [1, 768]
+	
+	try {
+		const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+		const vector = await embedder('rss');
+
+		if (embedder) {
+			window.embedder = embedder;
+			console.log('window.embedder is loaded');
+		}
+	} catch (ex) {
+		console.log(ex);
+	}
+	
+
+	// const translator = await pipeline('translation', 'Xenova/nllb-200-distilled-600M');
+	// const translated = await translator('We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.', {
+	//   src_lang: 'eng_Latn',
+	//   tgt_lang: 'vie_Latn',
+	// });
+	// console.log(translated);
 </script>
- -->
+

@@ -25,8 +25,16 @@ if (workbox.navigationPreload.isSupported()) {
 
 workbox.routing.registerRoute(
   new RegExp('/*'),
-  new workbox.strategies.StaleWhileRevalidate({
-    cacheName: CACHE
+  // new workbox.strategies.StaleWhileRevalidate({
+  new workbox.strategies.CacheFirst({
+    cacheName: CACHE,
+    plugins: [
+      new workbox.expiration.ExpirationPlugin({
+        maxAgeSeconds: 24 * 60 * 60, // cache for 1 days
+        maxEntries: 1e3,
+        purgeOnQuotaError: true
+      })
+    ]
   })
 );
 
