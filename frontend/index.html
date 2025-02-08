@@ -914,6 +914,8 @@
 									.replace(/\s+/gi, ' ');
 							}
 						};
+
+						if (feedIdx <= 1) item.prefetchContent();
 					})
 				});
 
