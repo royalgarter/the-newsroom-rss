@@ -42,11 +42,15 @@
 		<meta name="twitter:image" :content="host + '/favicons/ios/512.png'">
 		<meta name="twitter:card" content="summary">
 		<meta name="twitter:creator" content="@royalgarter">
+		
+		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
 
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.js"></script>
-		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
+
+		<script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+		<script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script>
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-100 min-h-screen flex flex-col">
 		<header class="bg-blue-600 p-4 text-stone-200 text-center">
@@ -176,115 +180,325 @@
 				</section>
 			</template>
 
-			<template x-if="true || !feeds.length">
-				<div class="w-full">
-					<div class="m-auto my-4 max-w-auto shadow-lg rounded-md">
-						<!-- Input -->
-						<div class="bg-blue-500 p-4 rounded-t-md flex relative">
-							<form @submit.prevent="addNewTask" class="min-w-9/10">
-								<input
-									x-model="input"
-									class="w-full bg-blue-500 text-white placeholder-gray-200 focus:outline-none border-b-2"
-									placeholder="Enter new RSS feed URL..."
-								/>
-							</form>
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-white mt-1 ml-3 cursor-pointer" @click="addNewTask">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+			<div class="divide-y divide-slate-200">
+				<div x-data="{ expanded: (document.querySelectorAll('.rss-task-item').length == 0) }" class="py-2">
+					<h3 class="text-xl">
+						<button
+							id="collapse-title-01"
+							type="button"
+							class="flex items-center justify-between w-full text-left font-semibold py-2"
+							@click="expanded = !expanded"
+							:aria-expanded="expanded"
+							aria-controls="collapse-text-01"
+						>
+							<span>Your RSS List & Settings</span>
+							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
+								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 							</svg>
-						</div>
-
-						<!-- List -->
-						<div class="p-3">
-							<span x-show="tasks.length <= 0" class="center italic text-gray-400 px-2">
-								<p>RSS is <strong>Really Simple Syndication</strong>, allows to access updates to websites in a standardized format, e.g: </p>
-								<ul class="ml-6 my-2 list-disc">
-									<template x-for="(d, idxDf) in K.DEFAULTS" :key="idxDf">
-										<li><p x-html="d" class="break-words overflow-wrap text-wrap"></p></li>	
-									</template>
-								</ul>
-							</span>
-
-							<div @drop.prevent="
-								if (drag !== null && drop !== null) {
-									if (drag < drop)
-										tasks = [
-											...tasks.slice(0, drag),
-											...tasks.slice(drag + 1, drop + 1),
-											tasks[drag],
-											...tasks.slice(drop + 1)
-										];
-									else
-										tasks = [
-											...tasks.slice(0, drop),
-											tasks[drag],
-											...tasks.slice(drop, drag),
-											...tasks.slice(drag + 1)
-										];
-									localStorage.setItem(K.tasks, JSON.stringify(tasks));
-								};
-								drop = null;
-								"
-								@dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
-							>
-								<template x-for="(item, index) in tasks" :key="index">
-									<div class="p-2 bg-gray-200 mt-2 rounded flex items-center relative"
-										:class="{'bg-blue-300': drag === index}"
-										style="overflow-wrap: anywhere;"
-										draggable="true" @dragstart="drag = index" @dragend="drag = null"
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+						</button>
+					</h3>
+					<div
+						id="collapse-text-01"
+						role="region"
+						aria-labelledby="collapse-title-01"
+						class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+						:class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+						>
+						<div class="overflow-hidden">
+							<div class="w-full">
+								<div class="m-auto my-4 max-w-auto shadow-lg rounded-md">
+									<!-- Input -->
+									<div class="bg-blue-500 p-4 rounded-t-md flex relative">
+										<form @submit.prevent="addNewTask" class="min-w-9/10">
+											<input
+												x-model="input"
+												class="w-full bg-blue-500 text-white placeholder-gray-200 focus:outline-none border-b-2"
+												placeholder="Enter new RSS feed URL..."
+											/>
+										</form>
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-white mt-1 ml-3 cursor-pointer" @click="addNewTask">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
 										</svg>
-										<div class="mx-2">
-											<a :href="item.url" target="_blank"><span x-text="item.url"></span></a>
-										</div>
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
-											class="size-3 cursor-pointer text-red-500"
-											@click="tasks.splice(index, 1);localStorage.setItem(K.tasks, JSON.stringify(tasks));"
-										>
-											<path stroke-linecap="round" stroke-linejoin="round" d="M13.181 8.68a4.503 4.503 0 0 1 1.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 0 0 6.364 6.365l3.129-3.129m5.614-5.615 1.757-1.757a4.5 4.5 0 0 0-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 0 1-1.242-.88 4.483 4.483 0 0 1-1.062-1.683m6.587 2.345 5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99 8.898 8.9" />
-										</svg>
-
-										<div class="absolute inset-0 opacity-50"
-											:class="{'bg-blue-200': drop === index}"
-											x-show.transition="drag !== null"
-											@dragenter.prevent="if (index !== drag) {drop = index}"
-											@dragleave="if (drop === index) drop = null"
-										></div>
 									</div>
-								</template>
+
+									<!-- List -->
+									<div class="p-3">
+										<span x-show="tasks.length <= 0" class="center italic text-gray-400 px-2">
+											<p>RSS is <strong>Really Simple Syndication</strong>, allows to access updates to websites in a standardized format, e.g: </p>
+											<ul class="ml-6 my-2 list-disc">
+												<template x-for="(d, idxDf) in K.DEFAULTS" :key="idxDf">
+													<li><p x-html="d" class="break-words overflow-wrap text-wrap"></p></li>	
+												</template>
+											</ul>
+										</span>
+
+										<div @drop.prevent="
+											if (drag !== null && drop !== null) {
+												if (drag < drop)
+													tasks = [
+														...tasks.slice(0, drag),
+														...tasks.slice(drag + 1, drop + 1),
+														tasks[drag],
+														...tasks.slice(drop + 1)
+													];
+												else
+													tasks = [
+														...tasks.slice(0, drop),
+														tasks[drag],
+														...tasks.slice(drop, drag),
+														...tasks.slice(drag + 1)
+													];
+												localStorage.setItem(K.tasks, JSON.stringify(tasks));
+											};
+											drop = null;
+											"
+											@dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
+										>
+											<template x-for="(item, index) in tasks" :key="index">
+												<div class="rss-task-item p-2 bg-gray-200 mt-2 rounded flex items-center relative"
+													:class="{'bg-blue-300': drag === index}"
+													style="overflow-wrap: anywhere;"
+													draggable="true" @dragstart="drag = index" @dragend="drag = null"
+												>
+													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+													</svg>
+													<div class="mx-2">
+														<a :href="item.url" target="_blank"><span x-text="item.url"></span></a>
+													</div>
+													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
+														class="size-3 cursor-pointer text-red-500"
+														@click="tasks.splice(index, 1);localStorage.setItem(K.tasks, JSON.stringify(tasks));"
+													>
+														<path stroke-linecap="round" stroke-linejoin="round" d="M13.181 8.68a4.503 4.503 0 0 1 1.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 0 0 6.364 6.365l3.129-3.129m5.614-5.615 1.757-1.757a4.5 4.5 0 0 0-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 0 1-1.242-.88 4.483 4.483 0 0 1-1.062-1.683m6.587 2.345 5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99 8.898 8.9" />
+													</svg>
+
+													<div class="absolute inset-0 opacity-50"
+														:class="{'bg-blue-200': drop === index}"
+														x-show.transition="drag !== null"
+														@dragenter.prevent="if (index !== drag) {drop = index}"
+														@dragleave="if (drop === index) drop = null"
+													></div>
+												</div>
+											</template>
+										</div>
+
+									</div>
+
+									<!-- Buttons -->
+									<div class="bg-blue-500 p-3 flex justify-end rounded-b-md space-x-4">
+										<button
+											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-purple-600 p-2 font-bold rounded shadow"
+											x-show="tasks.length == 0"
+											@click="importDefaults()"
+										>
+											Import Sample RSS
+										</button>
+										<button
+											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 p-2 font-bold rounded shadow"
+											x-show="tasks.length > 0"
+											@click="clearAllTasks()"
+										>
+											Clear All
+										</button>
+										<button
+											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow"
+											x-show="tasks.length > 0"
+											@click="buildTasks()"
+										>
+											Build Feeds
+										</button>
+									</div>
+								</div>
 							</div>
-
-						</div>
-
-						<!-- Buttons -->
-						<div class="bg-blue-500 p-3 flex justify-end rounded-b-md space-x-4">
-							<button
-								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-purple-600 p-2 font-bold rounded shadow"
-								x-show="tasks.length == 0"
-								@click="importDefaults()"
-							>
-								Import Sample RSS
-							</button>
-							<button
-								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 p-2 font-bold rounded shadow"
-								x-show="tasks.length > 0"
-								@click="clearAllTasks()"
-							>
-								Clear All
-							</button>
-							<button
-								class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow"
-								x-show="tasks.length > 0"
-								@click="buildTasks()"
-							>
-								Build Feeds
-							</button>
 						</div>
 					</div>
 				</div>
-			</template>
+				<div x-data="{ expanded: false }" class="py-2">
+					<h3 class="text-xl">
+						<button
+							id="collapse-title-02"
+							type="button"
+							class="flex items-center justify-between w-full text-left font-semibold py-2"
+							@click="expanded = !expanded"
+							:aria-expanded="expanded"
+							aria-controls="collapse-text-02"
+						>
+							<span>Why You Need RSS in Your Life</span>
+							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
+								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
+							</svg>
+						</button>
+					</h3>
+					<div
+						id="collapse-text-02"
+						role="region"
+						aria-labelledby="collapse-title-02"
+						class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+						:class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+						>
+						<div class="overflow-hidden">
+							<div class="w-full">
+								<div class="m-auto my-4 p-2 max-w-auto shadow rounded-md bg-gray-200">
+									<!--  uses radio buttons -->
+									<section class="flex flex-row flex-wrap m-4 py-4 rounded-lg">
+										<input id="tab-one" type="radio" name="tabs" class="cursor-pointer peer/tab-one opacity-0 absolute" checked />
+										<label for="tab-one" class="bg-slate-200 hover:bg-neutral-200 peer-checked/tab-one:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+											Fantastic RSS
+										</label>
 
+										<input id="tab-two" type="radio" name="tabs" class="cursor-pointer peer/tab-two opacity-0 absolute" />
+										<label for="tab-two" class="bg-slate-300 hover:bg-neutral-200 peer-checked/tab-two:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+											by Will McAvoy
+										</label>
+
+										<input id="tab-three" type="radio" name="tabs" class="cursor-pointer peer/tab-three opacity-0 absolute" />
+										<label for="tab-three" class="bg-slate-400 hover:bg-neutral-200 peer-checked/tab-three:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+											, Charlie Skinner
+										</label>
+
+										<input id="tab-four" type="radio" name="tabs" class="cursor-pointer peer/tab-four opacity-0 absolute" />
+										<label for="tab-four" class="bg-slate-400 hover:bg-neutral-200 peer-checked/tab-four:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+											& Where To Find Them
+										</label>
+
+										<div class="basis-full h-0"></div>
+
+										<div class="bg-stone-200 hidden peer-checked/tab-one:block p-2 w-full">
+											<div class="container mx-auto p-6 max-w-4xl">
+												<p class="text-base mb-4">
+													<strong class="font-bold">Reclaim Your Internet: Why You Need RSS in Your Life</strong>
+												</p>
+												<p class="text-base mb-4">Tired of endless scrolling, clickbait, and algorithms dictating what you see online? As a seasoned news professional, I've seen firsthand how the internet has changed. But amidst the noise, a powerful tool remains: RSS.</p>
+												<p class="text-base mb-4">RSS (Really Simple Syndication) is your personal internet concierge. Instead of visiting countless websites, RSS brings the content <em class="italic">you</em> want directly to you. Imagine a single, customizable feed filled with the latest articles, blog posts, and videos from your favorite sources. No ads, no distractions, just the information you need, when you need it. </p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">Here's why you should embrace RSS:</strong>
+												</p>
+												<ul class="list-disc pl-6 mb-4">
+													<li class="mb-2">
+														<strong class="font-bold">Time is precious:</strong> Stop wasting hours hopping between websites. RSS delivers updates in a clean, efficient format, saving you valuable time.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Control your information:</strong> Algorithms push content based on assumptions. RSS puts <em class="italic">you</em> in control. Subscribe to the sources you trust, and filter out the rest.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Stay informed, truly informed:</strong> Break free from echo chambers. RSS allows you to curate a diverse range of perspectives, fostering a more well-rounded understanding of the world.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Rediscover the open web:</strong> Support independent creators and niche publications. RSS connects you directly to the sources you value, bypassing social media gatekeepers.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">It's easier than you think:</strong> Numerous user-friendly RSS readers are available for your computer, phone, or tablet. A quick search will reveal the perfect option for you.
+													</li>
+												</ul>
+												<p class="text-base mb-4">In a world of information overload, RSS is a lifeline. It's a tool for reclaiming your attention, fostering informed citizenship, and connecting with the content that truly matters. Don't let the algorithms win. Take control of your internet experience and discover the power of RSS. You won't regret it.</p>
+											</div>
+										</div>
+										<div class="bg-stone-200 hidden peer-checked/tab-two:block p-2 w-full">
+											<div class="container mx-auto p-6 max-w-4xl">
+												<p class="text-base mb-4">
+													<strong class="font-bold">(Clears throat)</strong>
+												</p>
+												<p class="text-base mb-4">Good evening. Tonight, I want to talk about something that may seem… arcane. Something that might not trend on Twitter, but that, in its own quiet way, is essential to an informed citizenry. I'm speaking, of course, about RSS.</p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">(A hint of exasperation flickers)</strong>
+												</p>
+												<p class="text-base mb-4">Yes, RSS. I can practically hear the collective groan. But before you reach for the remote, consider this: In an age of disinformation, of algorithm-driven echo chambers, RSS offers a path to a more… curated, dare I say, <em class="italic">civilized</em> consumption of information. </p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">(A touch of passion)</strong>
+												</p>
+												<p class="text-base mb-4">It's a simple concept, really. Instead of passively accepting whatever Facebook or Google deems worthy of your attention, RSS allows you to actively select your sources. It's like building your own bespoke news feed, tailored to your interests, your values, your intellectual curiosity.</p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">(A wry smile)</strong>
+												</p>
+												<p class="text-base mb-4">Think of it as the antidote to the outrage industrial complex. Instead of being bombarded with sensational headlines designed to provoke an emotional response, you can focus on substantive reporting, on thoughtful analysis, on the kind of journalism that actually… informs.</p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">(A plea)</strong>
+												</p>
+												<p class="text-base mb-4">I know it's not as flashy as the latest viral video. It doesn't offer the instant gratification of a perfectly crafted meme. But RSS offers something far more valuable: control. Control over your information, control over your attention, control over your own intellectual development.</p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">(Straightens up)</strong>
+												</p>
+												<p class="text-base mb-4">In a society increasingly defined by its ability to process and disseminate information, the ability to curate your own information stream is not merely a convenience, it's a civic responsibility. It's a way to resist the forces of ignorance and manipulation. It's a way to reclaim the promise of the internet as a tool for enlightenment.</p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">(A hint of hope)</strong>
+												</p>
+												<p class="text-base mb-4">So, tonight, I urge you to consider RSS. It may not be the sexiest topic, but it is, I believe, a vital one. It's a small step, perhaps, but a step in the right direction. A step towards a more informed, a more engaged, a more… civilized society.</p>
+											</div>
+										</div>
+										<div class="bg-stone-200 hidden peer-checked/tab-three:block p-2 w-full">
+											<div class="container mx-auto p-6 max-w-4xl">
+												<p class="text-base mb-4">
+													<strong class="font-bold">Goddammit, Use RSS! Are You People Trying to Stay Uncivilized?</strong>
+												</p>
+												<p class="text-base mb-4">Alright, listen up! I haven't got all day, and neither do you, unless you <em class="italic">enjoy</em> being spoon-fed drivel by Zuckerberg and his army of algorithm-pushing monkeys. I'm talking about RSS. Yes, RSS! The thing you millennials probably think is some kind of obscure bird disease. </p>
+												<p class="text-base mb-4">This isn't some newfangled social media crap. This is a <em class="italic">tool</em>. A way to get real goddamn information without having to wade through a swamp of cat videos and Kardashian updates. Are you journalists, or trained seals? </p>
+												<p class="text-base mb-4">
+													<strong class="font-bold">Here's the deal, and listen close:</strong>
+												</p>
+												<ul class="list-disc pl-6 mb-4">
+													<li class="mb-2">
+														<strong class="font-bold">Time is Money, and You're Wasting Both:</strong> Stop clicking around like a bunch of caffeinated hamsters. RSS delivers the news you need, straight to your reader. No ads, no distractions, just the facts. It's called efficiency, people. Look it up.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Think for Yourselves, For Christ's Sake:</strong> You're letting some computer program decide what's important? You're journalists! You're supposed to be skeptical! RSS lets you choose your sources, so you can actually, you know, <em class="italic">think</em> for yourselves.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Get the Whole Story, Not Just the Sound Bites:</strong> The world is complicated. It's messy. You're not going to understand it by reading 140-character tweets. RSS lets you dig deeper, explore different perspectives, and actually, you know, <em class="italic">report</em>.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Support Real Journalism, Not Just Corporate Garbage:</strong> There are still some good people out there, trying to do honest work. They need your support. RSS lets you connect directly with those sources, instead of lining the pockets of some soulless corporation.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">It's Not Rocket Science!</strong> Download an RSS reader. Paste in a URL. Boom! News. If you can't figure that out, you're in the wrong business.
+													</li>
+												</ul>
+												<p class="text-base mb-4">Look, I'm not asking you to cure cancer. I'm asking you to use your goddamn brains. The internet is a powerful tool, but it can also make you stupid. RSS is the antidote. So get off your asses, download a reader, and start reading. The world isn't going to wait for you to catch up. Now get out of my office!</p>
+											</div>
+										</div>
+										<div class="bg-stone-200 hidden peer-checked/tab-four:block p-2 w-full">
+											<div class="container mx-auto p-6 max-w-4xl">
+												<p class="text-base mb-4">
+													<strong class="font-bold">Easy Guide to Getting News from Your Favorite Paper with RSS</strong>
+												</p>
+												<p class="text-base mb-4">Want the latest headlines without constantly checking the website? Here's how to find the RSS feed:</p>
+												<ul class="list-disc pl-6 mb-4">
+													<li class="mb-2">
+														<strong class="font-bold">Look for the RSS Icon:</strong> Some websites show a small RSS icon (looks like a radio signal) near articles or at the bottom of the page. Click it!
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Check the Website Directly:</strong> Browse the website's bottom (footer) or &quot;Contact Us&quot; page for links labeled &quot;RSS,&quot; &quot;Subscribe,&quot; or &quot;Feeds.&quot;
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Search the Website:</strong> Use the site's search box and type &quot;RSS feed.&quot;
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Google It:</strong> The easiest way! Search Google for &quot;[ <em class="italic">Newspaper Name</em>] RSS feed&quot;. For example, &quot;New York Times RSS feed.&quot;
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">Copy the Link:</strong> Once you find the feed link (it'll look like a web address), copy it.
+													</li>
+													<li class="mb-2">
+														<strong class="font-bold">That's it!</strong>
+													</li>
+												</ul>
+												<p class="text-base mb-4">
+													<a class="text-blue-500 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md">Get some Awesome RSS Feeds in Collective Directory here</a>
+												</p>
+												<p class="italic text-base mb-4">
+													<strong>Note:</strong> Some websites might not offer RSS feeds directly.
+												</p>
+											</div>
+										</div>
+									</section>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</main>
 		<footer class="bg-gray-300 p-4 text-center text-sm">
 			<blockquote class="m-2 text-base italic font-semibold text-stone-900">
@@ -368,6 +582,46 @@
 			},
 
 			CACHE: {},
+
+			get_embeddings(list_sentences, callback) {
+				use.load().then(model => {
+					model.embed(list_sentences).then(embeddings => {
+						callback(embeddings?.arraySync?.());
+					});
+				});
+			},
+			dot(a, b) {
+				var hasOwnProperty = Object.prototype.hasOwnProperty;
+				var sum = 0;
+				for (var key in a) {
+					if (hasOwnProperty.call(a, key) && hasOwnProperty.call(b, key)) {
+						sum += a[key] * b[key]
+					}
+				}
+				return sum
+			},
+			similarity(a, b) {
+				var magnitudeA = Math.sqrt(this.dot(a, a));
+				var magnitudeB = Math.sqrt(this.dot(b, b));
+				if (magnitudeA && magnitudeB)
+					return this.dot(a, b) / (magnitudeA * magnitudeB);
+				else return false
+			},
+			cosine_similarity_matrix(matrix) {
+				let cosine_similarity_matrix = [];
+				for (let i = 0; i < matrix.length; i++) {
+					let row = [];
+					for (let j = 0; j < i; j++) {
+						row.push(cosine_similarity_matrix[j][i]);
+					}
+					row.push(1);
+					for (let j = (i + 1); j < matrix.length; j++) {
+						row.push(this.similarity(matrix[i], matrix[j]));
+					}
+					cosine_similarity_matrix.push(row);
+				}
+				return cosine_similarity_matrix;
+			},
 
 			triggerIntersect(type, link) {
 				if (!link) return console.log('ELINK');
@@ -534,7 +788,6 @@
 				}
 				return Math.floor(seconds) + " sec";
 			},
-
 
 			filterViewedFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
 				let count = 0;
@@ -744,6 +997,31 @@
 					)
 					.forEach( ([k, v]) => localStorage.removeItem(k) )
 				;
+
+				/*let list_sentences = [
+					'Will it snow tomorrow?',
+					'Recently a lot of hurricanes have hit the US',
+					'Global warming is real',
+
+					'An apple a day, keeps the doctors away',
+					'Eating strawberries is healthy',
+
+					'what is your age?',
+					'How old are you?',
+					'How are you?',
+
+					'The dog bit Johnny',
+					'Johnny bit the dog',
+
+					'The cat ate the mouse',
+					'The mouse ate the cat',
+				];
+				this.get_embeddings(list_sentences, (embeddings) => {
+					let matrix = this.cosine_similarity_matrix(embeddings);
+
+					console.log(embeddings)
+					console.log(matrix)
+				});*/
 			}
 		}
 	}
@@ -755,5 +1033,13 @@
 			host: '//rss.phamthanh.me',
 		}
 	}
-
 </script>
+
+<!-- 
+<script type="module">
+	import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+	let pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+	let features = await pipe('this is text', { pooling: 'mean', normalize: true });
+	console.log('features', features); // of shape [1, 768]
+</script>
+ -->
