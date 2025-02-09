@@ -1182,16 +1182,16 @@
  
 <script type="module">
 	// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-	import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
+	// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
 	
 	try {
-		const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+		/*const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
 		const vector = await embedder('rss');
 
 		if (embedder) {
 			window.embedder = embedder;
 			console.log('window.embedder is loaded');
-		}
+		}*/
 
 		/*const translator = await pipeline('translation', 'Xenova/nllb-200-distilled-600M');
 		const translated = await translator('We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.', {
