@@ -54,7 +54,7 @@
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
 		<header class="bg-blue-600 p-4 text-stone-200 text-center">
-			<h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold">The Newsroom RSS</h1>
+			<a href="/#title" name="title"><h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold">The Newsroom RSS</h1></a>
 		</header>
 		<main class="container mx-auto p-2 flex-1">
 			<div class="flex gap-4 items-center mb-4 justify-self-center">
@@ -66,6 +66,11 @@
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent())"
 				>
+					<span class="relative flex size-3 p-1">
+						<span class="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+							:class="loading ? 'animate-ping' : 'invisible'"
+						></span>
+					</span>
 					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
 						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
 					</a>
@@ -78,10 +83,13 @@
 									x-intersect.full="triggerIntersect('full', item.link)"
 									:class="item.viewed && 'opacity-90 italic'"
 								>
-									<div x-show="!params?.style?.includes?.('noimg') && item.images?.[0]?.length" class="rss-meta relative">
+									<div x-show="!params?.style?.includes?.('noimg') && item.images?.[0]?.length" class="rss-meta relative min-h-36">
 										<a class="rss-thumb" :href="item.link" target="_blank">
-											<img class="rss-thumb w-full max-h-[320px]"
+											<img class="rss-thumb w-full min-h-36 max-h-[320px]"
+												loading="lazy" 
 												:src="item.images[0]"
+												:domain="new URL(feed.link).hostname"
+												onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
 												:alt="item.title">
 											<div
 												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
@@ -99,7 +107,6 @@
 										<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 											<div
 												class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
-												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
 												<small class="break-words text-center" x-html="item.author?.toString().substr(0, 12).trim()"></small>
 											</div>
 										</a>
@@ -799,7 +806,7 @@
 					let data = urls?.length ? await Promise.all(urls.map(this.fetchFeedUrl)) : [];
 
 					if (!this.params?.hash && data.length) {
-						let hash_local = await this.digest(JSON.stringify(data));
+						let hash_local = await this.digest(JSON.stringify(data) + Date.now());
 						this.params.hash = hash_local.slice(0, 6);
 					}
 
