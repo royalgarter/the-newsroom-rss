@@ -47,12 +47,12 @@
 
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
-		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.js"></script>
+		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
 	</head>
-	<body x-data="alpineRSS()" class="bg-gray-100 min-h-screen flex flex-col">
+	<body x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
 		<header class="bg-blue-600 p-4 text-stone-200 text-center">
 			<h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold">The Newsroom RSS</h1>
 		</header>
@@ -66,7 +66,7 @@
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent())"
 				>
-					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url">
+					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
 						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
 					</a>
 					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
@@ -79,7 +79,7 @@
 									:class="item.viewed && 'opacity-90 italic'"
 								>
 									<div x-show="!params?.style?.includes?.('noimg') && item.images?.[0]?.length" class="rss-meta relative">
-										<a class="rss-thumb" :href="item.link">
+										<a class="rss-thumb" :href="item.link" target="_blank">
 											<img class="rss-thumb w-full max-h-[320px]"
 												:src="item.images[0]"
 												:alt="item.title">
@@ -87,7 +87,7 @@
 												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
 											</div>
 										</a>
-										<a class="rss-tags" :href="item.link">
+										<a class="rss-tags" :href="item.link" target="_blank">
 											<div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out"
 												x-html="(timeSince(new Date(item.published)) + ' ago')
 													|| new Date(item.published).toString().split(' GMT').shift() 
@@ -96,7 +96,7 @@
 											</div>
 										</a>
 
-										<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link">
+										<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 											<div
 												class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
 												<!-- <span class="font-bold" x-html="feed.slug"></span> -->
@@ -114,7 +114,7 @@
 										
 										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out"
 											:class="(item.images?.[0]?.length) ? 'pointer-events-none' : ''"
-											:href="item.link"
+											:href="item.link" target="_blank"
 											x-text="item.title"
 										>
 										</a>
@@ -211,17 +211,17 @@
 						>
 						<div class="overflow-hidden">
 							<div class="w-full">
-								<div class="m-auto my-4 max-w-auto shadow-lg rounded-md">
+								<div class="m-auto my-4 max-w-auto shadow-lg rounded-md bg-gray-100">
 									<!-- Input -->
-									<div class="bg-blue-500 p-4 rounded-t-md flex relative">
+									<div class="text-lg bg-blue-500 p-4 rounded-t-md flex relative justify-around">
 										<form @submit.prevent="addNewTask" class="min-w-9/10">
 											<input
 												x-model="input"
-												class="w-full bg-blue-500 text-white placeholder-gray-200 focus:outline-none border-b-2"
-												placeholder="Enter new RSS feed URL..."
+												class="w-full bg-blue-500 italic text-base text-white placeholder-gray-200 focus:outline-none border-b-2"
+												placeholder=" Enter new RSS feed URL..."
 											/>
 										</form>
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-white mt-1 ml-3 cursor-pointer" @click="addNewTask">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-white mt-2 ml-3 cursor-pointer" @click="addNewTask">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
 										</svg>
 									</div>
@@ -265,7 +265,7 @@
 													style="overflow-wrap: anywhere;"
 													draggable="true" @dragstart="drag = index" @dragend="drag = null"
 												>
-													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4">
+													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4 ml-1 mr-2">
 														<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
 													</svg>
 													<div class="mx-2">
@@ -345,26 +345,26 @@
 						>
 						<div class="overflow-hidden">
 							<div class="w-full">
-								<div class="m-auto my-4 p-2 max-w-auto shadow rounded-md bg-gray-200">
+								<div class="m-auto my-4 p-2 max-w-auto shadow rounded-md bg-gray-100">
 									<!--  uses radio buttons -->
 									<section class="flex flex-row flex-wrap m-4 py-4 rounded-lg">
 										<input id="tab-one" type="radio" name="tabs" class="cursor-pointer peer/tab-one opacity-0 absolute" checked />
-										<label for="tab-one" class="bg-zinc-200 hover:bg-stone-200 peer-checked/tab-one:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+										<label for="tab-one" class="bg-slate-200 hover:bg-stone-200 peer-checked/tab-one:bg-stone-200 text-lg font-semibold cursor-default px-2 py-1 rounded-tl-lg block">
 											Fantastic RSS
 										</label>
 
 										<input id="tab-two" type="radio" name="tabs" class="cursor-pointer peer/tab-two opacity-0 absolute" />
-										<label for="tab-two" class="bg-zinc-300 hover:bg-stone-200 peer-checked/tab-two:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+										<label for="tab-two" class="bg-slate-300 hover:bg-stone-200 peer-checked/tab-two:bg-stone-200 text-lg font-semibold cursor-default px-2 py-1 block">
 											by Will McAvoy
 										</label>
 
 										<input id="tab-three" type="radio" name="tabs" class="cursor-pointer peer/tab-three opacity-0 absolute" />
-										<label for="tab-three" class="bg-zinc-400 hover:bg-stone-200 peer-checked/tab-three:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+										<label for="tab-three" class="bg-slate-400 hover:bg-stone-200 peer-checked/tab-three:bg-stone-200 text-lg font-semibold cursor-default px-2 py-1 block">
 											, Charlie Skinner
 										</label>
 
 										<input id="tab-four" type="radio" name="tabs" class="cursor-pointer peer/tab-four opacity-0 absolute" />
-										<label for="tab-four" class="bg-zinc-500 hover:bg-stone-200 peer-checked/tab-four:bg-stone-300 text-lg font-semibold cursor-default p-2 rounded-t-lg block">
+										<label for="tab-four" class="bg-slate-500 hover:bg-stone-200 peer-checked/tab-four:bg-stone-200 text-lg font-semibold cursor-default px-2 py-1 rounded-tr-lg block">
 											& Where To Find Them
 										</label>
 
@@ -470,7 +470,7 @@
 												<p class="text-base mb-4">Want the latest headlines without constantly checking the website? Here's how to find the RSS feed:</p>
 												<ul class="list-disc pl-6 mb-4">
 													<li class="mb-2">
-														<strong class="font-bold">Look for the RSS Icon:</strong> Some websites show a small RSS icon (looks like a radio signal) near articles or at the bottom of the page. Click it!
+														<strong class="font-bold">Look for the RSS Icon:</strong> Some websites show a small RSS icon (looks like a radio signal) near articles or at the bottom of the page.
 													</li>
 													<li class="mb-2">
 														<strong class="font-bold">Check the Website Directly:</strong> Browse the website's bottom (footer) or &quot;Contact Us&quot; page for links labeled &quot;RSS,&quot; &quot;Subscribe,&quot; or &quot;Feeds.&quot;
@@ -485,11 +485,11 @@
 														<strong class="font-bold">Copy the Link:</strong> Once you find the feed link (it'll look like a web address), copy it.
 													</li>
 													<li class="mb-2">
-														<strong class="font-bold">That's it!</strong>
+														<strong class="font-bold">That's it! Now you can see them!</strong>
 													</li>
 												</ul>
 												<p class="text-base mb-4">
-													<a class="text-blue-500 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md">Get some Awesome RSS Feeds in Collective Directory here</a>
+													<a class="text-blue-500 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md" target="_blank">Get some Awesome RSS Feeds in Collective Directory here</a>
 												</p>
 												<p class="italic text-base mb-4">
 													<strong>Note:</strong> Some websites might not offer RSS feeds directly.
@@ -1027,7 +1027,7 @@
 							if (item.vector) {
 								// console.log('currentPersona', this.persona);
 
-								if (!Array.isArray(this.persona?.vector)) {
+								if (!Array.isArray(this.persona?.vector) || (item.vector.length != this.persona.vector.length)) {
 									this.persona = {vector: item.vector, count: 1};
 									localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
 								} else {

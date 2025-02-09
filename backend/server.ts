@@ -117,66 +117,98 @@ async function fetchRSSLinks({urls, limit=12}) {
 		feeds = await Promise.all(feedUrls.map(fetchParse));	
 	}
 
-	const render = feeds.filter(x => x).map(data => {
-		const items = data.entries.slice(0, limit);
+	feeds = feeds.filter(x => x);
 
-		// console.dir(data)
+	const SPLIT = /[\:\,\.\-\_\/\|\~]/;
+	const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
-		const SPLIT = /[\:\,\.\-\_\/\|\~]/;
+	let render = [];
+	await Promise.all(feeds.map(data => new Promise(resolveFeed => {
+		(async () => {
+			const items = data.entries.slice(0, limit);
 
-		let head = {
-			title: data.description || data.title.value,
-			link: data.links?.[0] || data.rss_url,
-			rss_url: data.rss_url,
-			image: data.image?.url,
-		};
+			// console.dir(data)
 
-		head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
-		head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
+			let head = {
+				title: data.description || data.title.value,
+				link: data.links?.[0] || data.rss_url,
+				rss_url: data.rss_url,
+				image: data.image?.url,
+			};
 
-		// console.dir({head});
-		
-		let result = {
-			...head,
-			items: items.map(item => {
-				try {
-					if (item['media:group']) item = {...item, ...item['media:group']};
+			head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
+			head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
 
-					let images = [];
+			// console.dir({head});
 
-					images.push(...(item?.attachments?.filter?.(x => x.mimeType.includes('image')).map(x => x.url) || []));
-					images.push(...(item?.['media:content']?.filter?.(x => x.medium == 'image').map(x => x.url) || []));
-					images.push(item['media:thumbnail']?.url);
-					images.push(item['media:content']?.url);
-					// images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
-					// images.push(head.image);
+			let rss_items = [];
+			await Promise.all(items.map(item => new Promise(resolveItem => {
+				(async () => {
+					try {
+						if (item['media:group']) item = {...item, ...item['media:group']};
 
-					let x = {
-						title: item?.title?.value,
-						author: item?.author?.name || item?.['dc:subject'] || '',
-						description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
-						published: item?.published,
-						updated: item?.updated,
-						images: images.filter(x => typeof x == 'string'),
-						categories: item?.categories?.map?.(x => x.label || x.term),
-						link: item?.links?.[0]?.href,
-						link_author: item?.author?.url || item?.author?.uri,
-						statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
-					};
+						let images = [];
 
-					// console.dir({item, x});
+						images.push(...(item?.attachments?.filter?.(x => x.mimeType.includes('image')).map(x => x.url) || []));
+						images.push(...(item?.['media:content']?.filter?.(x => x.medium == 'image').map(x => x.url) || []));
+						images.push(item['media:thumbnail']?.url);
+						images.push(item['media:content']?.url);
 
-					return x;
-				} catch (ex) {
-					console.log(ex);
+						// console.dir(images)
+						let link = item?.links?.[0]?.href;
+						if (images.filter(x=>x).length == 0 && link) { try {
+							let key_image = 'HTML_IMAGE:' + link;
 
-					return null;
-				}
-			}).filter(x => x).sort((a, b) => b.images?.length - a.images?.length)
-		};
+							let image_og = CACHE.get(key_image);
 
-		return result;
-	})
+							if (!image_og) {
+								let html = await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(1e3) })
+												.then(resp => resp.text()).catch(null);
+
+								image_og = (html || '')?.match(REGEX_IMAGE)?.[1];
+							}
+
+							if (image_og) {
+								CACHE.set(key_image, image_og);
+								images.push(image_og);
+							}
+						} catch {} }
+						// console.dir(images)
+
+						if (images.filter(x=>x).length == 0) {
+							images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
+							images.push(head.image);
+						}
+
+						let x = {
+							title: item?.title?.value,
+							author: item?.author?.name || item?.['dc:subject'] || '',
+							description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
+							published: item?.published,
+							updated: item?.updated,
+							images: images.filter(x => x && (typeof x == 'string')),
+							categories: item?.categories?.map?.(x => x.label || x.term),
+							link: item?.links?.[0]?.href,
+							link_author: item?.author?.url || item?.author?.uri,
+							statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
+						};
+
+						// console.dir({x_images: x.images[0]});
+						// console.dir({item, x});
+
+						rss_items.push(x);
+					} catch (ex) { console.error(ex); } finally { resolveItem() }
+				})().catch(ex => resolveItem());
+			})));
+			
+			let result = {
+				...head,
+				items: rss_items.filter(x => x).sort((a, b) => b.images?.length - a.images?.length),
+			};
+
+			render.push(result);
+		})().catch(console.error).finally(resolveFeed);
+	})));
 
 	return render;
 }
