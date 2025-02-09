@@ -55,6 +55,8 @@ async function fetchParse(url: string, content: string) {
 	try {
 		if (!url) return null;
 
+		console.log('fetchParse.content', url);
+
 		if (!content) {
 			url = url.replaceAll(' ', '+');
 			// console.log('fetchParse.content.server-side', url);
@@ -65,10 +67,10 @@ async function fetchParse(url: string, content: string) {
 
 			content = await Promise.race([
 				new Promise((resolve, reject) => {
-					setTimeout(resolve, 20e3, CACHE.get(key_rss));
+					setTimeout(resolve, 10e3, CACHE.get(key_rss));
 				}),
 				new Promise((resolve, reject) => {
-					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(20e3)})
+					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(10e3)})
 						.then(resp => resp.text())
 						.then(text => CACHE.set(key_rss, text) && resolve(text))
 						.catch(ex => resolve(null));
@@ -78,7 +80,7 @@ async function fetchParse(url: string, content: string) {
 
 		if (!content) return null;
 
-		// console.log('fetchParse.content', content.length);
+		console.log('fetchParse.content', url, content.length);
 
 		let data = await parseFeed(content);
 
@@ -98,11 +100,11 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 	if (Array.isArray(urls)) {
 		feeds = await Promise.all(
-			urls.map(async ({url, content}) => {
+			urls.map(({url, content}) => {
 				if (!url) return null;
 
-				return await fetchParse(url, content);
-			})
+				return fetchParse(url, content);
+			}).filter(x => x)
 		);
 
 		feeds = feeds.filter(x => x);
@@ -123,6 +125,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 	const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
 	let render = [];
+	console.log('render')
 	await Promise.all(feeds.map(data => new Promise(resolveFeed => {
 		(async () => {
 			const items = data.entries.slice(0, limit);
@@ -142,6 +145,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 			// console.dir({head});
 
 			let rss_items = [];
+			console.log('rss_items', head.rss_url)
 			await Promise.all(items.map(item => new Promise(resolveItem => {
 				(async () => {
 					try {
@@ -200,7 +204,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 					} catch (ex) { console.error(ex); } finally { resolveItem() }
 				})().catch(ex => resolveItem());
 			})));
-			
+			console.log('rss_items', head.rss_url, rss_items.length)
+
 			let result = {
 				...head,
 				items: rss_items.filter(x => x).sort((a, b) => b.images?.length - a.images?.length),
@@ -209,7 +214,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 			render.push(result);
 		})().catch(console.error).finally(resolveFeed);
 	})));
-
+	console.log('render', render.length)
 	return render;
 }
 

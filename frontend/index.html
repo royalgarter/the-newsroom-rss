@@ -554,11 +554,13 @@
 </style>
 
 <script>
-	if (typeof navigator.serviceWorker !== 'undefined') {
-		navigator.serviceWorker.register('sw.js')
-	}
-
-	// if (MobileDragDrop) MobileDragDrop.polyfill({holdToDrag: 300, dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride});
+	function alpineHead() {
+		return {
+			title: 'The Newsroom RSS',
+			description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
+			host: '//rss.phamthanh.me',
+		}
+	};
 
 	function alpineRSS() {
 		const version = 'v1';
@@ -775,21 +777,16 @@
 				}
 			},
 
-			async fetchFeedUrl(url) {
+			async clientFetch(url) {
 				try {
-					// console.log('fetchFeedUrl', url);
 					const response = await fetch(url.replaceAll(' ', '+'), {redirect: 'follow'});
 
 					if (!response.ok || response.status >= 400) return {url};
 
 					const content = await response.text();
 
-					// console.log('fetchFeedUrl', content.length);
-
 					return {url, content};
 				} catch (error) {
-					// console.warn("Error client fetching feed url:", url/*, error.message*/);
-
 					return {url};
 				}
 			},
@@ -803,25 +800,40 @@
 				try {
 					let urls = this.params?.urls?.length ? this.params?.urls?.split(',') : [];
 
-					let data = urls?.length ? await Promise.all(urls.map(this.fetchFeedUrl)) : [];
+					let data = urls?.length ? await Promise.all(urls.map(this.clientFetch)) : [];
 
 					if (!this.params?.hash && data.length) {
 						let hash_local = await this.digest(JSON.stringify(data) + Date.now());
 						this.params.hash = hash_local.slice(0, 6);
 					}
 
-					const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
+					console.log('data', data);
+
+					let parallel = await Promise.all(data.map(item => new Promise(resolve => {
+						fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
+							method: 'POST', 
+							headers: {"content-type": "application/json"},
+							body: JSON.stringify([item]),
+						})
+						.then(resp => resp.json())
+						.then(json => console.log(item.url, json) && resolve(json))
+						.catch(ex => console.log(ex) && resolve())
+					})));
+
+					console.log('parallel', parallel);
+
+					this.feeds = parallel.flat().filter(x => x);
+
+					/*const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
 						method: 'POST', 
 						headers: {"content-type": "application/json"},
 						body: JSON.stringify(data),
 					});
+					this.feeds = await response.json();*/
 
-					if (!response.ok) throw new Error(`Failed to fetch feeds ${response.status}`)
-			
-					this.feeds = await response.json();
 					this.loading = false;
 
-					if (!this.feeds) return console.log("EEMPTYFEEDS");
+					if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
 					let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
 					localStorage.setItem(this.K.feeds, JSON.stringify(this.feeds));
@@ -838,8 +850,11 @@
 						history.pushState({}, "", url);
 					}
 
-					this.tasks = this.feeds.map(x => ({url: x.rss_url, checked: false}))
+					this.tasks = data.map(x => ({url: x.url, checked: false}))
 					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
+
+					console.log(this.tasks);
+
 				} catch (error) {
 					console.error("Error fetching feeds:", error);
 					this.error = "Failed to load feeds. Please check the server logs for more details";
@@ -1168,15 +1183,9 @@
 				// }, 10e3);
 			},
 		}
-	}
+	};
 
-	function alpineHead() {
-		return {
-			title: 'The Newsroom RSS',
-			description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
-			host: '//rss.phamthanh.me',
-		}
-	}
+	navigator?.serviceWorker?.register?.('sw.js');
 </script>
 
  
