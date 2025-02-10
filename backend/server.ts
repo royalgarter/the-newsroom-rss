@@ -34,9 +34,8 @@ async function parseRSS(url: string, content: string) {
 	try {
 		if (!url) return null;
 
-		console.log('parseRSS.content', url);
-
 		if (!content) {
+			console.log('parseRSS.content', url);
 			url = url.replaceAll(' ', '+');
 			// console.log('parseRSS.content.server-side', url);
 
@@ -55,6 +54,8 @@ async function parseRSS(url: string, content: string) {
 						.catch(ex => resolve(null));
 				}),
 			]);
+		} else {
+			console.log('parseRSS.content_with_url', url);
 		}
 
 		if (!content) return null;
@@ -208,35 +209,41 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/api/feeds") {
-		let finalResult = [];
+		let feeds = [];
 
 		if (req.method == 'GET') {
 			urls = decodeURIComponent(urls);
 
-			finalResult = await fetchRSSLinks({urls, limit});
+			feeds = await fetchRSSLinks({urls, limit});
 		}
 
 		if (req.method == 'POST') {
 			let data = await req.json();
 
-			if (hash && !data?.length) {
-				data = (await KV.get([pathname, hash]))?.value || [];
+			let {keys, batch} = data;
+
+			if (hash && !keys?.length) {
+				keys = (await KV.get([pathname, hash]))?.value || [];
 			} 
 			
-			let keys = data.filter(x => x.url).map(x => ({url: x.url}));
+			keys = keys.filter(x => x.url);
+
+			// console.log('post', hash, keys.map(x => x.url), keys.map(x => x.content?.length))
 
 			if (!hash) {
 				hash = crypto.createHash('md5').update(JSON.stringify(keys)).digest("hex").slice(0, 6);
 			}
 
-			KV.set([pathname, hash], keys);
+			let saved = batch || keys || null;
 
-			finalResult = await fetchRSSLinks({urls: data, limit});
+			if (saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
 
-			finalResult?.forEach?.(x => x.hash = hash);
+			// console.log('saved', saved.map(x => ({url: x.url})));
+
+			feeds = await fetchRSSLinks({urls: keys, limit});
 		}
 
-		return response(JSON.stringify(finalResult), {
+		return response(JSON.stringify({feeds, hash}), {
 			headers: {
 				...cors,
 				"Content-Type": "application/json; charset=utf-8",

@@ -248,7 +248,7 @@
 						>
 						<div class="overflow-hidden">
 							<div class="w-full">
-								<div class="m-auto my-4 max-w-auto shadow-lg rounded-md bg-gray-100">
+								<div class="m-auto my-4 max-w-auto shadow-lg rounded-md bg-gray-300">
 									<!-- Input -->
 									<div class="text-lg bg-blue-500 p-4 rounded-t-md flex relative justify-around">
 										<form @submit.prevent="addNewTask" class="min-w-9/10">
@@ -352,43 +352,12 @@
 										</button>
 									</div>
 								</div>
-							</div>
-						</div>
-					</div>
-				</div>
 
-				<!-- rss-options -->
-				<div x-data="{ expanded: true }" class="py-2">
-					<h3 class="text-xl">
-						<button
-							id="collapse-title-02"
-							type="button"
-							class="flex items-center justify-between w-full text-left font-semibold py-2"
-							@click="expanded = !expanded"
-							:aria-expanded="expanded"
-							aria-controls="collapse-text-02"
-						>
-							<span>RSS Options</span>
-							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
-								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
-							</svg>
-						</button>
-					</h3>
-					<div
-						id="collapse-text-03"
-						role="region"
-						aria-labelledby="collapse-title-03"
-						class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
-						:class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
-						>
-						<div class="overflow-hidden">
-							<div class="w-full">
-								<div class="bg-white shadow-md rounded-lg overflow-hidden">
+								<div class="shadow-md rounded-lg overflow-hidden bg-gray-300">
 									<div id='json-editor' class="px-4 py-2"></div>
 									<div class="bg-blue-500 px-4 py-3 sm:px-6 flex justify-end">
-										<button id='submit' class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow">
-											Submit
+										<button id='json-editor-submit' class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow">
+											Saved
 										</button>
 									</div>
 								</div>
@@ -637,19 +606,16 @@
 		@apply flex items-center relative max-w-full w-full;
 	}
 	.form-group {
-		@apply px-3 py-4 text-base bg-gray-50 rounded flex items-center relative max-w-full;
+		@apply px-3 py-4 text-base bg-gray-200 rounded flex items-center relative max-w-full;
 	}
 	.form-group label{
 		@apply mr-2 font-bold w-1/5 flex items-center relative;
 	}
 	.form-group .form-control{
-		@apply border focus:outline-none rounded max-w-full w-4/5 flex items-center relative text-center;
+		@apply border bg-gray-50 focus:outline-none rounded max-w-full w-4/5 flex items-center relative text-center;
 	}
 	button.btn-secondary {
 		@apply cursor-pointer focus:outline-none uppercase text-xs text-gray-100 border-none bg-blue-600 p-2 mx-2 font-bold rounded shadow;
-	}
-	#json-editor #submit {
-		@apply cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow
 	}
 </style>
 
@@ -677,6 +643,8 @@ function alpineRSS() {
 		drop: null,
 
 		persona: null,
+
+		options_editor: null,
 
 		K: {
 			LIMIT: 6,
@@ -917,7 +885,7 @@ function alpineRSS() {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
-							body: JSON.stringify([item]),
+							body: JSON.stringify({keys :[item], batch: data}),
 						})
 						.then(resp => resp.json())
 					)
@@ -925,7 +893,7 @@ function alpineRSS() {
 
 				console.log('parallel', parallel);
 
-				this.feeds = parallel.filter(p => p.status=='fulfilled').map(p => p.value)
+				this.feeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
 
 				/*const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
@@ -946,12 +914,14 @@ function alpineRSS() {
 					this.loadFeedsWithContent({limit, limit_adjust: count});
 				}
 
-				let hash_server = this.feeds?.[0]?.hash;
+				let hash_server = parallel.find(p => p.status == 'fulfilled').value.hash;
+				console.log({hash_server})
 				if (hash_server) {
 					const url = new URL(location);
 					url.searchParams.delete("urls");
 					url.searchParams.set("hash", hash_server);
 					history.pushState({}, "", url);
+					this.params.hash = hash_server;
 				}
 
 				this.tasks = data.map(x => ({url: x.url, checked: false}))
@@ -1289,6 +1259,50 @@ function alpineRSS() {
 				.forEach( ([k, v]) => localStorage.removeItem(k) )
 			;
 
+			let options_editor = new JSONEditor(document.getElementById('json-editor'), {
+				schema: {
+					type: "object",
+					title: "RSS Options",
+					properties: {
+						hash: {
+							type: "string",
+							title: "Identity",
+							default: this.params.hash,
+						},
+						limit: {
+							type: "integer",
+							title: "Item per Feed",
+							enum: [
+								3, 6, 9, 12, 15, 20, 30
+							],
+							default: limit,
+						},
+						style: {
+							type: "string",
+							title: "Style",
+							enum: [
+								"default",
+								"noimg",
+							],
+							default: this.params.style || 'default',
+						},
+					}
+				},
+				theme: 'bootstrap4',
+				disable_collapse: true,
+				disable_edit_json: true,
+				disable_properties: true,
+				no_additional_properties: true,
+			});
+			document.getElementById('json-editor-submit').addEventListener('click', function () {
+				let opts = options_editor.getValue();
+
+				const url = new URL(location);
+				Object.entries(opts).forEach( ([k,v]) => url.searchParams.set(k, v))
+				history.pushState({}, "", url);
+			});
+			this.options_editor = options_editor;
+
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
 			// 	console.log('vector2', vector2);
@@ -1298,46 +1312,6 @@ function alpineRSS() {
 };
 
 navigator?.serviceWorker?.register?.('sw.js');
-
-var editor = new JSONEditor(document.getElementById('json-editor'), {
-	schema: {
-		type: "object",
-		title: "RSS Options",
-		properties: {
-			id: {
-				type: "string",
-				title: "Custom Indentify"
-			},
-			limit: {
-				type: "integer",
-				title: "Item per Feed",
-				enum: [
-					3, 6, 9, 12, 15, 20, 30
-				],
-				default: 6
-			},
-			style: {
-				type: "string",
-				title: "Style",
-				enum: [
-					"default",
-					"noimg",
-				]
-			},
-		}
-	},
-	theme: 'bootstrap4',
-	disable_collapse: true,
-	disable_edit_json: true,
-	disable_properties: true,
-	no_additional_properties: true,
-});
-
-// Hook up the submit button to log to the console
-document.getElementById('submit').addEventListener('click', function () {
-	// Get the value from the editor
-	console.log(editor.getValue());
-});
 </script>
 
  
