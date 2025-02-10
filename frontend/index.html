@@ -70,9 +70,9 @@
 			<template x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed bg-white shadow rounded mb-4"
 					x-cloak x-show="feed?.items?.length > 0"
-					x-intersect:once="feed.items.forEach(x => x.prefetchContent())"
+					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
 				>
-					<span class="relative flex size-3 p-1">
+					<span class="relative flex size-3">
 						<span class="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
 							:class="loading ? 'animate-ping' : 'invisible'"
 						></span>
@@ -1124,7 +1124,7 @@ function alpineRSS() {
 					.filter(x => x);
 				// console.log('hrefs', hrefs);
 
-				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent()));
+				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 			}, 0.5e3);
 
 			return {count};
