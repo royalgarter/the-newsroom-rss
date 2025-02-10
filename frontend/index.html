@@ -48,11 +48,13 @@
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3" />
+		<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js" />
 		
 		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
@@ -214,7 +216,7 @@
 				</section>
 			</template>
 
-			<!-- rss-options -->
+			<!-- rss-configuration -->
 			<div class="divide-y divide-slate-200">
 				<!-- rss-settings -->
 				<div x-data="{
@@ -230,7 +232,7 @@
 							:aria-expanded="expanded"
 							aria-controls="collapse-text-01"
 						>
-							<span>Your RSS List & Settings</span>
+							<span>Your RSS List</span>
 							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
@@ -347,6 +349,46 @@
 											@click="buildTasks()"
 										>
 											Build Feeds
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- rss-options -->
+				<div x-data="{ expanded: true }" class="py-2">
+					<h3 class="text-xl">
+						<button
+							id="collapse-title-02"
+							type="button"
+							class="flex items-center justify-between w-full text-left font-semibold py-2"
+							@click="expanded = !expanded"
+							:aria-expanded="expanded"
+							aria-controls="collapse-text-02"
+						>
+							<span>RSS Options</span>
+							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
+								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
+							</svg>
+						</button>
+					</h3>
+					<div
+						id="collapse-text-03"
+						role="region"
+						aria-labelledby="collapse-title-03"
+						class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+						:class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+						>
+						<div class="overflow-hidden">
+							<div class="w-full">
+								<div class="bg-white shadow-md rounded-lg overflow-hidden">
+									<div id='json-editor' class="px-4 py-2"></div>
+									<div class="bg-blue-500 px-4 py-3 sm:px-6 flex justify-end">
+										<button id='submit' class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow">
+											Submit
 										</button>
 									</div>
 								</div>
@@ -580,6 +622,34 @@
 	p.rss-article-content img {
 		padding: 1rem;
 		place-self: center;
+	}
+
+	.card-title {
+		@apply float-right;
+	}
+	.card-title > span {
+		@apply hidden;
+	}
+	.card-body {
+		@apply block items-center relative max-w-full;
+	}
+	.card-body row {
+		@apply flex items-center relative max-w-full w-full;
+	}
+	.form-group {
+		@apply px-3 py-4 text-base bg-gray-50 rounded flex items-center relative max-w-full;
+	}
+	.form-group label{
+		@apply mr-2 font-bold w-1/5 flex items-center relative;
+	}
+	.form-group .form-control{
+		@apply border focus:outline-none rounded max-w-full w-4/5 flex items-center relative text-center;
+	}
+	button.btn-secondary {
+		@apply cursor-pointer focus:outline-none uppercase text-xs text-gray-100 border-none bg-blue-600 p-2 mx-2 font-bold rounded shadow;
+	}
+	#json-editor #submit {
+		@apply cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow
 	}
 </style>
 
@@ -1228,6 +1298,46 @@ function alpineRSS() {
 };
 
 navigator?.serviceWorker?.register?.('sw.js');
+
+var editor = new JSONEditor(document.getElementById('json-editor'), {
+	schema: {
+		type: "object",
+		title: "RSS Options",
+		properties: {
+			id: {
+				type: "string",
+				title: "Custom Indentify"
+			},
+			limit: {
+				type: "integer",
+				title: "Item per Feed",
+				enum: [
+					3, 6, 9, 12, 15, 20, 30
+				],
+				default: 6
+			},
+			style: {
+				type: "string",
+				title: "Style",
+				enum: [
+					"default",
+					"noimg",
+				]
+			},
+		}
+	},
+	theme: 'bootstrap4',
+	disable_collapse: true,
+	disable_edit_json: true,
+	disable_properties: true,
+	no_additional_properties: true,
+});
+
+// Hook up the submit button to log to the console
+document.getElementById('submit').addEventListener('click', function () {
+	// Get the value from the editor
+	console.log(editor.getValue());
+});
 </script>
 
  
