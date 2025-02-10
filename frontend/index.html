@@ -91,6 +91,7 @@
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
+								<link rel="prefetch" as="document" :href="item.link">
 								<div class="rss-item bg-slate-50 rounded overflow-hidden shadow"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
@@ -101,7 +102,7 @@
 									<template x-if="!params?.style?.includes?.('noimg') && item.images?.[0]?.length">
 										<div class="rss-meta relative min-h-36">
 											<a class="rss-thumb" :href="item.link" target="_blank">
-												<link rel="prefetch" as="image" href="item.images[0]" />
+												<link rel="prefetch" as="image" :href="item.images[0]" />
 												<img class="rss-thumb w-full min-h-36 max-h-[320px]"
 													:loading="index <= 1 ? 'eager' : 'lazy'"
 													:fetchpriority="index <= 1 ? 'high' : 'low'"
