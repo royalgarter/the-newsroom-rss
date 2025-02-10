@@ -42,9 +42,14 @@
 		<meta name="twitter:image" :content="host + '/favicons/ios/512.png'">
 		<meta name="twitter:card" content="summary">
 		<meta name="twitter:creator" content="@royalgarter">
+
+		<link rel="preload" as="script" href="//unpkg.com/@tailwindcss/browser@4" />
+		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js" />
+		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
+		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3" />
 		
 		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
-
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
@@ -61,56 +66,73 @@
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
 
+			<!-- rss-feed -->
 			<template x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed bg-white shadow rounded mb-4"
 					x-cloak x-show="feed?.items?.length > 0"
-					x-intersect:once="feed.items.forEach(x => x.prefetchContent())"
+					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
 				>
-					<span class="relative flex size-3 p-1">
+					<span class="relative flex size-3">
 						<span class="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
 							:class="loading ? 'animate-ping' : 'invisible'"
 						></span>
 					</span>
 					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
-						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
+						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
+							<img class="self-center size-6 mr-2 md:mr-4"
+								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
+								onerror="this.src = '/favicons/ios/128.png';"
+								/>
+							<h2 class="text-indigo-950 text-xl font-bold mx-auto"
+								x-text="feed.title"></h2>
+						</span>
 					</a>
 					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
+							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
+								<link rel="prefetch" as="document" :href="item.link">
 								<div class="rss-item bg-slate-50 rounded overflow-hidden shadow"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
 									:class="item.viewed && 'opacity-90 italic'"
 								>
-									<div x-show="!params?.style?.includes?.('noimg') && item.images?.[0]?.length" class="rss-meta relative min-h-36">
-										<a class="rss-thumb" :href="item.link" target="_blank">
-											<img class="rss-thumb w-full min-h-36 max-h-[320px]"
-												loading="lazy" 
-												:src="item.images[0]"
-												:domain="new URL(feed.link).hostname"
-												onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
-												:alt="item.title">
-											<div
-												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
-											</div>
-										</a>
-										<a class="rss-tags" :href="item.link" target="_blank">
-											<div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out"
-												x-html="(timeSince(new Date(item.published)) + ' ago')
-													|| new Date(item.published).toString().split(' GMT').shift() 
-													|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()
-											">
-											</div>
-										</a>
+									<!-- thumbnail -->
+									<template x-if="!params?.style?.includes?.('noimg') && item.images?.[0]?.length">
+										<div class="rss-meta relative min-h-36">
+											<a class="rss-thumb" :href="item.link" target="_blank">
+												<link rel="prefetch" as="image" :href="item.images[0]" />
+												<img class="rss-thumb w-full min-h-36 max-h-[320px]"
+													:loading="index <= 1 ? 'eager' : 'lazy'"
+													:fetchpriority="index <= 1 ? 'high' : 'low'"
+													:src="item.images[0]"
+													:alt="item.title"
+													:domain="new URL(feed.link).hostname"
+													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
+												/>
+												<div
+													class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+												</div>
+											</a>
+											<a class="rss-tags" :href="item.link" target="_blank">
+												<div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out"
+													x-html="(timeSince(new Date(item.published)) + ' ago')
+														|| new Date(item.published).toString().split(' GMT').shift()
+														|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()
+												">
+												</div>
+											</a>
 
-										<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
-											<div
-												class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
-												<small class="break-words text-center" x-html="item.author?.toString().substr(0, 12).trim()"></small>
-											</div>
-										</a>
-									</div>
+											<a class="rss-author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
+												<div
+													class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+													<small class="break-words text-center" x-html="item.author?.toString().substr(0, 12).trim()"></small>
+												</div>
+											</a>
+										</div>
+									</template>
+									<!-- title & description -->
 									<div class="p-4">
 										<span x-show="item.viewed" class="py-1 text-xs font-regular text-gray-400 mr-1 flex flex-row items-center">
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -130,6 +152,7 @@
 										>
 										</p>
 									</div>
+									<!-- item article -->
 									<div :id="'rss-item-article-' + index + '-' + itemIndex">
 										<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggleReadmore()" class="cursor-pointer px-4 py-2 flex flex-row items-center">
 											<span :class="item.read_more ? 'text-fuchsia-700' : 'text-teal-700'" class="py-1 text-xs font-regular flex flex-row items-center">
@@ -144,7 +167,7 @@
 										</div>
 										<template x-if="item.read_more">
 											<div :class="item.read_more ? 'block' : 'hidden'"
-												class="block sm:hidden px-4 py-2 flex flex-row items-center bg-amber-50"
+												class="block sm:hidden px-4 py-2 flex flex-row items-center bg-amber-50 transition-all transition-discrete"
 												x-intersect:leave="false && (item.read_more = false)"
 											>
 												<span class="py-1 text-xs font-regular text-gray-600 flex flex-row items-center">
@@ -158,9 +181,10 @@
 							</template>
 						</div>
 						
+						<!-- feed article -->
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
-								class="hidden sm:block pt-4 grid grid-cols-1 gap-6 shadow"
+								class="hidden sm:block pt-4 grid grid-cols-1 gap-6 shadow transition-all transition-discrete"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
 								<div class="rounded overflow-hidden shadow bg-amber-50">
@@ -191,8 +215,13 @@
 				</section>
 			</template>
 
+			<!-- rss-options -->
 			<div class="divide-y divide-slate-200">
-				<div x-data="{ expanded: (document.querySelectorAll('.rss-task-item').length == 0) }" class="py-2">
+				<!-- rss-settings -->
+				<div x-data="{
+						expanded: (document.querySelectorAll('.rss-task-item').length == 0 && location.search.search(/hash=[^\s]+/) >= 0)
+					}"
+					class="py-2">
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-01"
@@ -326,6 +355,8 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- rss-declarations -->
 				<div x-data="{ expanded: false }" class="py-2">
 					<h3 class="text-xl">
 						<button
@@ -377,7 +408,7 @@
 
 										<div class="basis-full h-0"></div>
 
-										<div class="bg-stone-200 hidden peer-checked/tab-one:block p-2 w-full">
+										<div class="bg-stone-200 hidden peer-checked/tab-one:block p-2 w-full transition-all transition-discrete">
 											<div class="container mx-auto p-6 max-w-4xl">
 												<p class="text-base mb-4">
 													<strong class="font-bold">Reclaim Your Internet: Why You Need RSS in Your Life</strong>
@@ -407,7 +438,7 @@
 												<p class="text-base mb-4">In a world of information overload, RSS is a lifeline. It's a tool for reclaiming your attention, fostering informed citizenship, and connecting with the content that truly matters. Don't let the algorithms win. Take control of your internet experience and discover the power of RSS. You won't regret it.</p>
 											</div>
 										</div>
-										<div class="bg-stone-200 hidden peer-checked/tab-two:block p-2 w-full">
+										<div class="bg-stone-200 hidden peer-checked/tab-two:block p-2 w-full transition-all transition-discrete">
 											<div class="container mx-auto p-6 max-w-4xl">
 												<p class="text-base mb-4">
 													<strong class="font-bold">(Clears throat)</strong>
@@ -439,7 +470,7 @@
 												<p class="text-base mb-4">So, tonight, I urge you to consider RSS. It may not be the sexiest topic, but it is, I believe, a vital one. It's a small step, perhaps, but a step in the right direction. A step towards a more informed, a more engaged, a more… civilized society.</p>
 											</div>
 										</div>
-										<div class="bg-stone-200 hidden peer-checked/tab-three:block p-2 w-full">
+										<div class="bg-stone-200 hidden peer-checked/tab-three:block p-2 w-full transition-all transition-discrete">
 											<div class="container mx-auto p-6 max-w-4xl">
 												<p class="text-base mb-4">
 													<strong class="font-bold">Goddammit, Use RSS! Are You People Trying to Stay Uncivilized?</strong>
@@ -469,7 +500,7 @@
 												<p class="text-base mb-4">Look, I'm not asking you to cure cancer. I'm asking you to use your goddamn brains. The internet is a powerful tool, but it can also make you stupid. RSS is the antidote. So get off your asses, download a reader, and start reading. The world isn't going to wait for you to catch up. Now get out of my office!</p>
 											</div>
 										</div>
-										<div class="bg-stone-200 hidden peer-checked/tab-four:block p-2 w-full">
+										<div class="bg-stone-200 hidden peer-checked/tab-four:block p-2 w-full transition-all transition-discrete">
 											<div class="container mx-auto p-6 max-w-4xl">
 												<p class="text-base mb-4">
 													<strong class="font-bold">Easy Guide to Getting News from Your Favorite Paper with RSS</strong>
@@ -554,662 +585,674 @@
 </style>
 
 <script>
-	function alpineHead() {
-		return {
-			title: 'The Newsroom RSS',
-			description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
-			host: '//rss.phamthanh.me',
-		}
-	};
+function alpineHead() {
+	return {
+		title: 'The Newsroom RSS',
+		description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
+		host: '//rss.phamthanh.me',
+	}
+};
 
-	function alpineRSS() {
-		const version = 'v1';
+function alpineRSS() {
+	const version = 'v1';
 
-		return {
-			feeds: [],
-			loading: false,
-			error: null,
-			params: {},
+	return {
+		feeds: [],
+		loading: false,
+		error: null,
+		params: {},
 
-			input: '',
-			tasks: [],
-			drag: null,
-			drop: null,
+		input: '',
+		tasks: [],
+		drag: null,
+		drop: null,
 
-			persona: null,
+		persona: null,
 
-			K: {
-				LIMIT: 6,
+		K: {
+			LIMIT: 6,
 
-				DEFAULTS: [
-					'https://feeds.bbci.co.uk/news/rss.xml',
-					'https://www.reddit.com/r/worldnews/.rss',
-					'https://feeds.nbcnews.com/feeds/worldnews',
-					'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
-				],
+			DEFAULTS: [
+				'https://feeds.bbci.co.uk/news/rss.xml',
+				'https://www.reddit.com/r/worldnews/.rss',
+				'https://feeds.nbcnews.com/feeds/worldnews',
+				'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
+			],
 
-				viewed: version + '_viewed_',
-				tasks: version + '_tasks',
-				feeds: version + '_feeds',
-				cache: version + '_cache',
+			viewed: version + '_viewed_',
+			tasks: version + '_tasks',
+			feeds: version + '_feeds',
+			cache: version + '_cache',
 
-				persona: version + '_persona',
-			},
+			persona: version + '_persona',
+		},
 
-			TRIGGER: {
-				LIMIT: 20e3, // time to read article
-			},
+		TRIGGER: {
+			LIMIT: 20e3, // time to read article
+		},
 
-			CACHE: {},
+		CACHE: {},
 
-			async testLLM() {
-				let list_sentences = [
-					'Will it snow tomorrow?',
-					'Recently a lot of hurricanes have hit the US',
-					'Global warming is real',
+		async testLLM() {
+			let list_sentences = [
+				'Will it snow tomorrow?',
+				'Recently a lot of hurricanes have hit the US',
+				'Global warming is real',
 
-					'An apple a day, keeps the doctors away',
-					'Eating strawberries is healthy',
+				'An apple a day, keeps the doctors away',
+				'Eating strawberries is healthy',
 
-					'what is your age?',
-					'How old are you?',
-					'How are you?',
+				'what is your age?',
+				'How old are you?',
+				'How are you?',
 
-					'The dog bit Johnny',
-					'Johnny bit the dog',
+				'The dog bit Johnny',
+				'Johnny bit the dog',
 
-					'The cat ate the mouse',
-					'The mouse ate the cat',
-				];
-				this.get_embeddings(list_sentences, (embeddings) => {
-					let matrix = this.cosine_similarity_matrix(embeddings);
+				'The cat ate the mouse',
+				'The mouse ate the cat',
+			];
+			this.get_embeddings(list_sentences, (embeddings) => {
+				let matrix = this.cosine_similarity_matrix(embeddings);
 
-					console.log(embeddings)
-					console.log(matrix)
+				console.log(embeddings)
+				console.log(matrix)
+			});
+		},
+		get_embeddings(list_sentences, callback) {
+			use.load().then(model => {
+				model.embed(list_sentences).then(embeddings => {
+					callback(embeddings?.arraySync?.());
 				});
-			},
-			get_embeddings(list_sentences, callback) {
-				use.load().then(model => {
-					model.embed(list_sentences).then(embeddings => {
-						callback(embeddings?.arraySync?.());
-					});
-				});
-			},
-			dot(a, b) {
-				var hasOwnProperty = Object.prototype.hasOwnProperty;
-				var sum = 0;
-				for (var key in a) {
-					if (hasOwnProperty.call(a, key) && hasOwnProperty.call(b, key)) {
-						sum += a[key] * b[key]
+			});
+		},
+		dot(a, b) {
+			var hasOwnProperty = Object.prototype.hasOwnProperty;
+			var sum = 0;
+			for (var key in a) {
+				if (hasOwnProperty.call(a, key) && hasOwnProperty.call(b, key)) {
+					sum += a[key] * b[key]
+				}
+			}
+			return sum
+		},
+		similarity(a, b) {
+			var magnitudeA = Math.sqrt(this.dot(a, a));
+			var magnitudeB = Math.sqrt(this.dot(b, b));
+			if (magnitudeA && magnitudeB)
+				return this.dot(a, b) / (magnitudeA * magnitudeB);
+			else return false
+		},
+		cosine_similarity_matrix(matrix) {
+			let cosine_similarity_matrix = [];
+			for (let i = 0; i < matrix.length; i++) {
+				let row = [];
+				for (let j = 0; j < i; j++) {
+					row.push(cosine_similarity_matrix[j][i]);
+				}
+				row.push(1);
+				for (let j = (i + 1); j < matrix.length; j++) {
+					row.push(this.similarity(matrix[i], matrix[j]));
+				}
+				cosine_similarity_matrix.push(row);
+			}
+			return cosine_similarity_matrix;
+		},
+		calculateMeanVector(vectors) {
+			if (!vectors || vectors.length === 0) {
+				return null; // Handle empty input
+			}
+
+			const numVectors = vectors.length;
+			const vectorLength = vectors[0].length;
+
+			// Check for consistent vector lengths and valid data types
+			for (let i = 1; i < numVectors; i++) {
+				if (vectors[i].length !== vectorLength) {
+					return null; // Handle inconsistent vector lengths
+				}
+			}
+
+			for (let i = 0; i < numVectors; i++) {
+				for (let j = 0; j < vectorLength; j++) {
+					if (typeof vectors[i][j] !== 'number' || isNaN(vectors[i][j])) {
+						return null; // Handle non-numeric data
 					}
 				}
-				return sum
-			},
-			similarity(a, b) {
-				var magnitudeA = Math.sqrt(this.dot(a, a));
-				var magnitudeB = Math.sqrt(this.dot(b, b));
-				if (magnitudeA && magnitudeB)
-					return this.dot(a, b) / (magnitudeA * magnitudeB);
-				else return false
-			},
-			cosine_similarity_matrix(matrix) {
-				let cosine_similarity_matrix = [];
-				for (let i = 0; i < matrix.length; i++) {
-					let row = [];
-					for (let j = 0; j < i; j++) {
-						row.push(cosine_similarity_matrix[j][i]);
-					}
-					row.push(1);
-					for (let j = (i + 1); j < matrix.length; j++) {
-						row.push(this.similarity(matrix[i], matrix[j]));
-					}
-					cosine_similarity_matrix.push(row);
+			}
+
+			// Calculate the sum of each component
+			const sumVector = new Array(vectorLength).fill(0);
+			for (let i = 0; i < numVectors; i++) {
+				for (let j = 0; j < vectorLength; j++) {
+					sumVector[j] += vectors[i][j];
 				}
-				return cosine_similarity_matrix;
-			},
-			calculateMeanVector(vectors) {
-				if (!vectors || vectors.length === 0) {
-					return null; // Handle empty input
-				}
+			}
 
-				const numVectors = vectors.length;
-				const vectorLength = vectors[0].length;
+			// Calculate the mean for each component
+			const meanVector = sumVector.map(sum => sum / numVectors);
 
-				// Check for consistent vector lengths and valid data types
-				for (let i = 1; i < numVectors; i++) {
-					if (vectors[i].length !== vectorLength) {
-						return null; // Handle inconsistent vector lengths
-					}
-				}
+			return meanVector;
+		},
+		updateMeanVector(mean, numVectors, newVector, weight=1) {
+			if (!mean || numVectors <= 0 || !newVector ) {
+				console.log('Handle invalid input')
+				return null;
+			}
 
-				for (let i = 0; i < numVectors; i++) {
-					for (let j = 0; j < vectorLength; j++) {
-						if (typeof vectors[i][j] !== 'number' || isNaN(vectors[i][j])) {
-							return null; // Handle non-numeric data
-						}
-					}
-				}
+			const vectorLength = mean.length;
 
-				// Calculate the sum of each component
-				const sumVector = new Array(vectorLength).fill(0);
-				for (let i = 0; i < numVectors; i++) {
-					for (let j = 0; j < vectorLength; j++) {
-						sumVector[j] += vectors[i][j];
-					}
-				}
+			if (newVector.length !== vectorLength) {
+				console.log('Handle inconsistent vector lengths', newVector.length, vectorLength, mean)
+				return null;
+			}
 
-				// Calculate the mean for each component
-				const meanVector = sumVector.map(sum => sum / numVectors);
-
-				return meanVector;
-			},
-			updateMeanVector(mean, numVectors, newVector, weight=1) {
-				if (!mean || numVectors <= 0 || !newVector ) {
-					console.log('Handle invalid input')
-					return null; 
-				}
-
-				const vectorLength = mean.length;
-
-				if (newVector.length !== vectorLength) {
-					console.log('Handle inconsistent vector lengths', newVector.length, vectorLength, mean)
+			// Check for valid data types (numbers) in mean and newVector
+			for (let i = 0; i < vectorLength; i++) {
+				if (typeof mean[i] !== 'number' || isNaN(mean[i])
+					|| typeof newVector[i] !== 'number' || isNaN(newVector[i])) {
+					console.log('Handle non-numeric data')
 					return null;
 				}
+			}
 
-				// Check for valid data types (numbers) in mean and newVector
-				for (let i = 0; i < vectorLength; i++) {
-					if (typeof mean[i] !== 'number' || isNaN(mean[i]) 
-						|| typeof newVector[i] !== 'number' || isNaN(newVector[i])) {
-						console.log('Handle non-numeric data')
-						return null;
-					}
-				}
+			const newNumVectors = numVectors + weight;
+			const updatedMean = mean.map((meanComponent, index) => {
+				return ((meanComponent * numVectors) + (newVector[index] * weight)) / newNumVectors;
+			});
 
-				const newNumVectors = numVectors + weight;
-				const updatedMean = mean.map((meanComponent, index) => {
-					return ((meanComponent * numVectors) + (newVector[index] * weight)) / newNumVectors;
-				});
+			return updatedMean;
+		},
 
-				return updatedMean;
-			},
+		triggerIntersect(type, link) {
+			if (!link) return console.log('ELINK');
 
-			triggerIntersect(type, link) {
-				if (!link) return console.log('ELINK');
+			this.TRIGGER[link] = this.TRIGGER[link] || {};
 
-				this.TRIGGER[link] = this.TRIGGER[link] || {};
+			let now = new Date();
 
-				let now = new Date();
+			switch (type) {
+				case 'full'://case 'enter':
+					this.TRIGGER[link].tic = Math.min(now, this.TRIGGER[link].tic || now);
+				break;
+				case 'leave':
+					this.TRIGGER[link].toc = Math.max(now, this.TRIGGER[link].toc || now);
+					// this.TRIGGER[link].tic = Math.min(this.TRIGGER[link].toc, this.TRIGGER[link].tic || now);
 
-				switch (type) {
-					case 'full'://case 'enter':
-						this.TRIGGER[link].tic = Math.min(now, this.TRIGGER[link].tic || now);
-					break;
-					case 'leave':
-						this.TRIGGER[link].toc = Math.max(now, this.TRIGGER[link].toc || now);
-						// this.TRIGGER[link].tic = Math.min(this.TRIGGER[link].toc, this.TRIGGER[link].tic || now);
+					if (this.TRIGGER[link].tic && this.TRIGGER[link].toc) {
+						let delta = this.TRIGGER[link].toc - this.TRIGGER[link].tic;
 
-						if (this.TRIGGER[link].tic && this.TRIGGER[link].toc) {
-							let delta = this.TRIGGER[link].toc - this.TRIGGER[link].tic;
+						this.TRIGGER[link].sum = this.TRIGGER[link].sum || 0;
+						this.TRIGGER[link].sum += delta;
 
-							this.TRIGGER[link].sum = this.TRIGGER[link].sum || 0; 
-							this.TRIGGER[link].sum += delta;
+						// console.log('delta', delta)
 
-							// console.log('delta', delta)
+						if (this.TRIGGER[link].sum > this.TRIGGER.LIMIT) {
+							// console.log(' > viewed', link);
 
-							if (this.TRIGGER[link].sum > this.TRIGGER.LIMIT) {
-								// console.log(' > viewed', link);
+							localStorage.setItem(this.K.viewed + link, now.toString().split(' GMT').shift());
 
-								localStorage.setItem(this.K.viewed + link, now.toString().split(' GMT').shift());
+							this.feeds.forEach(feed => {
+								let found = feed.items.find(x => x.link == link);
 
-								this.feeds.forEach(feed => {
-									let found = feed.items.find(x => x.link == link);
+								if (!found) return;
 
-									if (!found) return;
-									
-									found.viewed = localStorage.getItem(this.K.viewed + link);
-								});
-							} else {
-								this.TRIGGER[link].tic = this.TRIGGER[link].toc;
-								// console.log(' > reset', link);
-							}
+								found.viewed = localStorage.getItem(this.K.viewed + link);
+							});
+						} else {
+							this.TRIGGER[link].tic = this.TRIGGER[link].toc;
+							// console.log(' > reset', link);
 						}
-					break;
-				}
-			},
-
-			async clientFetch(url) {
-				try {
-					const response = await fetch(url.replaceAll(' ', '+'), {redirect: 'follow'});
-
-					if (!response.ok || response.status >= 400) return {url};
-
-					const content = await response.text();
-
-					return {url, content};
-				} catch (error) {
-					return {url};
-				}
-			},
-
-			async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=0}) {
-				if (this.loading) return;
-
-				this.loading = true;
-				this.error = null;
-
-				try {
-					let urls = this.params?.urls?.length ? this.params?.urls?.split(',') : [];
-
-					let data = urls?.length ? await Promise.all(urls.map(this.clientFetch)) : [];
-
-					if (!this.params?.hash && data.length) {
-						let hash_local = await this.digest(JSON.stringify(data) + Date.now());
-						this.params.hash = hash_local.slice(0, 6);
 					}
+				break;
+			}
+		},
 
-					console.log('data', data);
+		async clientFetch(url) {
+			try {
+				const response = await fetch(url.replaceAll(' ', '+'), {redirect: 'follow'});
 
-					let parallel = await Promise.all(data.map(item => new Promise(resolve => {
+				if (!response.ok || response.status >= 400) return {url};
+
+				const content = await response.text();
+
+				return {url, content};
+			} catch (error) {
+				return {url};
+			}
+		},
+
+		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=0}) {
+			if (this.loading) return;
+
+			this.loading = true;
+			this.error = null;
+
+			try {
+				let urls = this.params?.urls?.length ? this.params?.urls?.split(',') : this.tasks?.map(x => x.url);
+
+				console.log('urls', urls);
+
+				let data = urls?.length ? await Promise.all(urls.map(this.clientFetch)) : [];
+
+				if (!this.params?.hash && data.length) {
+					let hash_local = await this.digest(JSON.stringify(data) + Date.now());
+					this.params.hash = hash_local.slice(0, 6);
+				}
+
+				console.log('data', data);
+
+				let parallel = await Promise.allSettled(
+					data.map(item =>
 						fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
-							method: 'POST', 
+							method: 'POST',
 							headers: {"content-type": "application/json"},
+							signal: AbortSignal.timeout(20e3),
 							body: JSON.stringify([item]),
 						})
 						.then(resp => resp.json())
-						.then(json => console.log(item.url, json) && resolve(json))
-						.catch(ex => console.log(ex) && resolve())
-					})));
-
-					console.log('parallel', parallel);
-
-					this.feeds = parallel.flat().filter(x => x);
-
-					/*const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
-						method: 'POST', 
-						headers: {"content-type": "application/json"},
-						body: JSON.stringify(data),
-					});
-					this.feeds = await response.json();*/
-
-					this.loading = false;
-
-					if (!this.feeds.length) return console.log("EEMPTYFEEDS");
-
-					let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
-					localStorage.setItem(this.K.feeds, JSON.stringify(this.feeds));
-
-					if (limit_adjust == 0 && count > 0) {
-						this.loadFeedsWithContent({limit, limit_adjust: count});
-					}
-
-					let hash_server = this.feeds?.[0]?.hash;
-					if (hash_server) {
-						const url = new URL(location);
-						url.searchParams.delete("urls");
-						url.searchParams.set("hash", hash_server);
-						history.pushState({}, "", url);
-					}
-
-					this.tasks = data.map(x => ({url: x.url, checked: false}))
-					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
-
-					console.log(this.tasks);
-
-				} catch (error) {
-					console.error("Error fetching feeds:", error);
-					this.error = "Failed to load feeds. Please check the server logs for more details";
-					this.loading = false;
-				}
-			},
-
-			async digest(txt, algo='SHA-256') {
-				return Array.from(
-					new Uint8Array(await crypto.subtle.digest(algo, new TextEncoder().encode(txt))),
-					(byte) => byte.toString(16).padStart(2, '0')
-				).join('');
-			},
-
-			isElementInViewport(el) {
-				if (typeof jQuery === "function" && el instanceof jQuery) {
-					el = el[0];
-				}
-
-				let rect = el.getBoundingClientRect();
-
-				return (
-					rect.top >= 0 &&
-					rect.left >= 0 &&
-					rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /* or $(window).height() */
-					rect.right <= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
+					)
 				);
-			},
 
-			timeSince(date) {
-				let seconds = Math.floor((new Date() - date) / 1000);
+				console.log('parallel', parallel);
 
-				let interval = seconds / 31536000;
+				this.feeds = parallel.filter(p => p.status=='fulfilled').map(p => p.value)
+								.flat().filter(x => x);
 
-				if (interval > 1) {
-					return Math.floor(interval) + " yr";
+				/*const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
+					method: 'POST',
+					headers: {"content-type": "application/json"},
+					body: JSON.stringify(data),
+				});
+				this.feeds = await response.json();*/
+
+				this.loading = false;
+
+				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
+
+				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
+				localStorage.setItem(this.K.feeds, JSON.stringify(this.feeds));
+
+				if (limit_adjust == 0 && count > 0) {
+					this.loadFeedsWithContent({limit, limit_adjust: count});
 				}
-				interval = seconds / 2592000;
-				if (interval > 1) {
-					return Math.floor(interval) + " mth";
+
+				let hash_server = this.feeds?.[0]?.hash;
+				if (hash_server) {
+					const url = new URL(location);
+					url.searchParams.delete("urls");
+					url.searchParams.set("hash", hash_server);
+					history.pushState({}, "", url);
 				}
-				interval = seconds / 86400;
-				if (interval > 1) {
-					return Math.floor(interval) + " day";
-				}
-				interval = seconds / 3600;
-				if (interval > 1) {
-					return Math.floor(interval) + " hr";
-				}
-				interval = seconds / 60;
-				if (interval > 1) {
-					return Math.floor(interval) + " min";
-				}
-				return Math.floor(seconds) + " sec";
-			},
 
-			postProcessFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
-				let count = 0;
+				this.tasks = data.map(x => ({url: x.url, checked: false}))
+				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 
-				this.feeds.forEach((feed, feedIdx) => {
-					if (!feed?.items?.length) return;
+				console.log(this.tasks);
 
-					feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
+			} catch (error) {
+				console.error("Error fetching feeds:", error);
+				this.error = "Failed to load feeds. Please check the server logs for more details";
+				this.loading = false;
+			}
+		},
 
-					let len_full = feed.items.length;
+		async digest(txt, algo='SHA-256') {
+			return Array.from(
+				new Uint8Array(await crypto.subtle.digest(algo, new TextEncoder().encode(txt))),
+				(byte) => byte.toString(16).padStart(2, '0')
+			).join('');
+		},
 
-					feed.items = feed.items.filter(item => {
-						let {link} = item;
+		isElementInViewport(el) {
+			if (typeof jQuery === "function" && el instanceof jQuery) {
+				el = el[0];
+			}
 
-						if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
-							item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
-						}
+			let rect = el.getBoundingClientRect();
 
-						item.description = item.description
-							?.replace(/\<\/?[^>]*\>/g, '\n\n')
-							.replace(/\n\n+/g, '\n\n')
-							.replace(/\s+/g, ' ')
-							.substr(0, 400)
-							.trim() 
-						|| '';
+			return (
+				rect.top >= 0 &&
+				rect.left >= 0 &&
+				rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /* or $(window).height() */
+				rect.right <= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
+			);
+		},
 
-						if (len_full <= limit) return true;
+		timeSince(date) {
+			let seconds = Math.floor((new Date() - date) / 1000);
 
-						let viewed = localStorage.getItem(this.K.viewed + link);
+			let interval = seconds / 31536000;
 
-						if (viewed) return false;
+			if (interval > 1) {
+				return Math.floor(interval) + " yr";
+			}
+			interval = seconds / 2592000;
+			if (interval > 1) {
+				return Math.floor(interval) + " mth";
+			}
+			interval = seconds / 86400;
+			if (interval > 1) {
+				return Math.floor(interval) + " day";
+			}
+			interval = seconds / 3600;
+			if (interval > 1) {
+				return Math.floor(interval) + " hr";
+			}
+			interval = seconds / 60;
+			if (interval > 1) {
+				return Math.floor(interval) + " min";
+			}
+			return Math.floor(seconds) + " sec";
+		},
 
-						// console.log(' > skip', link)
+		postProcessFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
+			let count = 0;
 
-						return true;
-					});
+			this.feeds.forEach((feed, feedIdx) => {
+				if (!feed?.items?.length) return;
 
-					let len_filter = feed.items.length;
-					let delta = Math.abs(len_full - len_filter);
-					count = Math.max(count, delta);
+				feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 
-					feed.items = feed.items.slice(0, limit);
+				let len_full = feed.items.length;
 
-					feed.items.forEach(item => {
-						item.read_more = false;
-						item.prefetching = false;
+				feed.items = feed.items.filter(item => {
+					let {link} = item;
 
-						item.toggleReadmore = () => {
-							item.read_more = !item.read_more;
+					if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
+						item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
+					}
 
-							if (item.read_more) {
-								feed.read_more_item = item;
-								feed.read_more = true;
-								feed.article = item.article;
+					item.description = item.description
+						?.replace(/\<\/?[^>]*\>/g, '\n\n')
+						.replace(/\n\n+/g, '\n\n')
+						.replace(/\s+/g, ' ')
+						.substr(0, 400)
+						.trim()
+					|| '';
 
-								feed.items.filter(x => x.link != item.link).forEach(x => x.read_more = false);
+					if (len_full <= limit) return true;
 
-								localStorage.setItem(this.K.viewed + item.link, new Date().toString().split(' GMT').shift());
+					let viewed = localStorage.getItem(this.K.viewed + link);
 
-								setTimeout(() => {
-									let fa = document.querySelector('#rss-feed-article-' + feedIdx);
-									
-									if (window.getComputedStyle(fa).display == 'none') return;
+					if (viewed) return false;
 
-									fa.scrollIntoView(true)
-								}, 0.1e3)
+					// console.log(' > skip', link)
 
-								let intervalImg = setInterval(() => {
-									let doms = [...document.querySelectorAll('p.rss-article-content img')]
-										.filter(x => x.complete && (x.naturalHeight == 0));
-
-									if (doms.length == 0) return clearInterval(intervalImg);
-
-									doms.forEach(x => x.remove())
-								}, 0.3e3);
-
-								item.updatePersona?.();
-							} else {
-								feed.read_more = false;
-								feed.read_more_item.read_more = false;
-
-								setTimeout(() => {
-									let ia = document.querySelector(`a[href="${item.link}"]`);
-									
-									if (window.getComputedStyle(ia).display == 'none') return;
-
-									ia.scrollIntoView(true)
-								}, 0.1e3)
-							}
-						};
-
-						item.prefetchContent = async () => {
-							// console.log('prefetchContent', item.title);
-
-							if (!auto_fetch_content || item.article?.content || item.prefetching) return;
-							item.prefetching = true;
-
-							let resp = null;
-							let opts = {redirect: 'follow'};
-
-							try {
-								resp = await fetch(item.link, opts);
-							} catch (ex) {
-								resp = await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null);
-							}
-
-							// item.prefetching = false;
-
-							if (resp.status >= 400) return /*console.log(item.link, resp)*/;
-
-							let html = await resp?.text?.().catch(null);
-
-							if (!html) return;
-
-							let doc = new DOMParser().parseFromString(html, "text/html");
-							item.article = new Readability(doc).parse();
-
-							let content = item.article?.content;
-							if (content?.length) {
-								item.article.content = content
-									.trim()
-									.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
-									.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')
-									.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
-									.replace(/(\<br\>\s*\n*)+/gi, '<br>')
-									.replace(/\s+/gi, ' ');
-							}
-						};
-
-						if (feedIdx <= 1) item.prefetchContent();
-
-						item.updatePersona = async () => {
-							item.vector = item.vector || await this.embedSentence(item.title);
-
-							// console.log('updatePersona', item.vector)
-
-							if (item.vector) {
-								// console.log('currentPersona', this.persona);
-
-								if (!Array.isArray(this.persona?.vector) || (item.vector.length != this.persona.vector.length)) {
-									this.persona = {vector: item.vector, count: 1};
-									localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
-								} else {
-									let similarity = this.similarity(item.vector, this.persona.vector);
-									console.log('similarity', similarity);
-
-									let newVector = this.updateMeanVector(this.persona.vector, this.persona.count, item.vector);
-									// console.log('newVector', newVector);
-									
-									if (newVector) {
-										this.persona = 	{vector: newVector, count: this.persona.count + 1};
-										localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
-									}
-								}
-
-								// console.log('updatePersona', this.persona);
-							}
-						};
-
-						this.embedSentence(item.title).then(v => {
-							if (!v) return;
-							
-							item.vector = v;
-
-							if (Array.isArray(this.persona?.vector)) {
-								let similarity = this.similarity(item.vector, this.persona.vector);
-								
-								item.author = similarity ? Number(similarity).toFixed(2) : item.author;
-							}
-						});
-					})
+					return true;
 				});
 
-				setTimeout(() => {
-					let hrefs = [...document.querySelectorAll('a.rss-thumb,a.rss-title')]
-						.filter(x => this.isElementInViewport(x))
-						.map(a => a.href)
-						.filter(x => x);
-					// console.log('hrefs', hrefs);
+				let len_filter = feed.items.length;
+				let delta = Math.abs(len_full - len_filter);
+				count = Math.max(count, delta);
 
-					this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent()));
-				}, 0.5e3);
+				feed.items = feed.items.slice(0, limit);
 
-				return {count};
-			},
+				feed.items.forEach(item => {
+					item.read_more = false;
+					item.prefetching = false;
 
-			addNewTask() {
-				try {
-					this.input?.split(',').forEach(x => {
-						let url = new URL(x).toString();
+					item.toggleReadmore = () => {
+						item.read_more = !item.read_more;
 
-						let found = this.tasks.find(x => x?.url == url);
+						if (item.read_more) {
+							feed.read_more_item = item;
+							feed.read_more = true;
+							feed.article = item.article;
 
-						if (found) return;
+							feed.items.filter(x => x.link != item.link).forEach(x => x.read_more = false);
 
-						this.tasks.push({ url, checked: false });
+							localStorage.setItem(this.K.viewed + item.link, new Date().toString().split(' GMT').shift());
+
+							setTimeout(() => {
+								let fa = document.querySelector('#rss-feed-article-' + feedIdx);
+
+								if (window.getComputedStyle(fa).display == 'none') return;
+
+								fa.scrollIntoView(true)
+							}, 0.1e3)
+
+							let intervalImg = setInterval(() => {
+								let doms = [...document.querySelectorAll('p.rss-article-content img')]
+									.filter(x => x.complete && (x.naturalHeight == 0));
+
+								if (doms.length == 0) return clearInterval(intervalImg);
+
+								doms.forEach(x => x.remove())
+							}, 0.3e3);
+
+							item.updatePersona?.();
+						} else {
+							feed.read_more = false;
+							feed.read_more_item.read_more = false;
+
+							setTimeout(() => {
+								let ia = document.querySelector(`a[href="${item.link}"]`);
+
+								if (window.getComputedStyle(ia).display == 'none') return;
+
+								ia.scrollIntoView(true)
+							}, 0.1e3)
+						}
+					};
+
+					item.prefetchContent = async () => {
+						// console.log('prefetchContent', item.title);
+
+						if (!auto_fetch_content || item.article?.content || item.prefetching) return;
+						item.prefetching = true;
+
+						let resp = null;
+						let opts = {redirect: 'follow'};
+
+						try {
+							resp = await fetch(item.link, opts);
+						} catch (ex) {
+							resp = await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null);
+						}
+
+						// item.prefetching = false;
+
+						if (resp.status >= 400) return /*console.log(item.link, resp)*/;
+
+						let html = await resp?.text?.().catch(null);
+
+						if (!html) return;
+
+						let doc = new DOMParser().parseFromString(html, "text/html");
+						item.article = new Readability(doc).parse();
+
+						let content = item.article?.content;
+						if (content?.length) {
+							item.article.content = content
+								.trim()
+								.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
+								.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')
+								.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
+								.replace(/(\<br\>\s*\n*)+/gi, '<br>')
+								.replace(/\s+/gi, ' ');
+						}
+					};
+
+					if (feedIdx <= 1) item.prefetchContent();
+
+					item.updatePersona = async () => {
+						item.vector = item.vector || await this.embedSentence(item.title);
+
+						// console.log('updatePersona', item.vector)
+
+						if (item.vector) {
+							// console.log('currentPersona', this.persona);
+
+							if (!Array.isArray(this.persona?.vector) || (item.vector.length != this.persona.vector.length)) {
+								this.persona = {vector: item.vector, count: 1};
+								localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
+							} else {
+								let similarity = this.similarity(item.vector, this.persona.vector);
+								console.log('similarity', similarity);
+
+								let newVector = this.updateMeanVector(this.persona.vector, this.persona.count, item.vector);
+								// console.log('newVector', newVector);
+
+								if (newVector) {
+									this.persona = 	{vector: newVector, count: this.persona.count + 1};
+									localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
+								}
+							}
+
+							// console.log('updatePersona', this.persona);
+						}
+					};
+
+					this.embedSentence(item.title).then(v => {
+						if (!v) return;
+
+						item.vector = v;
+
+						if (Array.isArray(this.persona?.vector)) {
+							let similarity = this.similarity(item.vector, this.persona.vector);
+
+							item.author = similarity ? Number(similarity).toFixed(2) : item.author;
+						}
 					});
+				})
+			});
 
-					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
+			setTimeout(() => {
+				let hrefs = [...document.querySelectorAll('a.rss-thumb,a.rss-title')]
+					.filter(x => this.isElementInViewport(x))
+					.map(a => a.href)
+					.filter(x => x);
+				// console.log('hrefs', hrefs);
 
-					this.input = '';
-				} catch (ex) {
-					alert(ex.message);
-				}
-			},
+				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
+			}, 0.5e3);
 
-			importDefaults() {
-				try {
-					this.tasks.push(...this.K.DEFAULTS.map(x => ({url: x, checked: false})));
+			return {count};
+		},
 
-					localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
-				} catch (ex) {
-					alert(ex.message);
-				}
-			},
+		addNewTask() {
+			try {
+				this.input?.split(',').forEach(x => {
+					let url = new URL(x).toString();
 
-			clearAllTasks() {
+					let found = this.tasks.find(x => x?.url == url);
+
+					if (found) return;
+
+					this.tasks.push({ url, checked: false });
+				});
+
+				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
+
 				this.input = '';
-				this.tasks = [];
-				localStorage.setItem(this.K.tasks, '');
-			},
+			} catch (ex) {
+				alert(ex.message);
+			}
+		},
 
-			buildTasks() {
-				let urls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
-				
-				let limit = this.params?.limit || this.K.LIMIT;
+		importDefaults() {
+			try {
+				this.tasks.push(...this.K.DEFAULTS.map(x => ({url: x, checked: false})));
 
-				window.open(`/?limit=${limit}&hash=${this.params.hash||''}&urls=${urls}`, '_self');
-			},
+				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
+			} catch (ex) {
+				alert(ex.message);
+			}
+		},
 
-			async embedSentence(text) {
-				if (!window.embedder) return null;
-				const vector = await window.embedder(text, { pooling: 'mean', normalize: true });
-				return vector?.data;
-			},
+		clearAllTasks() {
+			this.input = '';
+			this.tasks = [];
+			localStorage.setItem(this.K.tasks, '');
+		},
 
-			async init() {
-				this.params = Object.fromEntries(new URLSearchParams(location.search));
+		buildTasks() {
+			let urls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 
-				let limit = this.params?.limit || this.K.LIMIT;
+			let limit = this.params?.limit || this.K.LIMIT;
 
-				if (localStorage.getItem(this.K.persona)) {
-					this.persona = JSON.parse(localStorage.getItem(this.K.persona));
-					if (typeof this.persona.vector == 'object') {
-						this.persona.vector = Object.values(this.persona.vector);
-					}
+			window.open(`/?limit=${limit}&hash=${this.params.hash||''}&urls=${urls}`, '_self');
+		},
+
+		async embedSentence(text) {
+			if (!window.embedder) return null;
+			const vector = await window.embedder(text, { pooling: 'mean', normalize: true });
+			return vector?.data;
+		},
+
+		async init() {
+			console.log('init')
+			this.params = Object.fromEntries(new URLSearchParams(location.search));
+
+			let limit = this.params?.limit || this.K.LIMIT;
+
+			if (localStorage.getItem(this.K.persona)) {
+				this.persona = JSON.parse(localStorage.getItem(this.K.persona));
+
+				console.log('init', this.persona)
+
+				if (typeof this.persona.vector == 'object') {
+					this.persona.vector = Object.values(this.persona.vector);
 				}
+			}
 
-				if (localStorage.getItem(this.K.tasks)?.length) {
-					this.tasks = JSON.parse(localStorage.getItem(this.K.tasks));
-				}
+			if (localStorage.getItem(this.K.tasks)?.length) {
+				this.tasks = JSON.parse(localStorage.getItem(this.K.tasks));
+				console.log('init', this.tasks)
+			}
 
-				if (localStorage.getItem(this.K.feeds)?.length) {
-					this.feeds = JSON.parse(localStorage.getItem(this.K.feeds));
-					this.postProcessFeeds({limit});
-				}
-				
-				this.loadFeedsWithContent({limit});
+			if (localStorage.getItem(this.K.feeds)?.length) {
+				this.feeds = JSON.parse(localStorage.getItem(this.K.feeds));
 
-				Object.entries({...localStorage})
-					.filter(
-						([k, v]) => k.includes(this.K.viewed) 
-									&& (new Date(v) < new Date(Date.now() - 24*60*60e3))
-					)
-					.forEach( ([k, v]) => localStorage.removeItem(k) )
-				;
+				console.log('init', this.feeds)
 
-				// setInterval(async () => {
-				// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
-				// 	console.log('vector2', vector2);
-				// }, 10e3);
-			},
-		}
-	};
+				this.postProcessFeeds({limit});
+			}
 
-	navigator?.serviceWorker?.register?.('sw.js');
+			this.loadFeedsWithContent({limit});
+
+			Object.entries({...localStorage})
+				.filter(
+					([k, v]) => k.includes(this.K.viewed)
+								&& (new Date(v) < new Date(Date.now() - 24*60*60e3))
+				)
+				.forEach( ([k, v]) => localStorage.removeItem(k) )
+			;
+
+			// setInterval(async () => {
+			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
+			// 	console.log('vector2', vector2);
+			// }, 10e3);
+		},
+	}
+};
+
+navigator?.serviceWorker?.register?.('sw.js');
 </script>
 
  
 <script type="module">
-	// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-	// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
-	
-	try {
-		/*const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-		const vector = await embedder('rss');
+// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
 
-		if (embedder) {
-			window.embedder = embedder;
-			console.log('window.embedder is loaded');
-		}*/
+try {
+	/*const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+	const vector = await embedder('rss');
 
-		/*const translator = await pipeline('translation', 'Xenova/nllb-200-distilled-600M');
-		const translated = await translator('We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.', {
-		  src_lang: 'eng_Latn',
-		  tgt_lang: 'vie_Latn',
-		});
-		console.log(translated);*/
-	} catch (ex) {
-		console.log(ex);
-	}	
+	if (embedder) {
+		window.embedder = embedder;
+		console.log('window.embedder is loaded');
+	}*/
+
+	/*const translator = await pipeline('translation', 'Xenova/nllb-200-distilled-600M');
+	const translated = await translator('We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.', {
+	  src_lang: 'eng_Latn',
+	  tgt_lang: 'vie_Latn',
+	});
+	console.log(translated);*/
+} catch (ex) {
+	console.log(ex);
+}
 </script>
 

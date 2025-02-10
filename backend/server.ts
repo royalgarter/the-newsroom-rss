@@ -10,8 +10,6 @@ import * as yaml from "https://deno.land/std@0.170.0/encoding/yaml.ts";
 
 const crypto = await import('node:crypto');
 
-const DEFAULT_CONFIG_FILE = "./feeds.yaml";
-
 const cors = {
 	"Access-Control-Allow-Origin": "*",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -32,34 +30,15 @@ async function test() {
 	// console.log("Random UUID:", myUUID);
 }
 
-async function loadFeedsConfig() {
-	try {
-		const fileExt = extname(DEFAULT_CONFIG_FILE);
-		const fileContent = await Deno.readTextFile(DEFAULT_CONFIG_FILE);
-
-		if (fileExt === ".json") {
-			return JSON.parse(fileContent)
-		}
-		if (fileExt === ".yaml" || fileExt === ".yml") {
-			return yaml.parse(fileContent)
-		}
-		throw new Error(`Unsupported config file extension: ${fileExt}`)
-
-	} catch (error) {
-		console.error("Failed to load config:", error);
-		return {feeds: []};
-	}
-}
-
-async function fetchParse(url: string, content: string) {
+async function parseRSS(url: string, content: string) {
 	try {
 		if (!url) return null;
 
-		console.log('fetchParse.content', url);
+		console.log('parseRSS.content', url);
 
 		if (!content) {
 			url = url.replaceAll(' ', '+');
-			// console.log('fetchParse.content.server-side', url);
+			// console.log('parseRSS.content.server-side', url);
 
 			if (!url.includes('http')) url = 'https://' + url;
 
@@ -80,7 +59,7 @@ async function fetchParse(url: string, content: string) {
 
 		if (!content) return null;
 
-		console.log('fetchParse.content', url, content.length);
+		// console.log('parseRSS.content', url, content.length);
 
 		let data = await parseFeed(content);
 
@@ -99,15 +78,13 @@ async function fetchRSSLinks({urls, limit=12}) {
 	let feeds = [];
 
 	if (Array.isArray(urls)) {
-		feeds = await Promise.all(
+		feeds = await Promise.allSettled(
 			urls.map(({url, content}) => {
 				if (!url) return null;
 
-				return fetchParse(url, content);
+				return parseRSS(url, content);
 			}).filter(x => x)
 		);
-
-		feeds = feeds.filter(x => x);
 	}
 
 	if (typeof urls == 'string') {
@@ -116,17 +93,17 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 		// console.dir({urls, feedUrls})
 
-		feeds = await Promise.all(feedUrls.map(fetchParse));	
+		feeds = await Promise.allSettled(feedUrls.map(parseRSS));
 	}
 
-	feeds = feeds.filter(x => x);
+	feeds = feeds.map(p => p.value).filter(x => x);
 
 	const SPLIT = /[\:\,\.\-\_\/\|\~]/;
 	const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
 	let render = [];
-	console.log('render')
-	await Promise.all(feeds.map(data => new Promise(resolveFeed => {
+	// console.log('render')
+	await Promise.allSettled(feeds.map(data => new Promise(resolveFeed => {
 		(async () => {
 			const items = data.entries.slice(0, limit);
 
@@ -145,8 +122,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 			// console.dir({head});
 
 			let rss_items = [];
-			console.log('rss_items', head.rss_url)
-			await Promise.all(items.map(item => new Promise(resolveItem => {
+			// console.log('rss_items', head.rss_url)
+			await Promise.allSettled(items.map(item => new Promise(resolveItem => {
 				(async () => {
 					try {
 						if (item['media:group']) item = {...item, ...item['media:group']};
@@ -160,7 +137,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 						// console.dir(images)
 						let link = item?.links?.[0]?.href;
-						if (images.filter(x=>x).length == 0 && link) { try {
+						if (link && (images.filter(x => x).length == 0)) { try {
 							let key_image = 'HTML_IMAGE:' + link;
 
 							let image_og = CACHE.get(key_image);
@@ -179,7 +156,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						} catch {} }
 						// console.dir(images)
 
-						if (images.filter(x=>x).length == 0) {
+						if (images.filter(x => x).length == 0) {
 							images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
 							images.push(head.image);
 						}
@@ -204,7 +181,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 					} catch (ex) { console.error(ex); } finally { resolveItem() }
 				})().catch(ex => resolveItem());
 			})));
-			console.log('rss_items', head.rss_url, rss_items.length)
+			// console.log('rss_items', head.rss_url, rss_items.length)
 
 			let result = {
 				...head,
@@ -214,7 +191,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 			render.push(result);
 		})().catch(console.error).finally(resolveFeed);
 	})));
-	console.log('render', render.length)
+	// console.log('render', render.length)
 	return render;
 }
 
@@ -224,7 +201,11 @@ async function handleRequest(req: Request) {
 	let params = Object.fromEntries(searchParams);
 	let {urls='', limit, hash} = params;
 
-	// console.dir({params})
+	// console.log(pathname, params);
+	const response = (data, options) => {
+		// console.log(pathname, 'responsed');
+		return new Response(data, options);
+	}
 
 	if (pathname === "/api/feeds") {
 		let finalResult = [];
@@ -255,7 +236,7 @@ async function handleRequest(req: Request) {
 			finalResult?.forEach?.(x => x.hash = hash);
 		}
 
-		return new Response(JSON.stringify(finalResult), {
+		return response(JSON.stringify(finalResult), {
 			headers: {
 				...cors,
 				"Content-Type": "application/json; charset=utf-8",
@@ -264,7 +245,7 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/html") {
-		if (!urls) return new Response(JSON.stringify({error: 'E_urls_missing'}));
+		if (!urls) return response(JSON.stringify({error: 'E_urls_missing'}));
 
 		let link = decodeURIComponent(urls);
 		let key_link = 'HTML:' + link;
@@ -281,21 +262,21 @@ async function handleRequest(req: Request) {
 				CACHE.set(key_link, html);
 			}
 
-			if (!html) return new Response(JSON.stringify({error: 'E403_html'}), {status: 403});
+			if (!html) return response(JSON.stringify({error: 'E403_html'}), {status: 403});
 
-			return new Response(html, {
+			return response(html, {
 				headers: {
 					"Content-Type": "text/html",
 					"Cache-Control": "public, max-age=604800",
 				}
 			});
 		} catch {
-			return new Response('', {status: 403});
+			return response('', {status: 403});
 		}
 	}
 
 	if (pathname === "/") {
-		return new Response(await Deno.readTextFile("./frontend/index.html"), {
+		return response(await Deno.readTextFile("./frontend/index.html"), {
 			headers: {
 				"Content-Type": "text/html; charset=utf-8",
 				"Cache-Control": "public, max-age=604800",
@@ -306,7 +287,7 @@ async function handleRequest(req: Request) {
 	const filePath = `./frontend${pathname}`;
 	if (await exists(filePath)) {
 		const fileExt = extname(filePath)
-		return new Response(await Deno.readFile(filePath), {
+		return response(await Deno.readFile(filePath), {
 			headers: {
 				"Content-Type": `${contentType(fileExt) ?? "text/plain"}; charset=utf-8`,
 				"Cache-Control": "public, max-age=604800",
@@ -314,7 +295,7 @@ async function handleRequest(req: Request) {
 		})
 	}
 
-	return new Response(JSON.stringify({error: 'E404'}), {status: 404});
+	return response(JSON.stringify({error: 'E404'}), {status: 404});
 }
 
 const port = process.env.PORT || 17385;
