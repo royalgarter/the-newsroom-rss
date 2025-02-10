@@ -72,7 +72,7 @@
 						></span>
 					</span>
 					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
-						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="feed.title"></h2>
+						<h2 class="text-indigo-950 text-xl font-bold mx-auto pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8" x-text="'[' + (feed.items?.length || '') + '] ' + feed.title"></h2>
 					</a>
 					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
@@ -798,7 +798,9 @@
 				this.error = null;
 
 				try {
-					let urls = this.params?.urls?.length ? this.params?.urls?.split(',') : [];
+					let urls = this.params?.urls?.length ? this.params?.urls?.split(',') : this.tasks?.map(x => x.url);
+
+					console.log('urls', urls);
 
 					let data = urls?.length ? await Promise.all(urls.map(this.clientFetch)) : [];
 
@@ -809,20 +811,22 @@
 
 					console.log('data', data);
 
-					let parallel = await Promise.all(data.map(item => new Promise(resolve => {
-						fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
-							method: 'POST', 
-							headers: {"content-type": "application/json"},
-							body: JSON.stringify([item]),
-						})
-						.then(resp => resp.json())
-						.then(json => console.log(item.url, json) && resolve(json))
-						.catch(ex => console.log(ex) && resolve())
-					})));
+					let parallel = await Promise.allSettled(
+						data.map(item =>
+							fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
+								method: 'POST',
+								headers: {"content-type": "application/json"},
+								signal: AbortSignal.timeout(20e3),
+								body: JSON.stringify([item]),
+							})
+							.then(resp => resp.json())
+						)
+					);
 
 					console.log('parallel', parallel);
 
-					this.feeds = parallel.flat().filter(x => x);
+					this.feeds = parallel.filter(p => p.status=='fulfilled').map(p => p.value)
+									.flat().filter(x => x);
 
 					/*const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
 						method: 'POST', 
@@ -1147,12 +1151,16 @@
 			},
 
 			async init() {
+				console.log('init')
 				this.params = Object.fromEntries(new URLSearchParams(location.search));
 
 				let limit = this.params?.limit || this.K.LIMIT;
 
 				if (localStorage.getItem(this.K.persona)) {
 					this.persona = JSON.parse(localStorage.getItem(this.K.persona));
+
+					console.log('init', this.persona)
+
 					if (typeof this.persona.vector == 'object') {
 						this.persona.vector = Object.values(this.persona.vector);
 					}
@@ -1160,10 +1168,14 @@
 
 				if (localStorage.getItem(this.K.tasks)?.length) {
 					this.tasks = JSON.parse(localStorage.getItem(this.K.tasks));
+					console.log('init', this.tasks)
 				}
 
 				if (localStorage.getItem(this.K.feeds)?.length) {
 					this.feeds = JSON.parse(localStorage.getItem(this.K.feeds));
+
+					console.log('init', this.feeds)
+
 					this.postProcessFeeds({limit});
 				}
 				
