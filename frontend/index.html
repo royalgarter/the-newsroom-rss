@@ -60,8 +60,8 @@
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
-		<header class="bg-blue-600 p-4 text-stone-200 text-center">
-			<a href="/#title" name="title"><h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold">The Newsroom RSS</h1></a>
+		<header class="bg-blue-600 p-4 pt-6 text-stone-100 text-center">
+			<a href="/#title" name="title"><h1 :class="loading ? 'animate-bounce' : ''" class="text-2xl font-bold">The Newsroom RSS</h1></a>
 		</header>
 		<main class="container mx-auto p-2 flex-1">
 			<div class="flex gap-4 items-center mb-4 justify-self-center">
@@ -74,10 +74,9 @@
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
 				>
-					<span class="relative flex size-3">
-						<span class="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
-							:class="loading ? 'animate-ping' : 'invisible'"
-						></span>
+					<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
+						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
+						<span class="relative inline-flex size-2 rounded-full bg-orange-500"></span>
 					</span>
 					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
@@ -652,7 +651,7 @@ function alpineRSS() {
 			DEFAULTS: [
 				'https://feeds.bbci.co.uk/news/rss.xml',
 				'https://www.reddit.com/r/worldnews/.rss',
-				'https://feeds.nbcnews.com/feeds/worldnews',
+				'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en',
 				'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
 			],
 
@@ -903,9 +902,25 @@ function alpineRSS() {
 
 				console.log('parallel', parallel);
 
-				this.feeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
+				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
 
+				// merge articles
+				respFeeds.forEach(feed => {
+					let curFeed = this.feeds?.find?.(f => f.rss_url == feed.rss_url);
+
+					if (!curFeed) return;
+
+					feed.items.forEach(item => {
+						let curItem = curFeed.items?.find?.(x => x.link == item.link);
+
+						if (!curItem?.article) return;
+
+						item.article = curItem.article;
+					});
+				});
+
+				this.feeds = respFeeds;
 				this.loading = false;
 
 				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
