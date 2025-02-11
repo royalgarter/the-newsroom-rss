@@ -877,18 +877,28 @@ function alpineRSS() {
 					this.params.hash = hash_local.slice(0, 6);
 				}
 
-				console.log('data', data);
+				console.log('data', data, data?.length);
 
 				let parallel = await Promise.allSettled(
-					data.map(item =>
-						fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
-							method: 'POST',
-							headers: {"content-type": "application/json"},
-							signal: AbortSignal.timeout(20e3),
-							body: JSON.stringify({keys :[item], batch: data}),
-						})
-						.then(resp => resp.json())
-					)
+					!data?.length
+						? [
+							fetch(`/api/feeds?limit=${limit}&hash=${this.params.hash || ''}`, {
+								method: 'POST',
+								headers: {"content-type": "application/json"},
+								signal: AbortSignal.timeout(20e3),
+								body: JSON.stringify({batch: data}),
+							})
+							.then(resp => resp.json())
+						]
+						: data.map(item =>
+							fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
+								method: 'POST',
+								headers: {"content-type": "application/json"},
+								signal: AbortSignal.timeout(20e3),
+								body: JSON.stringify({keys :[item], batch: data}),
+							})
+							.then(resp => resp.json())
+						)
 				);
 
 				console.log('parallel', parallel);
@@ -896,14 +906,17 @@ function alpineRSS() {
 				this.feeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
 
-				/*const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
-					method: 'POST',
-					headers: {"content-type": "application/json"},
-					body: JSON.stringify(data),
-				});
-				this.feeds = await response.json();*/
-
 				this.loading = false;
+
+				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
+				console.log({hash_server})
+				if (hash_server) {
+					const url = new URL(location);
+					url.searchParams.delete("urls");
+					url.searchParams.set("hash", hash_server);
+					history.pushState({}, "", url);
+					this.params.hash = hash_server;
+				}
 
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
@@ -914,17 +927,9 @@ function alpineRSS() {
 					this.loadFeedsWithContent({limit, limit_adjust: count});
 				}
 
-				let hash_server = parallel.find(p => p.status == 'fulfilled').value.hash;
-				console.log({hash_server})
-				if (hash_server) {
-					const url = new URL(location);
-					url.searchParams.delete("urls");
-					url.searchParams.set("hash", hash_server);
-					history.pushState({}, "", url);
-					this.params.hash = hash_server;
-				}
-
-				this.tasks = data.map(x => ({url: x.url, checked: false}))
+				this.tasks = !data?.length
+					? this.feeds.map(x => ({url: x.rss_url, checked: false}))
+					: data.map(x => ({url: x.url, checked: false}));
 				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
 
 				console.log(this.tasks);
