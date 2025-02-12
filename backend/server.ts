@@ -227,12 +227,12 @@ async function handleRequest(req: Request) {
 		let {keys, batch} = data;
 
 		if (!keys?.length) {
-			console.log('fallback keys = batch')
+			// console.log('fallback keys = batch')
 			keys = batch || [];
 		}
 
 		if (!keys?.length && hash) {
-			console.log('fallback keys = KV', hash)
+			// console.log('fallback keys = KV', hash)
 			keys = (await KV.get([pathname, hash]))?.value || [];
 		}
 
@@ -242,9 +242,7 @@ async function handleRequest(req: Request) {
 
 		// console.dir({keys})
 
-		if (!hash) {
-			hash = crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 6);
-		}
+		hash = hash || crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 8);
 
 		let saved = (batch?.length ? batch : keys) || null;
 

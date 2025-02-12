@@ -716,6 +716,9 @@ function alpineRSS() {
 			tasks: VERSION + '_tasks_',
 			feeds: VERSION + '_feeds_',
 			cache: VERSION + '_cache_',
+			hash: VERSION + '_hash_',
+
+			noClientFetch: VERSION + '_ncf_',
 
 			persona: VERSION + '_persona_',
 		},
@@ -911,20 +914,6 @@ function alpineRSS() {
 			}
 		},
 
-		async clientFetch(url) {
-			try {
-				const response = await fetch(url.replaceAll(' ', '+'), {redirect: 'follow'});
-
-				if (!response.ok || response.status >= 400) return {url};
-
-				const content = await response.text();
-
-				return {url, content};
-			} catch (error) {
-				return {url};
-			}
-		},
-
 		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=0}) {
 			if (this.loading) return;
 
@@ -934,16 +923,25 @@ function alpineRSS() {
 			try {
 				let urls = this.params?.urls?.length ? this.params?.urls?.split(',') : this.tasks?.map(x => x.url);
 
-				console.log('urls', urls);
+				let data = urls?.length ? await Promise.all(urls.map(url => new Promise(resolve => {
+					let key_nofetch = this.K.noClientFetch + new URL(url).hostname;
 
-				let data = urls?.length ? await Promise.all(urls.map(this.clientFetch)) : [];
+					if (this.storageGet(key_nofetch)) return resolve({url});
+					try {
+						fetch(url.replaceAll(' ', '+'), {redirect: 'follow'})
+							.then(resp => resp.text())
+							.then(content => resolve({url, content}))	
+					} catch (ex) {
+						this.storageSet(key_nofetch, true);
+						resolve({url})
+					}
+				}))) : [];
 
 				if (!this.params?.hash && data.length) {
 					let hash_local = await this.digest(JSON.stringify(data) + Date.now());
 					this.params.hash = hash_local.slice(0, 6);
+					this.storageSet(this.K.hash, this.params.hash);
 				}
-
-				console.log('data', data, data?.length);
 
 				let parallel = await Promise.allSettled(
 					!data?.length
@@ -967,7 +965,7 @@ function alpineRSS() {
 						)
 				);
 
-				console.log('parallel', parallel);
+				console.log('feed', parallel);
 
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
@@ -999,29 +997,33 @@ function alpineRSS() {
 					url.searchParams.set("hash", hash_server);
 					history.pushState({}, "", url);
 					this.params.hash = hash_server;
+					this.storageSet(this.K.hash, this.params.hash);
 				}
 
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
 				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
-				this.storageSet(this.K.feeds, this.feeds);
+				
 				if (this.params.hash) {
 					this.storageSet(this.K.feeds + this.params.hash, this.feeds);
 					this.storageDel(this.K.feeds);
+				} else {
+					this.storageSet(this.K.feeds, this.feeds);	
 				}
-
 
 				if (limit_adjust == 0 && count > 0) {
 					this.loadFeedsWithContent({limit, limit_adjust: count});
 				}
 
 				this.tasks = !data?.length
-					? this.feeds.map(x => ({url: x.rss_url, checked: false}))
-					: data.map(x => ({url: x.url, checked: false}));
-				this.storageSet(this.K.tasks, this.tasks);
+					? this.feeds.map((x, i) => ({url: x.rss_url, order: i, checked: false}))
+					: data.map((x, i) => ({url: x.url, order: i, checked: false}));
+				
 				if (this.params.hash) {
 					this.storageSet(this.K.tasks + this.params.hash, this.tasks);
 					this.storageDel(this.K.tasks);
+				} else {
+					this.storageSet(this.K.tasks, this.tasks);
 				}
 
 				console.log(this.tasks);
@@ -1180,10 +1182,15 @@ function alpineRSS() {
 
 						let resp = null;
 						let opts = {redirect: 'follow'};
+						let key_nofetch = this.K.noClientFetch + new URL(item.link).hostname;
 
+						let noClientFetch = this.storageGet(key_nofetch);
 						try {
-							resp = await fetch(item.link, opts);
+							resp = noClientFetch 
+									? await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null) 
+									: await fetch(item.link, opts);
 						} catch (ex) {
+							this.storageSet(key_nofetch, true);
 							resp = await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null);
 						}
 
@@ -1304,7 +1311,7 @@ function alpineRSS() {
 
 					if (found) return;
 
-					this.tasks.push({ url, checked: false });
+					this.tasks.push({ url, order: tasks.length, checked: false });
 				});
 
 				this.storageSet(this.K.tasks, this.tasks);
@@ -1322,12 +1329,12 @@ function alpineRSS() {
 
 		importDefaults() {
 			try {
-				this.tasks.push(...this.K.DEFAULTS.map(x => ({url: x, checked: false})));
+				this.tasks.push(...this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false})));
 
-				this.storageSet(this.K.tasks, this.tasks);
 				if (this.params.hash) {
 					this.storageSet(this.K.tasks + this.params.hash, this.tasks);
-					this.storageDel(this.K.tasks);
+				} else {
+					this.storageSet(this.K.tasks, this.tasks);	
 				}
 			} catch (ex) {
 				alert(ex.message);
@@ -1358,18 +1365,18 @@ function alpineRSS() {
 		async init() {
 			// console.log('init')
 			this.params = Object.fromEntries(new URLSearchParams(location.search));
-			this.params.hash = this.params.hash || '';
+			this.params.hash = this.params.hash || this.storageGet(this.K.hash);
 
 			let limit = this.params?.limit || this.K.LIMIT;
 
 			if (this.storageGet(this.K.tasks)?.length) {
 				this.tasks = this.storageGet(this.K.tasks);
 
-				if (this.params.hash && this.storageGet(this.K.tasks + this.params.hash))
-					this.tasks = this.storageGet(this.K.tasks + this.params.hash);
+				if (this.params.hash)
+					this.tasks = this.storageGet(this.K.tasks + this.params.hash) || this.tasks;
 
 				if (this.tasks?.length)
-					this.tasks = this.K.DEFAULTS.map(x => ({url: x, checked: false}));
+					this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
 
 				// console.log('init', this.tasks)
 			}
@@ -1378,7 +1385,7 @@ function alpineRSS() {
 				this.feeds = this.storageGet(this.K.feeds);
 
 				if (this.params.hash && this.storageGet(this.K.feeds + this.params.hash))
-					this.feeds = this.storageGet(this.K.feeds + this.params.hash);
+					this.feeds = this.storageGet(this.K.feeds + this.params.hash) || this.feeds;
 
 				// console.log('init', this.feeds)
 
@@ -1412,12 +1419,12 @@ function alpineRSS() {
 					properties: {
 						hash: {
 							type: "string",
-							title: "Identity",
+							title: "Hash Identity",
 							default: this.params.hash,
 						},
 						limit: {
 							type: "integer",
-							title: "Item per Feed",
+							title: "Items per Feed",
 							enum: [
 								3, 6, 9, 12, 15, 20, 30
 							],
