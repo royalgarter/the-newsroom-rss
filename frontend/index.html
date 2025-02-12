@@ -1362,20 +1362,10 @@ function alpineRSS() {
 
 			let limit = this.params?.limit || this.K.LIMIT;
 
-			if (this.storageGet(this.K.persona)) {
-				this.persona = this.storageGet(this.K.persona);
-
-				// console.log('init', this.persona)
-
-				if (typeof this.persona.vector == 'object') {
-					this.persona.vector = Object.values(this.persona.vector);
-				}
-			}
-
 			if (this.storageGet(this.K.tasks)?.length) {
 				this.tasks = this.storageGet(this.K.tasks);
 
-				if (this.params.hash && this.storageGet(this.K.tasks))
+				if (this.params.hash && this.storageGet(this.K.tasks + this.params.hash))
 					this.tasks = this.storageGet(this.K.tasks + this.params.hash);
 
 				if (this.tasks?.length)
@@ -1387,7 +1377,7 @@ function alpineRSS() {
 			if (this.storageGet(this.K.feeds)?.length) {
 				this.feeds = this.storageGet(this.K.feeds);
 
-				if (this.params.hash && this.storageGet(this.K.feeds))
+				if (this.params.hash && this.storageGet(this.K.feeds + this.params.hash))
 					this.feeds = this.storageGet(this.K.feeds + this.params.hash);
 
 				// console.log('init', this.feeds)
@@ -1396,6 +1386,16 @@ function alpineRSS() {
 			}
 
 			this.loadFeedsWithContent({limit});
+
+			if (this.storageGet(this.K.persona)) {
+				this.persona = this.storageGet(this.K.persona);
+
+				// console.log('init', this.persona)
+
+				if (typeof this.persona.vector == 'object') {
+					this.persona.vector = Object.values(this.persona.vector);
+				}
+			}
 
 			Object.entries({...localStorage})
 				.filter(
