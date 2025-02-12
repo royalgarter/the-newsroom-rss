@@ -240,7 +240,7 @@ async function handleRequest(req: Request) {
 
 		// console.log('post', hash, keys.map(x => x.url), keys.map(x => x.content?.length))
 
-		console.dir({keys})
+		// console.dir({keys})
 
 		if (!hash) {
 			hash = crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 6);
