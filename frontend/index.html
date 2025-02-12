@@ -60,7 +60,7 @@
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
-		<header class="bg-blue-600 p-4 text-stone-200 text-center">
+		<header class="bg-blue-600 p-4 pt-6 text-stone-100 text-center">
 			<a href="/#title" name="title"><h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold">The Newsroom RSS</h1></a>
 		</header>
 		<main class="container mx-auto p-2 flex-1">
@@ -74,10 +74,9 @@
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
 				>
-					<span class="relative flex size-3">
-						<span class="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
-							:class="loading ? 'animate-ping' : 'invisible'"
-						></span>
+					<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
+						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
+						<span class="relative inline-flex size-2 rounded-full bg-orange-500"></span>
 					</span>
 					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
@@ -218,6 +217,7 @@
 
 			<!-- rss-configuration -->
 			<div class="divide-y divide-slate-200">
+
 				<!-- rss-settings -->
 				<div x-data="{
 						expanded: (document.querySelectorAll('.rss-task-item').length == 0 && location.search.search(/hash=[^\s]+/) >= 0)
@@ -232,13 +232,65 @@
 							:aria-expanded="expanded"
 							aria-controls="collapse-text-01"
 						>
-							<span>Your RSS List</span>
+							<span x-html="'Your RSS Feeds (' + (tasks.length || '') + ')'"></span>
 							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 							</svg>
 						</button>
 					</h3>
+					<!-- rss-review-item -->
+					<template x-if="review_feed">
+						<section class="rss-feed bg-white shadow rounded mb-4 italic opacity-90">
+							<a :name="review_feed.anchor" :href="review_feed.rss_url" target="_blank">
+								<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
+									<img class="self-center size-6 mr-2 md:mr-4"
+										:src="'https://www.google.com/s2/favicons?domain=' + new URL(review_feed.link).hostname +'&sz=128'"
+										onerror="this.src = '/favicons/ios/128.png';"
+										/>
+									<h2 class="text-indigo-900 font-bold mx-auto truncate"
+										x-text="'[REVIEW] ' + review_feed.rss_url"></h2>
+								</span>
+							</a>
+							<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
+								<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
+									<!-- rss-item -->
+									<template x-for="(item, itemIndex) in review_feed.items" :key="itemIndex">
+										<div class="rss-item bg-slate-50 rounded overflow-hidden shadow">
+											<!-- thumbnail -->
+											<template x-if="!params?.style?.includes?.('noimg') && item.images?.[0]?.length">
+												<div class="rss-meta relative min-h-[240px]">
+													<link rel="prefetch" as="image" :href="item.images[0]" />
+													<img class="rss-thumb w-full min-h-24 max-h-[240px]"
+														:loading="index <= 1 ? 'eager' : 'lazy'"
+														:fetchpriority="index <= 1 ? 'high' : 'low'"
+														:src="item.images[0]"
+														:alt="item.title"
+														:domain="new URL(review_feed.link).hostname"
+														onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
+													/>
+													<div
+														class="transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+													</div>
+													<div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm transition duration-500 ease-in-out"
+														x-html="(timeSince(new Date(item.published)) + ' ago')
+															|| new Date(item.published).toString().split(' GMT').shift()
+															|| (item.categories?.join(', ') || item.statistics || review_feed.short).substr(0, 30).trim()
+													">
+													</div>
+												</div>
+											</template>
+											<!-- title & description -->
+											<div class="p-4">
+												<p class="rss-title font-semibold text-lg mb-2 inline-block text-indigo-800 hover:text-indigo-600 transition duration-500 ease-in-out" x-html="item.title"></p>
+												<p class="rss-desc text-indigo-400 text-sm whitespace-pre-line break-words" x-html="item.description || ''"></p>
+											</div>
+									</template>
+								</div>
+							</div>
+						</section>
+					</template>
+
 					<div
 						id="collapse-text-01"
 						role="region"
@@ -253,6 +305,7 @@
 									<div class="text-lg bg-blue-500 p-4 rounded-t-md flex relative justify-around">
 										<form @submit.prevent="addNewTask" class="min-w-9/10">
 											<input
+												x-on:input.change.debounce.300ms='reviewTask()'
 												x-model="input"
 												class="w-full bg-blue-500 italic text-base text-white placeholder-gray-200 focus:outline-none border-b-2"
 												placeholder=" Enter new RSS feed URL..."
@@ -290,7 +343,7 @@
 														...tasks.slice(drop, drag),
 														...tasks.slice(drag + 1)
 													];
-												localStorage.setItem(K.tasks, JSON.stringify(tasks));
+												storageSet(K.tasks, tasks);
 											};
 											drop = null;
 											"
@@ -310,7 +363,7 @@
 													</div>
 													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
 														class="size-3 cursor-pointer text-red-500"
-														@click="tasks.splice(index, 1);localStorage.setItem(K.tasks, JSON.stringify(tasks));"
+														@click="tasks.splice(index, 1);storageSet(K.tasks, tasks);"
 													>
 														<path stroke-linecap="round" stroke-linejoin="round" d="M13.181 8.68a4.503 4.503 0 0 1 1.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 0 0 6.364 6.365l3.129-3.129m5.614-5.615 1.757-1.757a4.5 4.5 0 0 0-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 0 1-1.242-.88 4.483 4.483 0 0 1-1.062-1.683m6.587 2.345 5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99 8.898 8.9" />
 													</svg>
@@ -629,7 +682,7 @@ function alpineHead() {
 };
 
 function alpineRSS() {
-	const version = 'v1';
+	const VERSION = 'v2';
 
 	return {
 		feeds: [],
@@ -642,6 +695,8 @@ function alpineRSS() {
 		drag: null,
 		drop: null,
 
+		review_feed: null,
+
 		persona: null,
 
 		options_editor: null,
@@ -651,17 +706,18 @@ function alpineRSS() {
 
 			DEFAULTS: [
 				'https://feeds.bbci.co.uk/news/rss.xml',
-				'https://www.reddit.com/r/worldnews/.rss',
-				'https://feeds.nbcnews.com/feeds/worldnews',
-				'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
+				'https://feeds.nbcnews.com/feeds/topstories',
+				'https://www.business-standard.com/rss/latest.rss',
+				'https://feeds.npr.org/1128/rss.xml',
+				'https://www.espn.com/espn/rss/news',
 			],
 
-			viewed: version + '_viewed_',
-			tasks: version + '_tasks',
-			feeds: version + '_feeds',
-			cache: version + '_cache',
+			viewed: VERSION + '_viewed_',
+			tasks: VERSION + '_tasks_',
+			feeds: VERSION + '_feeds_',
+			cache: VERSION + '_cache_',
 
-			persona: version + '_persona',
+			persona: VERSION + '_persona_',
 		},
 
 		TRIGGER: {
@@ -669,6 +725,16 @@ function alpineRSS() {
 		},
 
 		CACHE: {},
+
+		storageSet(key, val) {
+			return localStorage.setItem(key, JSON.stringify(val));
+		},
+		storageGet(key) {
+			return JSON.parse(localStorage.getItem(key) || null);
+		},
+		storageDel(key) {
+			return localStorage.removeItem(key);
+		},
 
 		async testLLM() {
 			let list_sentences = [
@@ -827,14 +893,14 @@ function alpineRSS() {
 						if (this.TRIGGER[link].sum > this.TRIGGER.LIMIT) {
 							// console.log(' > viewed', link);
 
-							localStorage.setItem(this.K.viewed + link, now.toString().split(' GMT').shift());
+							this.storageSet(this.K.viewed + link, now.toString().split(' GMT').shift());
 
 							this.feeds.forEach(feed => {
 								let found = feed.items.find(x => x.link == link);
 
 								if (!found) return;
 
-								found.viewed = localStorage.getItem(this.K.viewed + link);
+								found.viewed = this.storageGet(this.K.viewed + link);
 							});
 						} else {
 							this.TRIGGER[link].tic = this.TRIGGER[link].toc;
@@ -877,44 +943,55 @@ function alpineRSS() {
 					this.params.hash = hash_local.slice(0, 6);
 				}
 
-				console.log('data', data);
+				console.log('data', data, data?.length);
 
 				let parallel = await Promise.allSettled(
-					data.map(item =>
-						fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
-							method: 'POST',
-							headers: {"content-type": "application/json"},
-							signal: AbortSignal.timeout(20e3),
-							body: JSON.stringify({keys :[item], batch: data}),
-						})
-						.then(resp => resp.json())
-					)
+					!data?.length
+						? [
+							fetch(`/api/feeds?limit=${limit}&hash=${this.params.hash || ''}`, {
+								method: 'POST',
+								headers: {"content-type": "application/json"},
+								signal: AbortSignal.timeout(20e3),
+								body: JSON.stringify({batch: data}),
+							})
+							.then(resp => resp.json())
+						]
+						: data.map(item =>
+							fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
+								method: 'POST',
+								headers: {"content-type": "application/json"},
+								signal: AbortSignal.timeout(20e3),
+								body: JSON.stringify({keys :[item], batch: data}),
+							})
+							.then(resp => resp.json())
+						)
 				);
 
 				console.log('parallel', parallel);
 
-				this.feeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
+				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
 
-				/*const response = await fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
-					method: 'POST',
-					headers: {"content-type": "application/json"},
-					body: JSON.stringify(data),
-				});
-				this.feeds = await response.json();*/
+				// merge articles
+				respFeeds.forEach(feed => {
+					let curFeed = this.feeds?.find?.(f => f.rss_url == feed.rss_url);
 
+					if (!curFeed) return;
+
+					feed.items.forEach(item => {
+						let curItem = curFeed.items?.find?.(x => x.link == item.link);
+
+						if (!curItem?.article) return;
+
+						item.viewed = curItem.viewed;
+						item.article = curItem.article;
+					});
+				});
+
+				this.feeds = respFeeds;
 				this.loading = false;
 
-				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
-
-				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
-				localStorage.setItem(this.K.feeds, JSON.stringify(this.feeds));
-
-				if (limit_adjust == 0 && count > 0) {
-					this.loadFeedsWithContent({limit, limit_adjust: count});
-				}
-
-				let hash_server = parallel.find(p => p.status == 'fulfilled').value.hash;
+				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
 				console.log({hash_server})
 				if (hash_server) {
 					const url = new URL(location);
@@ -924,8 +1001,28 @@ function alpineRSS() {
 					this.params.hash = hash_server;
 				}
 
-				this.tasks = data.map(x => ({url: x.url, checked: false}))
-				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
+				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
+
+				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
+				this.storageSet(this.K.feeds, this.feeds);
+				if (this.params.hash) {
+					this.storageSet(this.K.feeds + this.params.hash, this.feeds);
+					this.storageDel(this.K.feeds);
+				}
+
+
+				if (limit_adjust == 0 && count > 0) {
+					this.loadFeedsWithContent({limit, limit_adjust: count});
+				}
+
+				this.tasks = !data?.length
+					? this.feeds.map(x => ({url: x.rss_url, checked: false}))
+					: data.map(x => ({url: x.url, checked: false}));
+				this.storageSet(this.K.tasks, this.tasks);
+				if (this.params.hash) {
+					this.storageSet(this.K.tasks + this.params.hash, this.tasks);
+					this.storageDel(this.K.tasks);
+				}
 
 				console.log(this.tasks);
 
@@ -1012,7 +1109,7 @@ function alpineRSS() {
 
 					if (len_full <= limit) return true;
 
-					let viewed = localStorage.getItem(this.K.viewed + link);
+					let viewed = this.storageGet(this.K.viewed + link);
 
 					if (viewed) return false;
 
@@ -1041,7 +1138,7 @@ function alpineRSS() {
 
 							feed.items.filter(x => x.link != item.link).forEach(x => x.read_more = false);
 
-							localStorage.setItem(this.K.viewed + item.link, new Date().toString().split(' GMT').shift());
+							this.storageSet(this.K.viewed + item.link, new Date().toString().split(' GMT').shift());
 
 							setTimeout(() => {
 								let fa = document.querySelector('#rss-feed-article-' + feedIdx);
@@ -1125,7 +1222,7 @@ function alpineRSS() {
 
 							if (!Array.isArray(this.persona?.vector) || (item.vector.length != this.persona.vector.length)) {
 								this.persona = {vector: item.vector, count: 1};
-								localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
+								this.storageSet(this.K.persona, this.persona);
 							} else {
 								let similarity = this.similarity(item.vector, this.persona.vector);
 								console.log('similarity', similarity);
@@ -1135,7 +1232,7 @@ function alpineRSS() {
 
 								if (newVector) {
 									this.persona = 	{vector: newVector, count: this.persona.count + 1};
-									localStorage.setItem(this.K.persona, JSON.stringify(this.persona));
+									this.storageSet(this.K.persona, this.persona);
 								}
 							}
 
@@ -1170,6 +1267,34 @@ function alpineRSS() {
 			return {count};
 		},
 
+		async reviewTask() {
+			try {
+				let urls = this.input?.split(',').map(x => {
+					let url = new URL(x).toString();
+
+					return {url};
+				});
+
+				let data = await fetch(`/api/feeds?limit=6`, {
+					method: 'POST',
+					headers: {"content-type": "application/json"},
+					signal: AbortSignal.timeout(20e3),
+					body: JSON.stringify({keys: urls}),
+				})
+				.then(resp => resp.json())
+				.catch(null);
+
+				if (!data) return;
+
+				// console.log({data});
+				this.review_feed = data.feeds[0];
+
+				console.log({review_feed: this.review_feed});
+			} catch (ex) {
+				alert(ex.message);
+			}
+		},
+
 		addNewTask() {
 			try {
 				this.input?.split(',').forEach(x => {
@@ -1182,9 +1307,14 @@ function alpineRSS() {
 					this.tasks.push({ url, checked: false });
 				});
 
-				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
+				this.storageSet(this.K.tasks, this.tasks);
+				if (this.params.hash) {
+					this.storageSet(this.K.tasks + this.params.hash, this.tasks);
+					this.storageDel(this.K.tasks);
+				}
 
 				this.input = '';
+				this.review_feed = null;
 			} catch (ex) {
 				alert(ex.message);
 			}
@@ -1194,7 +1324,11 @@ function alpineRSS() {
 			try {
 				this.tasks.push(...this.K.DEFAULTS.map(x => ({url: x, checked: false})));
 
-				localStorage.setItem(this.K.tasks, JSON.stringify(this.tasks));
+				this.storageSet(this.K.tasks, this.tasks);
+				if (this.params.hash) {
+					this.storageSet(this.K.tasks + this.params.hash, this.tasks);
+					this.storageDel(this.K.tasks);
+				}
 			} catch (ex) {
 				alert(ex.message);
 			}
@@ -1203,7 +1337,8 @@ function alpineRSS() {
 		clearAllTasks() {
 			this.input = '';
 			this.tasks = [];
-			localStorage.setItem(this.K.tasks, '');
+			this.storageDel(this.K.tasks, '');
+			this.storageDel(this.K.tasks + this.params.hash, '');
 		},
 
 		buildTasks() {
@@ -1221,40 +1356,51 @@ function alpineRSS() {
 		},
 
 		async init() {
-			console.log('init')
+			// console.log('init')
 			this.params = Object.fromEntries(new URLSearchParams(location.search));
+			this.params.hash = this.params.hash || '';
 
 			let limit = this.params?.limit || this.K.LIMIT;
 
-			if (localStorage.getItem(this.K.persona)) {
-				this.persona = JSON.parse(localStorage.getItem(this.K.persona));
+			if (this.storageGet(this.K.tasks)?.length) {
+				this.tasks = this.storageGet(this.K.tasks);
 
-				console.log('init', this.persona)
+				if (this.params.hash && this.storageGet(this.K.tasks + this.params.hash))
+					this.tasks = this.storageGet(this.K.tasks + this.params.hash);
 
-				if (typeof this.persona.vector == 'object') {
-					this.persona.vector = Object.values(this.persona.vector);
-				}
+				if (this.tasks?.length)
+					this.tasks = this.K.DEFAULTS.map(x => ({url: x, checked: false}));
+
+				// console.log('init', this.tasks)
 			}
 
-			if (localStorage.getItem(this.K.tasks)?.length) {
-				this.tasks = JSON.parse(localStorage.getItem(this.K.tasks));
-				console.log('init', this.tasks)
-			}
+			if (this.storageGet(this.K.feeds)?.length) {
+				this.feeds = this.storageGet(this.K.feeds);
 
-			if (localStorage.getItem(this.K.feeds)?.length) {
-				this.feeds = JSON.parse(localStorage.getItem(this.K.feeds));
+				if (this.params.hash && this.storageGet(this.K.feeds + this.params.hash))
+					this.feeds = this.storageGet(this.K.feeds + this.params.hash);
 
-				console.log('init', this.feeds)
+				// console.log('init', this.feeds)
 
 				this.postProcessFeeds({limit});
 			}
 
 			this.loadFeedsWithContent({limit});
 
+			if (this.storageGet(this.K.persona)) {
+				this.persona = this.storageGet(this.K.persona);
+
+				// console.log('init', this.persona)
+
+				if (typeof this.persona.vector == 'object') {
+					this.persona.vector = Object.values(this.persona.vector);
+				}
+			}
+
 			Object.entries({...localStorage})
 				.filter(
-					([k, v]) => k.includes(this.K.viewed)
-								&& (new Date(v) < new Date(Date.now() - 24*60*60e3))
+					([k, v]) => ( k.includes(this.K.viewed) && (new Date(v) < new Date(Date.now() - 24*60*60e3)) )
+							|| ( Number(k.split('_').shift().replace('v', '')) < Number(VERSION.replace('v', '')) )
 				)
 				.forEach( ([k, v]) => localStorage.removeItem(k) )
 			;

@@ -35,7 +35,7 @@ async function parseRSS(url: string, content: string) {
 		if (!url) return null;
 
 		if (!content) {
-			console.log('parseRSS.content', url);
+			// console.log('parseRSS.content', url);
 			url = url.replaceAll(' ', '+');
 			// console.log('parseRSS.content.server-side', url);
 
@@ -55,7 +55,7 @@ async function parseRSS(url: string, content: string) {
 				}),
 			]);
 		} else {
-			console.log('parseRSS.content_with_url', url);
+			// console.log('parseRSS.content_with_url', url);
 		}
 
 		if (!content) return null;
@@ -209,39 +209,50 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/api/feeds") {
-		let feeds = [];
+		let feeds = [], data = null;
 
 		if (req.method == 'GET') {
-			urls = decodeURIComponent(urls);
+			urls = decodeURIComponent(urls).split(',');
 
-			feeds = await fetchRSSLinks({urls, limit});
+			let v = urls.map(x => ({url: x}));
+			data = {keys: v, batch: v};
 		}
 
 		if (req.method == 'POST') {
-			let data = await req.json();
-
-			let {keys, batch} = data;
-
-			if (hash && !keys?.length) {
-				keys = (await KV.get([pathname, hash]))?.value || [];
-			} 
-			
-			keys = keys.filter(x => x.url);
-
-			// console.log('post', hash, keys.map(x => x.url), keys.map(x => x.content?.length))
-
-			if (!hash) {
-				hash = crypto.createHash('md5').update(JSON.stringify(keys)).digest("hex").slice(0, 6);
-			}
-
-			let saved = batch || keys || null;
-
-			if (saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
-
-			// console.log('saved', saved.map(x => ({url: x.url})));
-
-			feeds = await fetchRSSLinks({urls: keys, limit});
+			data = await req.json();
 		}
+
+		// console.dir({data})
+
+		let {keys, batch} = data;
+
+		if (!keys?.length) {
+			console.log('fallback keys = batch')
+			keys = batch || [];
+		}
+
+		if (!keys?.length && hash) {
+			console.log('fallback keys = KV', hash)
+			keys = (await KV.get([pathname, hash]))?.value || [];
+		}
+
+		keys = keys.filter(x => x.url);
+
+		// console.log('post', hash, keys.map(x => x.url), keys.map(x => x.content?.length))
+
+		// console.dir({keys})
+
+		if (!hash) {
+			hash = crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 6);
+		}
+
+		let saved = (batch?.length ? batch : keys) || null;
+
+		if (saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
+
+		console.log('saved', [pathname, hash], saved.map(x => ({url: x.url})));
+
+		feeds = await fetchRSSLinks({urls: keys, limit});
 
 		return response(JSON.stringify({feeds, hash}), {
 			headers: {
