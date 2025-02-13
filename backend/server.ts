@@ -224,7 +224,7 @@ async function handleRequest(req: Request) {
 
 		// console.dir({data})
 
-		let {keys, batch} = data;
+		let {keys, batch, force_update} = data;
 
 		if (!keys?.length) {
 			// console.log('fallback keys = batch')
@@ -248,7 +248,7 @@ async function handleRequest(req: Request) {
 
 		if (saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
 
-		console.log('saved', [pathname, hash], saved.map(x => ({url: x.url})));
+		console.log('saved', saved.length, force_update, [pathname, hash], saved.map(x => ({url: x.url})));
 
 		feeds = await fetchRSSLinks({urls: keys, limit});
 
