@@ -61,7 +61,11 @@
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
 		<header class="bg-blue-600 p-4 pt-6 text-stone-100 text-center">
-			<a href="/#title" name="title"><h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold">The Newsroom RSS</h1></a>
+			<a href="/#title" name="title">
+				<h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold" 
+					x-html="K.TITLE">
+				</h1>
+			</a>
 		</header>
 		<main class="container mx-auto p-2 flex-1">
 			<div class="flex gap-4 items-center mb-4 justify-self-center">
@@ -702,6 +706,7 @@ function alpineRSS() {
 		options_editor: null,
 
 		K: {
+			TITLE: 'The Newsroom RSS',
 			LIMIT: 6,
 
 			DEFAULTS: [
@@ -737,6 +742,25 @@ function alpineRSS() {
 		},
 		storageDel(key) {
 			return localStorage.removeItem(key);
+		},
+
+		theTitle() {
+			const BREAKS = [
+				"We'll be right back...",
+				"We'll be back in a moment...",
+				"More after the break...",
+				"Stay with us...",
+			];
+
+			let now = new Date();
+
+			let hour = now.getHours();
+
+			if (this.loading) return BREAKS[Math.floor(Math.random()*BREAKS.length)];
+			
+			if (hour >= 20 && hour <=21) return 'News Night';
+
+			return 'The Newsroom RSS';
 		},
 
 		async testLLM() {
@@ -1369,6 +1393,8 @@ function alpineRSS() {
 
 			let limit = this.params?.limit || this.K.LIMIT;
 
+			this.loading = true;
+
 			if (this.storageGet(this.K.tasks)?.length) {
 				this.tasks = this.storageGet(this.K.tasks);
 
@@ -1391,6 +1417,7 @@ function alpineRSS() {
 
 				this.postProcessFeeds({limit});
 			}
+			this.loading = false;
 
 			this.loadFeedsWithContent({limit});
 
@@ -1460,6 +1487,10 @@ function alpineRSS() {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
 			// 	console.log('vector2', vector2);
 			// }, 10e3);
+
+			this.$watch('loading', value => {
+                this.K.TITLE = this.theTitle();
+            });
 		},
 	}
 };
