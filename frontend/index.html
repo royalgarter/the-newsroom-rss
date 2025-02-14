@@ -952,6 +952,8 @@ function alpineRSS() {
 			this.loading = true;
 			this.error = null;
 
+			console.log('loadFeedsWithContent');
+
 			try {
 				let urls = init_urls || (this.params?.urls?.length ? this.params?.urls?.split(',') : this.tasks?.map(x => x.url));
 
@@ -965,6 +967,7 @@ function alpineRSS() {
 						fetch(url.replaceAll(' ', '+'), {redirect: 'follow'})
 							.then(resp => resp.text())
 							.then(content => resolve({url, content}))
+							.catch(ex => resolve({url}))
 					} catch (ex) {
 						this.storageSet(key_nofetch, true);
 						resolve({url})
@@ -977,6 +980,8 @@ function alpineRSS() {
 					this.storageSet(this.K.hash, this.params.hash);
 				}
 
+				console.log('datas:', data);
+
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
@@ -987,6 +992,7 @@ function alpineRSS() {
 							body: JSON.stringify({batch: data, force_update}),
 						})
 						.then(resp => resp.json())
+						.catch(null)
 					]
 					: data.map(item =>
 						fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
@@ -996,6 +1002,7 @@ function alpineRSS() {
 							body: JSON.stringify({keys :[item], batch: data}),
 						})
 						.then(resp => resp.json())
+						.catch(null)
 					)
 				);
 
@@ -1064,6 +1071,8 @@ function alpineRSS() {
 				console.error("Error fetching feeds:", error);
 				this.error = "Failed to load feeds. Please check the server logs for more details";
 				this.loading = false;
+			} finally {
+				console.log('loadFeedsWithContent.done');
 			}
 		},
 
@@ -1220,7 +1229,7 @@ function alpineRSS() {
 						try {
 							resp = noClientFetch
 									? await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null)
-									: await fetch(item.link, opts);
+									: await fetch(item.link, opts).catch(null);
 						} catch (ex) {
 							this.storageSet(key_nofetch, true);
 							resp = await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null);
@@ -1436,32 +1445,31 @@ function alpineRSS() {
 
 			this.loading = true;
 
-			// this.title = this.theTitle();
+			console.log('inited params', this.params)
 
-			if (this.storageGet(this.K.tasks)?.length) {
-				this.tasks = this.storageGet(this.K.tasks);
+			this.tasks = this.storageGet(this.K.tasks) || [];
+			console.log('inited tasks_0', this.tasks.length)
 
-				if (this.params.hash)
-					this.tasks = this.storageGet(this.K.tasks + this.params.hash) || this.tasks;
+			if (this.params.hash)
+				this.tasks = this.storageGet(this.K.tasks + this.params.hash) || this.tasks;
 
-				if (this.tasks?.length)
-					this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
-			}
-			console.log('inited tasks')
+			if (this.tasks?.length)
+				this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
+			console.log('inited tasks', this.tasks.length)
 
-			if (this.storageGet(this.K.feeds)?.length) {
-				this.feeds = this.storageGet(this.K.feeds);
 
-				if (this.params.hash && this.storageGet(this.K.feeds + this.params.hash))
-					this.feeds = this.storageGet(this.K.feeds + this.params.hash) || this.feeds;
+			this.feeds = this.storageGet(this.K.feeds) || [];
+			console.log('inited feeds_0', this.feeds.length, this.params.hash, this.storageGet(this.K.feeds + this.params.hash))
 
-				// console.log('init', this.feeds)
+			if (this.params.hash && this.storageGet(this.K.feeds + this.params.hash))
+				this.feeds = this.storageGet(this.K.feeds + this.params.hash) || this.feeds;
 
-				this.postProcessFeeds({limit});
-			}
-			console.log('inited feeds')
+			this.postProcessFeeds({limit});
+			console.log('inited feeds', this.feeds.length)
+
 
 			this.loading = false;
+
 
 			this.loadFeedsWithContent({limit});
 			console.log('inited contents')
