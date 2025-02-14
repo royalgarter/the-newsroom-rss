@@ -1048,7 +1048,7 @@ function alpineRSS() {
 					this.loadFeedsWithContent({limit, limit_adjust: count});
 				}
 
-				this.tasks = !data?.length
+				this.tasks = (!data?.length)
 					? this.feeds.map((x, i) => ({url: x.rss_url, order: i, checked: false}))
 					: data.map((x, i) => ({url: x.url, order: i, checked: false}));
 
@@ -1060,7 +1060,6 @@ function alpineRSS() {
 				}
 
 				console.log(this.tasks);
-
 			} catch (error) {
 				console.error("Error fetching feeds:", error);
 				this.error = "Failed to load feeds. Please check the server logs for more details";
@@ -1403,6 +1402,12 @@ function alpineRSS() {
 			let encodedUrls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 
 			let limit = this.params?.limit || this.K.LIMIT;
+
+			this.storageSet(this.K.tasks, this.tasks);
+			if (this.params.hash) {
+				this.storageSet(this.K.tasks + this.params.hash, this.tasks);
+				this.storageDel(this.K.tasks);
+			}
 
 			this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
 				.then(done => {
