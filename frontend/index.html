@@ -1446,9 +1446,8 @@ function alpineRSS() {
 
 				if (this.tasks?.length)
 					this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
-
-				// console.log('init', this.tasks)
 			}
+			console.log('inited tasks')
 
 			if (this.storageGet(this.K.feeds)?.length) {
 				this.feeds = this.storageGet(this.K.feeds);
@@ -1460,9 +1459,12 @@ function alpineRSS() {
 
 				this.postProcessFeeds({limit});
 			}
+			console.log('inited feeds')
+
 			this.loading = false;
 
 			this.loadFeedsWithContent({limit});
+			console.log('inited contents')
 
 			if (this.storageGet(this.K.persona)) {
 				this.persona = this.storageGet(this.K.persona);
@@ -1473,6 +1475,7 @@ function alpineRSS() {
 					this.persona.vector = Object.values(this.persona.vector);
 				}
 			}
+			console.log('inited persona')
 
 			Object.entries({...localStorage})
 				.filter(
@@ -1481,6 +1484,7 @@ function alpineRSS() {
 				)
 				.forEach( ([k, v]) => localStorage.removeItem(k) )
 			;
+			console.log('inited old localStorage')
 
 			let this_params = this.params;
 			let editor_options = new JSONEditor(document.getElementById('json-editor'), {
@@ -1529,13 +1533,12 @@ function alpineRSS() {
 				history.pushState({}, "", url);
 			});
 			this.editor_options = editor_options;
+			console.log('inited editor')
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
 			// 	console.log('vector2', vector2);
 			// }, 10e3);
-
-
 		},
 	}
 };
