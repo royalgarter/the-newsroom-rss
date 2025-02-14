@@ -1052,7 +1052,7 @@ function alpineRSS() {
 				}
 
 				if (limit_adjust == 0 && count > 0) {
-					this.loadFeedsWithContent({limit, limit_adjust: count});
+					await this.loadFeedsWithContent({limit, limit_adjust: count});
 				}
 
 				this.tasks = (!data?.length)
@@ -1127,6 +1127,8 @@ function alpineRSS() {
 
 		postProcessFeeds({limit=this.K.LIMIT, auto_fetch_content=false}) {
 			let count = 0;
+
+			if (!this.feeds?.length) return {count};
 
 			this.feeds.forEach((feed, feedIdx) => {
 				if (!feed?.items?.length) return;
@@ -1452,11 +1454,7 @@ function alpineRSS() {
 
 			if (this.params.hash)
 				this.tasks = this.storageGet(this.K.tasks + this.params.hash) || this.tasks;
-
-			if (this.tasks?.length)
-				this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
 			console.log('inited tasks', this.tasks.length)
-
 
 			this.feeds = this.storageGet(this.K.feeds) || [];
 			console.log('inited feeds_0', this.feeds.length, this.params.hash, this.storageGet(this.K.feeds + this.params.hash))
@@ -1467,11 +1465,16 @@ function alpineRSS() {
 			this.postProcessFeeds({limit});
 			console.log('inited feeds', this.feeds.length)
 
-
 			this.loading = false;
 
-
-			this.loadFeedsWithContent({limit});
+			this.loadFeedsWithContent({limit})
+				.then(done => {
+					if (this.tasks?.length) {
+						this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
+						console.log('default tasks', this.tasks.length)
+					}
+				})
+				.catch(null);
 			console.log('inited contents')
 
 			if (this.storageGet(this.K.persona)) {
