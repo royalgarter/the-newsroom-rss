@@ -1336,7 +1336,7 @@ function alpineRSS() {
 
 					if (found) return;
 
-					this.tasks.push({ url, order: tasks.length, checked: false });
+					this.tasks.push({ url, order: this.tasks.length, checked: false });
 				});
 
 				this.storageSet(this.K.tasks, this.tasks);
