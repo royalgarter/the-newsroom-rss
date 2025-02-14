@@ -63,7 +63,7 @@
 		<header class="bg-blue-600 p-4 pt-6 text-stone-100 text-center">
 			<a href="/#title" name="title">
 				<h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold" 
-					x-html="K.TITLE">
+					x-html="title">
 				</h1>
 			</a>
 		</header>
@@ -224,20 +224,20 @@
 
 				<!-- rss-settings -->
 				<div x-data="{
-						expanded: (document.querySelectorAll('.rss-task-item').length == 0 && location.search.search(/hash=[^\s]+/) >= 0)
+						expanded: (document.querySelectorAll('.rss-task-item').length == 0)
 					}"
 					class="py-2">
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-01"
 							type="button"
-							class="flex items-center justify-between w-full text-left font-semibold py-2"
+							class="cursor-pointer flex items-center justify-between w-full text-left font-semibold py-2"
 							@click="expanded = !expanded"
 							:aria-expanded="expanded"
 							aria-controls="collapse-text-01"
 						>
 							<span x-html="'Your RSS Feeds (' + (tasks.length || '') + ')'"></span>
-							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+							<svg class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 							</svg>
@@ -401,6 +401,13 @@
 											Clear All
 										</button>
 										<button
+											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-500 p-2 font-bold rounded shadow"
+											x-show="tasks.length > 0"
+											@click="exportTasks()"
+										>
+											Export CSV
+										</button>
+										<button
 											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow"
 											x-show="tasks.length > 0"
 											@click="buildTasks()"
@@ -429,13 +436,13 @@
 						<button
 							id="collapse-title-02"
 							type="button"
-							class="flex items-center justify-between w-full text-left font-semibold py-2"
+							class="cursor-pointer flex items-center justify-between w-full text-left font-semibold py-2"
 							@click="expanded = !expanded"
 							:aria-expanded="expanded"
 							aria-controls="collapse-text-02"
 						>
 							<span>Why You Need RSS in Your Life</span>
-							<svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+							<svg class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 							</svg>
@@ -689,6 +696,8 @@ function alpineRSS() {
 	const VERSION = 'v2';
 
 	return {
+		title: 'The Newsroom RSS',
+
 		feeds: [],
 		loading: false,
 		error: null,
@@ -703,10 +712,9 @@ function alpineRSS() {
 
 		persona: null,
 
-		options_editor: null,
+		editor_options: null,
 
 		K: {
-			TITLE: 'The Newsroom RSS',
 			LIMIT: 6,
 
 			DEFAULTS: [
@@ -757,7 +765,7 @@ function alpineRSS() {
 			let hour = now.getHours();
 
 			if (this.loading) return BREAKS[Math.floor(Math.random()*BREAKS.length)];
-			
+
 			if (hour >= 20 && hour <=21) return 'News Night';
 
 			return 'The Newsroom RSS';
@@ -956,7 +964,7 @@ function alpineRSS() {
 					try {
 						fetch(url.replaceAll(' ', '+'), {redirect: 'follow'})
 							.then(resp => resp.text())
-							.then(content => resolve({url, content}))	
+							.then(content => resolve({url, content}))
 					} catch (ex) {
 						this.storageSet(key_nofetch, true);
 						resolve({url})
@@ -1028,12 +1036,12 @@ function alpineRSS() {
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
 				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
-				
+
 				if (this.params.hash) {
 					this.storageSet(this.K.feeds + this.params.hash, this.feeds);
 					this.storageDel(this.K.feeds);
 				} else {
-					this.storageSet(this.K.feeds, this.feeds);	
+					this.storageSet(this.K.feeds, this.feeds);
 				}
 
 				if (limit_adjust == 0 && count > 0) {
@@ -1043,7 +1051,7 @@ function alpineRSS() {
 				this.tasks = !data?.length
 					? this.feeds.map((x, i) => ({url: x.rss_url, order: i, checked: false}))
 					: data.map((x, i) => ({url: x.url, order: i, checked: false}));
-				
+
 				if (this.params.hash) {
 					this.storageSet(this.K.tasks + this.params.hash, this.tasks);
 					this.storageDel(this.K.tasks);
@@ -1211,8 +1219,8 @@ function alpineRSS() {
 
 						let noClientFetch = this.storageGet(key_nofetch);
 						try {
-							resp = noClientFetch 
-									? await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null) 
+							resp = noClientFetch
+									? await fetch(`/html?urls=${encodeURIComponent(item.link)}`, opts).catch(null)
 									: await fetch(item.link, opts);
 						} catch (ex) {
 							this.storageSet(key_nofetch, true);
@@ -1302,7 +1310,7 @@ function alpineRSS() {
 		async reviewTask() {
 			try {
 				let urls = this.input?.split(',').map(x => {
-					let url = new URL(x).toString();
+					let url = new URL(x.trim()).toString();
 
 					return {url};
 				});
@@ -1323,14 +1331,14 @@ function alpineRSS() {
 
 				console.log({review_feed: this.review_feed});
 			} catch (ex) {
-				alert(ex.message);
+				console.log(ex.message);
 			}
 		},
 
 		addNewTask() {
 			try {
 				this.input?.split(',').forEach(x => {
-					let url = new URL(x).toString();
+					let url = new URL(x.trim()).toString();
 
 					let found = this.tasks.find(x => x?.url == url);
 
@@ -1348,7 +1356,7 @@ function alpineRSS() {
 				this.input = '';
 				this.review_feed = null;
 			} catch (ex) {
-				alert(ex.message);
+				console.error(ex.message);
 			}
 		},
 
@@ -1359,10 +1367,10 @@ function alpineRSS() {
 				if (this.params.hash) {
 					this.storageSet(this.K.tasks + this.params.hash, this.tasks);
 				} else {
-					this.storageSet(this.K.tasks, this.tasks);	
+					this.storageSet(this.K.tasks, this.tasks);
 				}
 			} catch (ex) {
-				alert(ex.message);
+				console.error(ex.message);
 			}
 		},
 
@@ -1371,6 +1379,24 @@ function alpineRSS() {
 			this.tasks = [];
 			this.storageDel(this.K.tasks, '');
 			this.storageDel(this.K.tasks + this.params.hash, '');
+		},
+
+		exportTasks() {
+			let encodedUrls = this.tasks?.map?.(x => x.url).join(',\n');
+			let filename = `${this.params.hash || 'feeds'}.csv`;
+
+			const blob = new Blob([encodedUrls], {type: 'text/csv'});
+
+			if(window.navigator.msSaveOrOpenBlob) {
+				window.navigator.msSaveBlob(blob, filename);
+			} else {
+				const elem = window.document.createElement('a');
+				elem.href = window.URL.createObjectURL(blob);
+				elem.download = filename;
+				document.body.appendChild(elem);
+				elem.click();
+				document.body.removeChild(elem);
+			}
 		},
 
 		buildTasks() {
@@ -1393,12 +1419,19 @@ function alpineRSS() {
 
 		async init() {
 			// console.log('init')
+
+			this.$watch('loading', value => {
+				this.title = this.theTitle();
+			});
+
 			this.params = Object.fromEntries(new URLSearchParams(location.search));
 			this.params.hash = this.params.hash || this.storageGet(this.K.hash);
 
 			let limit = this.params?.limit || this.K.LIMIT;
 
 			this.loading = true;
+
+			// this.title = this.theTitle();
 
 			if (this.storageGet(this.K.tasks)?.length) {
 				this.tasks = this.storageGet(this.K.tasks);
@@ -1444,7 +1477,8 @@ function alpineRSS() {
 				.forEach( ([k, v]) => localStorage.removeItem(k) )
 			;
 
-			let options_editor = new JSONEditor(document.getElementById('json-editor'), {
+			let this_params = this.params;
+			let editor_options = new JSONEditor(document.getElementById('json-editor'), {
 				schema: {
 					type: "object",
 					title: "RSS Options",
@@ -1480,22 +1514,23 @@ function alpineRSS() {
 				no_additional_properties: true,
 			});
 			document.getElementById('json-editor-submit').addEventListener('click', function () {
-				let opts = options_editor.getValue();
+				let opts = editor_options.getValue();
 
 				const url = new URL(location);
-				Object.entries(opts).forEach( ([k,v]) => url.searchParams.set(k, v))
+				Object.entries(opts).forEach( ([k, v]) => {
+					url.searchParams.set(k, v);
+					this_params[k] = v;
+				});
 				history.pushState({}, "", url);
 			});
-			this.options_editor = options_editor;
+			this.editor_options = editor_options;
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
 			// 	console.log('vector2', vector2);
 			// }, 10e3);
 
-			this.$watch('loading', value => {
-                this.K.TITLE = this.theTitle();
-            });
+
 		},
 	}
 };
