@@ -24,11 +24,11 @@ const CACHE = {
 	del: (k) => CACHE.MAP.delete(k),
 }
 
-console.log(Deno.env.get("DENO_KV_ACCESS_TOKEN"));
-console.log(Deno.env.get("DENO_KV_URL"));
-console.log(await KV.get(["/api/feeds","djinni"]));
 
 async function test() {
+	// console.log(Deno.env.get("DENO_KV_ACCESS_TOKEN"));
+	// console.log(Deno.env.get("DENO_KV_URL"));
+	// console.log(await KV.get(["/api/feeds","djinni"]));
 	// await KV.set(['hello'], 'world');console.log(await KV.get(['hello']));
 	// const myUUID = crypto.randomUUID();
 	// console.log("Random UUID:", myUUID);
