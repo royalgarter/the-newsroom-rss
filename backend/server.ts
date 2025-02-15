@@ -244,7 +244,7 @@ async function handleRequest(req: Request) {
 
 		hash = hash || crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 8);
 
-		let saved = (batch?.length ? batch : keys) || null;
+		let saved = force_update ? batch : ((batch?.length ? batch : keys) || null);
 
 		if (saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
 
