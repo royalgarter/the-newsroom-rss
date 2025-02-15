@@ -60,9 +60,9 @@
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
 	</head>
 	<body x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
-		<header class="bg-blue-600 p-4 pt-6 text-stone-100 text-center">
+		<header class="bg-blue-600 p-4 text-stone-100 text-center">
 			<a href="/#title" name="title">
-				<h1 :class="loading ? 'animate-pulse' : ''" class="text-2xl font-bold" 
+				<h1 :class="loading ? 'animate-pulse italic' : ''" class="text-2xl font-bold" 
 					x-html="title">
 				</h1>
 			</a>
@@ -758,6 +758,8 @@ function alpineRSS() {
 			const BREAKS = [
 				"We'll be right back...",
 				"We'll be back in a moment...",
+				"We'll be back in 30s...",
+				"Back in 5s. 5...4...3...2...",
 				"More after the break...",
 				"Stay with us...",
 			];
