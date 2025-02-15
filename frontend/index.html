@@ -148,11 +148,11 @@
 										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 transition duration-500 ease-in-out"
 											:class="(item.images?.[0]?.length) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
-											x-text="item.title"
+											x-text="decodeHTML(item.title)"
 										>
 										</a>
 										<p class="rss-desc text-gray-500 text-sm whitespace-pre-line break-words" 
-											x-html="item.description || ''"
+											x-html="item.description ? decodeHTML(item.description) : ''"
 										>
 										</p>
 									</div>
@@ -1106,6 +1106,14 @@ function alpineRSS() {
 				rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /* or $(window).height() */
 				rect.right <= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
 			);
+		},
+
+		decodeHTML(html) {
+			var txt = document.createElement('textarea');
+			txt.innerHTML = html;
+			let decoded = txt.value;
+			delete txt;
+			return decoded;
 		},
 
 		timeSince(date) {
