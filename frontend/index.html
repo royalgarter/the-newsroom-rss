@@ -236,7 +236,7 @@
 							:aria-expanded="expanded"
 							aria-controls="collapse-text-01"
 						>
-							<span x-html="'Your RSS Feeds' + (tasks.length ? ' (' + tasks.length + ') ' : ' ')"></span>
+							<span x-html="'Your RSS Feeds' + (tasks?.length ? ' [' + tasks.length + ']' : '') + (loading ? ' is loading' : '')"></span>
 							<svg class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
@@ -907,27 +907,27 @@ function alpineRSS() {
 		triggerIntersect(type, link) {
 			if (!link) return console.log('ELINK');
 
-			this.TRIGGER[link] = this.TRIGGER[link] || {};
+			let trig = this.TRIGGER[link] || {};
 
 			let now = new Date();
 
 			switch (type) {
 				case 'full'://case 'enter':
-					this.TRIGGER[link].tic = Math.min(now, this.TRIGGER[link].tic || now);
+					trig.tic = Math.min(now, trig.tic || now);
 				break;
 				case 'leave':
-					this.TRIGGER[link].toc = Math.max(now, this.TRIGGER[link].toc || now);
-					// this.TRIGGER[link].tic = Math.min(this.TRIGGER[link].toc, this.TRIGGER[link].tic || now);
+					trig.toc = Math.max(now, trig.toc || now);
+					// trig.tic = Math.min(trig.toc, trig.tic || now);
 
-					if (this.TRIGGER[link].tic && this.TRIGGER[link].toc) {
-						let delta = this.TRIGGER[link].toc - this.TRIGGER[link].tic;
+					if (trig.tic && trig.toc) {
+						let delta = trig.toc - trig.tic;
 
-						this.TRIGGER[link].sum = this.TRIGGER[link].sum || 0;
-						this.TRIGGER[link].sum += delta;
+						trig.sum = trig.sum || 0;
+						trig.sum += delta;
 
 						// console.log('delta', delta)
 
-						if (this.TRIGGER[link].sum > this.TRIGGER.LIMIT) {
+						if (trig.sum > this.TRIGGER.LIMIT) {
 							// console.log(' > viewed', link);
 
 							this.storageSet(this.K.viewed + link, now.toString().split(' GMT').shift());
@@ -940,12 +940,14 @@ function alpineRSS() {
 								found.viewed = this.storageGet(this.K.viewed + link);
 							});
 						} else {
-							this.TRIGGER[link].tic = this.TRIGGER[link].toc;
+							trig.tic = trig.toc;
 							// console.log(' > reset', link);
 						}
 					}
 				break;
 			}
+
+			this.TRIGGER[link] = trig;
 		},
 
 		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=0, init_urls, force_update}) {
@@ -1278,7 +1280,10 @@ function alpineRSS() {
 						}
 					};
 
-					if (feedIdx <= 1) item.prefetchContent();
+					if (feedIdx <= 1) {
+						item.prefetchContent();
+						this.triggerIntersect('full', item.link);
+					}
 
 					item.updatePersona = async () => {
 						item.vector = item.vector || await this.embedSentence(item.title);
