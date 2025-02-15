@@ -16,13 +16,17 @@ const cors = {
 	"Access-Control-Allow-Headers": "Content-Type",
 };
 
-const KV = await Deno.openKv();
+const KV = await Deno.openKv(Deno.env.get("DENO_KV_URL"));
 const CACHE = {
 	MAP: new Map(),
 	set: (k, v, e=60*60*24*7) => setTimeout(CACHE.MAP.delete, e*1e3, k) && CACHE.MAP.set(k, v),
 	get: (k) => CACHE.MAP.get(k),
 	del: (k) => CACHE.MAP.delete(k),
 }
+
+console.log(Deno.env.get("DENO_KV_ACCESS_TOKEN"));
+console.log(Deno.env.get("DENO_KV_URL"));
+console.log(await KV.get(["/api/feeds","djinni"]));
 
 async function test() {
 	// await KV.set(['hello'], 'world');console.log(await KV.get(['hello']));
@@ -32,7 +36,7 @@ async function test() {
 
 async function parseRSS(url: string, content: string) {
 	try {
-		if (!url) return null;
+		if (!url) return {rss_url: url};
 
 		if (!content) {
 			// console.log('parseRSS.content', url);
@@ -58,7 +62,7 @@ async function parseRSS(url: string, content: string) {
 			// console.log('parseRSS.content_with_url', url);
 		}
 
-		if (!content) return null;
+		if (!content) return {rss_url: url};
 
 		// console.log('parseRSS.content', url, content.length);
 
@@ -69,7 +73,7 @@ async function parseRSS(url: string, content: string) {
 		return data;
 	} catch (error) {
 		// console.error(`Error fetching or parsing ${url}:`, error.message);
-		return null;
+		return {rss_url: url};
 	}
 }
 
@@ -78,13 +82,13 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 	let feeds = [];
 
+	console.log('urls', urls, urls.length)
+
 	if (Array.isArray(urls)) {
 		feeds = await Promise.allSettled(
-			urls.map(({url, content}) => {
-				if (!url) return null;
-
-				return parseRSS(url, content);
-			}).filter(x => x)
+			urls
+			.filter(({url}) => url)
+			.map(({url, content}) => parseRSS(url, content))
 		);
 	}
 
@@ -102,19 +106,20 @@ async function fetchRSSLinks({urls, limit=12}) {
 	const SPLIT = /[\:\,\.\-\_\/\|\~]/;
 	const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
-	let render = [];
+	let render = Array(feeds.length).fill(null);
 	// console.log('render')
-	await Promise.allSettled(feeds.map(data => new Promise(resolveFeed => {
+	await Promise.allSettled(feeds.map((data, order) => new Promise(resolveFeed => {
 		(async () => {
-			const items = data.entries.slice(0, limit);
+			const items = data.entries?.slice(0, limit) || [];
 
 			// console.dir(data)
 
 			let head = {
-				title: data.description || data.title.value,
+				title: data.description || data.title?.value || data.rss_url,
 				link: data.links?.[0] || data.rss_url,
 				rss_url: data.rss_url,
 				image: data.image?.url,
+				order,
 			};
 
 			head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
@@ -189,10 +194,12 @@ async function fetchRSSLinks({urls, limit=12}) {
 				items: rss_items.filter(x => x).sort((a, b) => b.images?.length - a.images?.length),
 			};
 
-			render.push(result);
+			render[order] = result;
 		})().catch(console.error).finally(resolveFeed);
 	})));
-	// console.log('render', render.length)
+
+	render = render.filter(x => x);
+	console.log('render', render.map(x => [x?.order, x?.rss_url, x?.items.length]), render.length)
 	return render;
 }
 
@@ -232,8 +239,9 @@ async function handleRequest(req: Request) {
 		}
 
 		if (!keys?.length && hash) {
-			// console.log('fallback keys = KV', hash)
-			keys = (await KV.get([pathname, hash]))?.value || [];
+			let kv_keys = (await KV.get([pathname, hash]))?.value;
+			console.log('fallback keys = KV', kv_keys, kv_keys.length);
+			keys = kv_keys || [];
 		}
 
 		keys = keys.filter(x => x.url);
@@ -246,9 +254,11 @@ async function handleRequest(req: Request) {
 
 		let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
-		if (update && saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
-
-		console.log('saved', saved.length, update, [pathname, hash], saved.map(x => ({url: x.url})));
+		if (update && saved) {
+			let save_obj = saved.map((x, order) => ({url: x.url, order}));
+			KV.set([pathname, hash], save_obj);
+			console.log('saved', saved.length, [pathname, hash], save_obj);
+		}
 
 		feeds = await fetchRSSLinks({urls: keys, limit});
 
@@ -317,3 +327,4 @@ async function handleRequest(req: Request) {
 const port = process.env.PORT || 17385;
 
 serve(handleRequest, {port});
+const ping = () => fetch(`http://localhost:${port}`).then(() => setTimeout(ping, 5*60e3));ping();

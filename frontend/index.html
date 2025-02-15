@@ -959,14 +959,14 @@ function alpineRSS() {
 			try {
 				let urls = init_urls || (this.params?.urls?.length ? this.params?.urls?.split(',') : this.tasks?.map(x => x.url));
 
-				let data = urls?.length ? await Promise.all(urls.map(url => new Promise(resolve => {
+				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
 					if (force_update) return resolve({url});
 
 					let key_nofetch = this.K.noClientFetch + new URL(url).hostname;
 
 					if (this.storageGet(key_nofetch)) return resolve({url});
 					try {
-						fetch(url.replaceAll(' ', '+'), {redirect: 'follow'})
+						fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(5e3)})
 							.then(resp => resp.text())
 							.then(content => resolve({url, content}))
 							.catch(ex => resolve({url}))
@@ -975,6 +975,8 @@ function alpineRSS() {
 						resolve({url})
 					}
 				}))) : [];
+
+				data = data.map(x => x.value);
 
 				if (!this.params?.hash && data.length) {
 					let hash_local = await this.digest(JSON.stringify(data) + Date.now());

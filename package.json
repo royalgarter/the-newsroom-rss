@@ -1,5 +1,5 @@
 {
   "scripts": {
-    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env backend/server.ts"
+    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --env-file=.env backend/server.ts"
   }
 }
