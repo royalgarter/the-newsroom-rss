@@ -325,6 +325,6 @@ async function handleRequest(req: Request) {
 }
 
 const port = process.env.PORT || 17385;
-console.dir({port});
 serve(handleRequest, {port});
-const ping = () => fetch(`http://localhost:80`).then().catch().finally(() => setTimeout(ping, 5*60e3));ping();
+// console.dir({port});
+// const ping = () => fetch(`http://localhost:80`).then().catch().finally(() => setTimeout(ping, 5*60e3));ping();
