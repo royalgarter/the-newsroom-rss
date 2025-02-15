@@ -144,7 +144,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 							let image_og = CACHE.get(key_image);
 
 							if (!image_og) {
-								let html = await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(1e3) })
+								let html = await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
 												.then(resp => resp.text()).catch(null);
 
 								image_og = (html || '')?.match(REGEX_IMAGE)?.[1];
@@ -224,7 +224,7 @@ async function handleRequest(req: Request) {
 
 		// console.dir({data})
 
-		let {keys, batch, force_update} = data;
+		let {keys, batch, update} = data;
 
 		if (!keys?.length) {
 			// console.log('fallback keys = batch')
@@ -244,11 +244,11 @@ async function handleRequest(req: Request) {
 
 		hash = hash || crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 8);
 
-		let saved = force_update ? batch : ((batch?.length ? batch : keys) || null);
+		let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
-		if (saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
+		if (update && saved) KV.set([pathname, hash], saved.map(x => ({url: x.url})) );
 
-		console.log('saved', saved.length, force_update, [pathname, hash], saved.map(x => ({url: x.url})));
+		console.log('saved', saved.length, update, [pathname, hash], saved.map(x => ({url: x.url})));
 
 		feeds = await fetchRSSLinks({urls: keys, limit});
 

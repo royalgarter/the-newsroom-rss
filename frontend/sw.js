@@ -2,7 +2,7 @@
 
 const CACHE = "pwabuilder-offline-page";
 
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.4.1/workbox-sw.js');
 
 const offlineFallbackPage = "index.html";
 
@@ -25,12 +25,12 @@ if (workbox.navigationPreload.isSupported()) {
 
 workbox.routing.registerRoute(
   new RegExp('/*'),
-  // new workbox.strategies.StaleWhileRevalidate({
-  new workbox.strategies.CacheFirst({
+  new workbox.strategies.StaleWhileRevalidate({
+  // new workbox.strategies.CacheFirst({
     cacheName: CACHE,
     plugins: [
       new workbox.expiration.ExpirationPlugin({
-        maxAgeSeconds: 24 * 60 * 60, // cache for 1 days
+        maxAgeSeconds: 7 * 24 * 60 * 60, // cache for 1 days
         maxEntries: 1e3,
         purgeOnQuotaError: true
       })

@@ -236,7 +236,7 @@
 							:aria-expanded="expanded"
 							aria-controls="collapse-text-01"
 						>
-							<span x-html="'Your RSS Feeds (' + (tasks.length || '') + ')'"></span>
+							<span x-html="'Your RSS Feeds' + (tasks.length ? ' (' + tasks.length + ') ' : ' ')"></span>
 							<svg class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
@@ -697,6 +697,8 @@ function alpineRSS() {
 
 	return {
 		title: 'The Newsroom RSS',
+		version: VERSION,
+
 
 		feeds: [],
 		loading: false,
@@ -989,12 +991,12 @@ function alpineRSS() {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
-							body: JSON.stringify({batch: data, force_update}),
+							body: JSON.stringify({batch: data, update: force_update}),
 						})
 						.then(resp => resp.json())
 						.catch(null)
 					]
-					: data.map(item =>
+					: data.map((item, idx) =>
 						fetch(`/api/feeds?limit=${limit + limit_adjust}&hash=${this.params.hash || ''}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
@@ -1002,6 +1004,10 @@ function alpineRSS() {
 							body: JSON.stringify({keys :[item], batch: data}),
 						})
 						.then(resp => resp.json())
+						.then(json => {
+							console.log('fetched', idx, item, json);
+							return json;
+						})
 						.catch(null)
 					)
 				);
@@ -1010,6 +1016,8 @@ function alpineRSS() {
 
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
+
+				console.log('respFeeds:', respFeeds);
 
 				// merge articles
 				respFeeds.forEach(feed => {
@@ -1414,6 +1422,7 @@ function alpineRSS() {
 
 			let limit = this.params?.limit || this.K.LIMIT;
 
+			this.loading = true;
 			this.storageSet(this.K.tasks, this.tasks);
 			if (this.params.hash) {
 				this.storageSet(this.K.tasks + this.params.hash, this.tasks);
@@ -1423,6 +1432,7 @@ function alpineRSS() {
 			this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
 				.then(done => {
 					console.log('build tasks done');
+					this.loading = false;
 					window.open(`/?limit=${limit}&hash=${this.params.hash||''}`, '_self')
 				});
 		},
@@ -1469,7 +1479,7 @@ function alpineRSS() {
 
 			this.loadFeedsWithContent({limit})
 				.then(done => {
-					if (this.tasks?.length) {
+					if (!this.tasks?.length) {
 						this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
 						console.log('default tasks', this.tasks.length)
 					}
@@ -1518,7 +1528,7 @@ function alpineRSS() {
 						},
 						style: {
 							type: "string",
-							title: "Style",
+							title: "Display Style",
 							enum: [
 								"default",
 								"noimg",
