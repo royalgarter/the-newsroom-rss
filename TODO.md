@@ -4,7 +4,7 @@
 [ ] https://clientvectorsearch.com/
 [ ] https://ai.google.dev/edge/mediapipe/solutions/text/text_embedder/web_js
 [ ] https://medium.com/@robert.lukoshko/the-ultimate-guide-to-embeddings-in-frontend-development-e4211a06bb13
-
+[ ] https://dev.to/saunved/isfastnet-a-tiny-script-to-find-out-if-your-user-s-internet-is-fast-or-slow-4h84
 
 https://www.reddit.com/r/worldnews+news/.rss,
 https://www.reddit.com/r/askreddit+technology+youshouldknow+explainlikeimfive+todayilearned/.rss,

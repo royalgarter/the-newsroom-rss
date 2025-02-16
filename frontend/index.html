@@ -47,14 +47,13 @@
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3" />
-		<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js" />
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js" />
 		
 		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+		<script src="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
@@ -1029,14 +1028,14 @@ function alpineRSS() {
 						})
 						.then(resp => resp.json())
 						.then(json => {
-							console.log('fetched', idx, item, json);
+							// console.log('fetched', idx, item, json);
 							return json;
 						})
 						.catch(null)
 					)
 				);
 
-				console.log('feeds:', parallel);
+				// console.log('feeds:', parallel);
 
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
@@ -1603,8 +1602,8 @@ navigator?.serviceWorker?.register?.('sw.js');
 </script>
 
  
+<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3" /> -->
 <script type="module">
-// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 // import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
 
 try {
@@ -1621,9 +1620,14 @@ try {
 	  src_lang: 'eng_Latn',
 	  tgt_lang: 'vie_Latn',
 	});
-	console.log(translated);*/
-} catch (ex) {
-	console.log(ex);
-}
+	console.log({translated});*/
+
+	/*const translator = await pipeline('translation', 'Xenova/m2m100_418M');
+	const translated = await translator('We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.', {
+	  src_lang: 'en',
+	  tgt_lang: 'vi',
+	});
+	console.log({translated});*/
+} catch (ex) { console.log(ex) }
 </script>
 
