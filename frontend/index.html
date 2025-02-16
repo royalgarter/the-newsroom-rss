@@ -119,7 +119,25 @@
 													class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
 												</div>
 											</a>
-											<a class="rss-tags" :href="item.link" target="_blank">
+											<a class="rss-tags" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
+												<div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out"
+													x-html="item.author?.toString().substr(0, 12).trim()">
+												</div>
+											</a>
+
+											<a class="rss-author" :href="item.link" target="_blank">
+												<div class="text-xs p-2 h-12 w-12 absolute top-0 right-0 bg-indigo-600  text-white rounded-full flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+													<small class="break-words text-center" 
+														x-html="
+															(timeSince(new Date(item.published)) + ' ago')
+															|| new Date(item.published).toString().split(' GMT').shift()
+															|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()
+														">
+													</small>
+												</div>
+											</a>
+
+											<!-- <a class="rss-tags" :href="item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out"
 													x-html="(timeSince(new Date(item.published)) + ' ago')
 														|| new Date(item.published).toString().split(' GMT').shift()
@@ -133,7 +151,7 @@
 													class="text-xs absolute top-0 right-0 bg-indigo-600 p-1 text-white rounded-full h-14 w-14 flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
 													<small class="break-words text-center" x-html="item.author?.toString().substr(0, 12).trim()"></small>
 												</div>
-											</a>
+											</a> -->
 										</div>
 									</template>
 									<!-- title & description -->
