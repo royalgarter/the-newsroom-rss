@@ -47,15 +47,17 @@ async function parseRSS(url: string, content: string) {
 
 			let key_rss = 'RSS:' + url;
 
-			content = await Promise.race([
+			content = await Promise.any([
 				new Promise((resolve, reject) => {
-					setTimeout(resolve, 10e3, CACHE.get(key_rss));
+					let cached = CACHE.get(key_rss);
+					if (cached) setTimeout(resolve, 3e3, cached);
+					else reject(null);
 				}),
 				new Promise((resolve, reject) => {
 					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(10e3)})
 						.then(resp => resp.text())
 						.then(text => CACHE.set(key_rss, text) && resolve(text))
-						.catch(ex => resolve(null));
+						.catch(ex => reject(null));
 				}),
 			]);
 		} else {
@@ -82,7 +84,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 	let feeds = [];
 
-	console.log('urls', urls, urls.length)
+	// console.log('urls', urls, urls.length)
 
 	if (Array.isArray(urls)) {
 		feeds = await Promise.allSettled(
@@ -191,7 +193,9 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 			let result = {
 				...head,
-				items: rss_items.filter(x => x).sort((a, b) => b.images?.length - a.images?.length),
+				items: rss_items
+						.filter(x => x)
+						.sort((a, b) => (b.images?.length - a.images?.length) || (b.published - a.published)),
 			};
 
 			render[order] = result;
@@ -199,7 +203,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 	})));
 
 	render = render.filter(x => x);
-	console.log('render', render.map(x => [x?.order, x?.rss_url, x?.items.length]), render.length)
+	console.log('render', render.map(x => [x?.order, x?.rss_url, x?.items.length].join()), render.length)
 	return render;
 }
 
