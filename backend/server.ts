@@ -324,7 +324,8 @@ async function handleRequest(req: Request) {
 	return response(JSON.stringify({error: 'E404'}), {status: 404});
 }
 
-const port = process.env.PORT || 17385;
+const port = 17385;try {port = process.env.PORT || 17385} catch{}
 serve(handleRequest, {port});
+
 // console.dir({port});
 // const ping = () => fetch(`http://localhost:80`).then().catch().finally(() => setTimeout(ping, 5*60e3));ping();
