@@ -58,14 +58,16 @@
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
 	</head>
-	<body x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
-		<header class="bg-blue-600 p-4 text-stone-100 text-center">
-			<a href="/#title" name="title">
-				<h1 :class="loading ? 'animate-pulse italic' : ''" class="text-2xl font-bold" 
-					x-html="title">
-				</h1>
-			</a>
-		</header>
+	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 min-h-screen flex flex-col">
+		<template x-if="ready">
+			<header class="bg-blue-600 p-4 text-stone-100 text-center">
+				<a href="/#title" name="title">
+					<h1 :class="loading ? 'animate-pulse italic' : ''" class="text-2xl font-bold" 
+						x-html="title">
+					</h1>
+				</a>
+			</header>
+		</template>
 		<main class="container mx-auto p-2 flex-1">
 			<div class="flex gap-4 items-center mb-4 justify-self-center">
 				<span x-show="error" class="text-red-500" x-text="error"></span>
@@ -74,7 +76,7 @@
 			<!-- rss-feed -->
 			<template x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed bg-white rounded mb-4"
-					:class="params.shadow ? 'shadow' : ''"
+					:class="params?.style?.includes?.('shadow') ? 'shadow' : ''"
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
 				>
@@ -101,7 +103,7 @@
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
 									:class="item.viewed && 'opacity-90 italic'"
-									:class="params.shadow ? 'shadow' : ''"
+									:class="params?.style?.includes?.('shadow') ? 'shadow' : ''"
 								>
 									<!-- thumbnail -->
 									<template x-if="!params?.style?.includes?.('no') && item.images?.[0]?.length">
@@ -142,7 +144,7 @@
 									<!-- title & description -->
 									<div class="p-4">
 										<span x-show="item.viewed" class="py-1 text-xs font-regular text-gray-400 mr-1 flex flex-row items-center">
-											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+											<svg x-cloak xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
 											</svg>
 											<span class="ml-1" x-text="item.viewed"></span>
@@ -170,10 +172,10 @@
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
 											<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggleReadmore()" class="cursor-pointer px-4 py-2 flex flex-row items-center">
 												<span :class="item.read_more ? 'text-fuchsia-700' : 'text-teal-700'" class="py-1 text-xs font-regular flex flex-row items-center">
-													<svg x-show="!item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+													<svg x-cloak x-show="!item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
 													</svg>
-													<svg x-show="item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+													<svg x-cloak x-show="item.read_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 														<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
 													</svg>
 													<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Preview'"></span>
@@ -199,11 +201,11 @@
 						<!-- feed article -->
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
-								:class="params.shadow ? 'shadow' : ''"
+								:class="params?.style?.includes?.('shadow') ? 'shadow' : ''"
 								class="hidden sm:block pt-4 grid grid-cols-1 gap-6 transition-all transition-discrete"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
-								<div class="rounded overflow-hidden bg-amber-50" :class="params.shadow ? 'shadow' : ''">
+								<div class="rounded overflow-hidden bg-amber-50" :class="params?.style?.includes?.('shadow') ? 'shadow' : ''">
 									<div class="px-4 py-2 flex flex-row items-center">
 										<span class="py-1 text-xl font-bold flex flex-row items-center">
 											<p class="rss-article-title text-gray-600 whitespace-pre-line break-words" x-html="feed.article?.title || ''">
@@ -218,7 +220,7 @@
 									</div>
 									<div @click="feed.read_more_item.toggleReadmore()" class="cursor-pointer p-2 flex flex-row items-center float-right">
 										<span class="p-3 text-xs font-regular text-fuchsia-950 flex flex-row items-center">
-											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
+											<svg x-cloak xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
 											  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5" />
 											  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 7.5-7.5 7.5 7.5" />
 											</svg>
@@ -233,7 +235,6 @@
 
 			<!-- rss-configuration -->
 			<div class="divide-y divide-slate-200">
-
 				<!-- rss-settings -->
 				<div x-data="{
 						expanded: (document.querySelectorAll('.rss-task-item').length == 0)
@@ -249,7 +250,7 @@
 							aria-controls="collapse-text-01"
 						>
 							<span x-html="'Your RSS Feeds' + (tasks?.length ? ' [' + tasks.length + ']' : '') + (loading ? ' is loading' : '')"></span>
-							<svg class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+							<svg x-cloak class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 							</svg>
@@ -316,118 +317,121 @@
 						>
 						<div class="overflow-hidden">
 							<div class="w-full">
-								<div class="m-auto my-4 max-w-auto shadow-lg rounded-md bg-gray-300">
-									<!-- Input -->
-									<div class="text-lg bg-blue-500 p-4 rounded-t-md flex relative justify-around">
-										<form @submit.prevent="addNewTask" class="min-w-9/10">
-											<input
-												x-on:input.change.debounce.300ms='reviewTask()'
-												x-model="input"
-												class="w-full bg-blue-500 italic text-base text-white placeholder-gray-200 focus:outline-none border-b-2"
-												placeholder=" Enter new RSS feed URL..."
-											/>
-										</form>
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-white mt-2 ml-3 cursor-pointer" @click="addNewTask">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-										</svg>
-									</div>
-
-									<!-- List -->
-									<div class="p-3">
-										<span x-show="tasks.length <= 0" class="center italic text-gray-400 px-2">
-											<p>RSS is <strong>Really Simple Syndication</strong>, allows to access updates to websites in a standardized format, e.g: </p>
-											<ul class="ml-6 my-2 list-disc">
-												<template x-for="(d, idxDf) in K.DEFAULTS" :key="idxDf">
-													<li><p x-html="d" class="break-words overflow-wrap text-wrap"></p></li>	
-												</template>
-											</ul>
-										</span>
-
-										<div @drop.prevent="
-											if (drag !== null && drop !== null) {
-												if (drag < drop)
-													tasks = [
-														...tasks.slice(0, drag),
-														...tasks.slice(drag + 1, drop + 1),
-														tasks[drag],
-														...tasks.slice(drop + 1)
-													];
-												else
-													tasks = [
-														...tasks.slice(0, drop),
-														tasks[drag],
-														...tasks.slice(drop, drag),
-														...tasks.slice(drag + 1)
-													];
-												storageSet(K.tasks, tasks);
-											};
-											drop = null;
-											"
-											@dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
-										>
-											<template x-for="(item, index) in tasks" :key="index">
-												<div class="rss-task-item p-2 bg-gray-200 mt-2 rounded flex items-center relative"
-													:class="{'bg-blue-300': drag === index}"
-													style="overflow-wrap: anywhere;"
-													draggable="true" @dragstart="drag = index" @dragend="drag = null"
-												>
-													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4 ml-1 mr-2">
-														<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
-													</svg>
-													<div class="mx-2">
-														<a :href="item.url" target="_blank"><span x-text="item.url"></span></a>
-													</div>
-													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
-														class="size-3 cursor-pointer text-red-500"
-														@click="tasks.splice(index, 1);storageSet(K.tasks, tasks);"
-													>
-														<path stroke-linecap="round" stroke-linejoin="round" d="M13.181 8.68a4.503 4.503 0 0 1 1.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 0 0 6.364 6.365l3.129-3.129m5.614-5.615 1.757-1.757a4.5 4.5 0 0 0-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 0 1-1.242-.88 4.483 4.483 0 0 1-1.062-1.683m6.587 2.345 5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99 8.898 8.9" />
-													</svg>
-
-													<div class="absolute inset-0 opacity-50"
-														:class="{'bg-blue-200': drop === index}"
-														x-show.transition="drag !== null"
-														@dragenter.prevent="if (index !== drag) {drop = index}"
-														@dragleave="if (drop === index) drop = null"
-													></div>
-												</div>
-											</template>
+								<template x-if="ready">
+									<div class="m-auto my-4 max-w-auto shadow-lg rounded-md bg-gray-300">
+										<!-- Input -->
+										<div class="text-lg bg-blue-500 p-4 rounded-t-md flex relative justify-around">
+											<form @submit.prevent="addNewTask" class="min-w-9/10">
+												<input
+													x-on:input.change.debounce.300ms='reviewTask()'
+													x-model="input"
+													class="w-full bg-blue-500 italic text-base text-white placeholder-gray-200 focus:outline-none border-b-2"
+													placeholder=" Enter new RSS feed URL..."
+												/>
+											</form>
+											<svg x-cloak xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-white mt-2 ml-3 cursor-pointer" @click="addNewTask">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+											</svg>
 										</div>
 
-									</div>
+										<!-- List -->
+										<div class="p-3">
+											<span x-show="tasks.length <= 0" class="center italic text-gray-400 px-2">
+												<p>RSS is <strong>Really Simple Syndication</strong>, allows to access updates to websites in a standardized format, e.g: </p>
+												<ul class="ml-6 my-2 list-disc">
+													<template x-for="(d, idxDf) in K.DEFAULTS" :key="idxDf">
+														<li><p x-html="d" class="break-words overflow-wrap text-wrap"></p></li>	
+													</template>
+												</ul>
+											</span>
 
-									<!-- Buttons -->
-									<div class="bg-blue-500 p-3 flex justify-end rounded-b-md space-x-4">
-										<button
-											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-purple-600 p-2 font-bold rounded shadow"
-											x-show="tasks.length == 0"
-											@click="importDefaults()"
-										>
-											Import Sample RSS
-										</button>
-										<button
-											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 p-2 font-bold rounded shadow"
-											x-show="tasks.length > 0"
-											@click="clearAllTasks()"
-										>
-											Clear All
-										</button>
-										<button
-											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-500 p-2 font-bold rounded shadow"
-											x-show="tasks.length > 0"
-											@click="exportTasks()"
-										>
-											Export CSV
-										</button>
-										<button
-											class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow"
-											x-show="tasks.length > 0"
-											@click="buildTasks()"
-										>
-											Build Feeds
-										</button>
+											<div @drop.prevent="
+												if (drag !== null && drop !== null) {
+													if (drag < drop)
+														tasks = [
+															...tasks.slice(0, drag),
+															...tasks.slice(drag + 1, drop + 1),
+															tasks[drag],
+															...tasks.slice(drop + 1)
+														];
+													else
+														tasks = [
+															...tasks.slice(0, drop),
+															tasks[drag],
+															...tasks.slice(drop, drag),
+															...tasks.slice(drag + 1)
+														];
+													storageSet(K.tasks, tasks);
+												};
+												drop = null;
+												"
+												@dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
+											>
+												<template x-for="(item, index) in tasks" :key="index">
+													<div class="rss-task-item p-2 bg-gray-200 mt-2 rounded flex items-center relative"
+														:class="{'bg-blue-300': drag === index}"
+														style="overflow-wrap: anywhere;"
+														draggable="true" @dragstart="drag = index" @dragend="drag = null"
+													>
+														<svg x-cloak xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4 ml-1 mr-2">
+															<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+														</svg>
+														<div class="mx-2">
+															<a :href="item.url" target="_blank"><span x-text="item.url"></span></a>
+														</div>
+														<svg x-cloak xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
+															class="size-3 cursor-pointer text-red-500"
+															@click="tasks.splice(index, 1);storageSet(K.tasks, tasks);"
+														>
+															<path stroke-linecap="round" stroke-linejoin="round" d="M13.181 8.68a4.503 4.503 0 0 1 1.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 0 0 6.364 6.365l3.129-3.129m5.614-5.615 1.757-1.757a4.5 4.5 0 0 0-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 0 1-1.242-.88 4.483 4.483 0 0 1-1.062-1.683m6.587 2.345 5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99 8.898 8.9" />
+														</svg>
+
+														<div class="absolute inset-0 opacity-50"
+															:class="{'bg-blue-200': drop === index}"
+															x-show.transition="drag !== null"
+															@dragenter.prevent="if (index !== drag) {drop = index}"
+															@dragleave="if (drop === index) drop = null"
+														></div>
+													</div>
+												</template>
+											</div>
+
+										</div>
+
+										<!-- Buttons -->
+										<div class="bg-blue-500 p-3 flex justify-end rounded-b-md space-x-4">
+											<button
+												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-purple-600 p-2 font-bold rounded shadow"
+												x-show="tasks.length == 0"
+												@click="importDefaults()"
+											>
+												Import Sample RSS
+											</button>
+											<button
+												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 p-2 font-bold rounded shadow"
+												x-show="tasks.length > 0"
+												@click="clearAllTasks()"
+											>
+												Clear All
+											</button>
+											<button
+												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-500 p-2 font-bold rounded shadow"
+												x-show="tasks.length > 0"
+												@click="exportTasks()"
+											>
+												Export CSV
+											</button>
+											<button
+												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 p-2 font-bold rounded shadow"
+												x-show="tasks.length > 0"
+												@click="buildTasks()"
+											>
+												Build Feeds
+											</button>
+										</div>
 									</div>
-								</div>
+								</template>
+									
 
 								<div class="shadow-md rounded-lg overflow-hidden bg-gray-300">
 									<div id='json-editor' class="px-4 py-2"></div>
@@ -454,7 +458,7 @@
 							aria-controls="collapse-text-02"
 						>
 							<span>Why You Need RSS in Your Life</span>
-							<svg class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+							<svg x-cloak class="shadow-lg fill-indigo-500 shrink-0 ml-8" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 							</svg>
@@ -628,12 +632,14 @@
 				</div>
 			</div>
 		</main>
-		<footer class="bg-gray-300 p-4 text-center text-sm">
-			<blockquote class="m-2 text-base italic font-semibold text-stone-900">
-				"In the Information Age, ignorance is a choice.", "It's not the news, it's HOW you get the news.", "We just decided to try to do it better."
-			</blockquote>
-			— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
-		</footer>
+		<template x-if="ready">
+			<footer class="bg-gray-300 p-4 text-center text-sm">
+				<blockquote class="m-2 text-base italic font-semibold text-stone-900">
+					"In the Information Age, ignorance is a choice.", "It's not the news, it's HOW you get the news.", "We just decided to try to do it better."
+				</blockquote>
+				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
+			</footer>
+		</template>
 	</body>
 </html>
 
@@ -711,6 +717,7 @@ function alpineRSS() {
 		title: 'The Newsroom RSS',
 		version: VERSION,
 
+		ready: false,
 
 		feeds: [],
 		loading: false,
@@ -1036,6 +1043,11 @@ function alpineRSS() {
 								.flat().filter(x => x);
 
 				console.log('respFeeds:', respFeeds);
+
+				if (this.feeds?.length && !respFeeds?.length) {
+					this.loading = false;
+					return console.log("EEMPTYRESPFEEDS");
+				}
 
 				// merge articles
 				respFeeds.forEach(feed => {
@@ -1488,6 +1500,7 @@ function alpineRSS() {
 
 			let limit = this.params?.limit || this.K.LIMIT;
 
+			this.ready = true;
 			this.loading = true;
 
 			console.log('inited params', this.params)
@@ -1554,16 +1567,15 @@ function alpineRSS() {
 						limit: {
 							type: "integer",
 							title: "Items per Feed",
-							enum: [
-								3, 6, 9, 12, 15, 20, 30
-							],
-							default: limit,
+							enum: [ 3, 6, 9, 12, 15, 20, 24, 30, 36, 48, 64, 100 ],
+							default: this.params.limit || this.K.LIMIT,
 						},
 						style: {
 							type: "string",
 							title: "Display Style",
 							enum: [
 								"default",
+								"full",
 								"nopreview",
 								"noimg",
 								"title",
