@@ -1463,6 +1463,8 @@ function alpineRSS() {
 				this.storageDel(this.K.tasks);
 			}
 
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+
 			this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
 				.then(done => {
 					console.log('build tasks done');
