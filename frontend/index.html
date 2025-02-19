@@ -813,6 +813,8 @@ function alpineRSS() {
 				"Stay with us...",
 			];
 
+			const capitalize = s => s && String(s[0]).toUpperCase() + String(s).slice(1);
+
 			let now = new Date();
 
 			let hour = now.getHours();
@@ -822,10 +824,10 @@ function alpineRSS() {
 			if (hour >= 20 && hour <=21) {
 				if (!this.dark) this.toggleDarkMode();
 
-				return 'News Night';
+				return 'News Night' + (this.params?.hash ? ` with Mc${capitalize(this.params.hash)}` : '');
 			}
 
-			return 'The Newsroom RSS';
+			return 'The Newsroom RSS' + (this.params?.hash ? ` | ${this.params.hash}` : '');
 		},
 
 		async testLLM() {
