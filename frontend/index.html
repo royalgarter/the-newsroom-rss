@@ -168,7 +168,9 @@
 										</span>
 
 										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
-											:class="(item.images?.[0]?.length && !params?.style?.includes?.('title')) ? 'pointer-events-none' : ''"
+											:class="( item.images?.[0]?.length &&
+														(params?.style?.includes?.('no') || !params?.style?.includes?.('title'))
+													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
 											x-html="decodeHTML(item.title) + (
 														params?.style?.includes?.('title')
@@ -757,6 +759,8 @@ function alpineRSS() {
 		tasks: [],
 		drag: null,
 		drop: null,
+
+		is_noimg: false,
 
 		review_feed: null,
 
