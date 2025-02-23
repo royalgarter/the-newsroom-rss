@@ -203,15 +203,17 @@ async function fetchRSSLinks({urls, limit=12}) {
 	})));
 
 	render = render.filter(x => x);
-	console.log('render', render.map(x => [x?.order, x?.rss_url, x?.items.length].join()).join(' '), render.length)
+	console.log(' render: ', render.map(x => [x?.order, x?.rss_url, x?.items.length].join()).join(' '))
 	return render;
 }
 
 async function handleRequest(req: Request) {
 	const {pathname, searchParams} = new URL(req.url);
 
+	const localpath = `./frontend${pathname}`;
+
 	let params = Object.fromEntries(searchParams);
-	let {urls='', limit, hash} = params;
+	let {urls='', limit, hash, ver} = params;
 
 	// console.log(pathname, params);
 	const response = (data, options) => {
@@ -243,7 +245,7 @@ async function handleRequest(req: Request) {
 		}
 
 		if (!keys?.length && hash) {
-			let kv_keys = (await KV.get([pathname, hash]))?.value;
+			let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
 			console.log('fallback keys = KV', kv_keys, kv_keys.length);
 			keys = kv_keys || [];
 		}
@@ -259,9 +261,17 @@ async function handleRequest(req: Request) {
 		let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
 		if (update && saved) {
+			let version = (await KV.get([pathname, hash, 'version']))?.value || '0';
+
+			version = (++version) + 1;
+
 			let save_obj = saved.map((x, order) => ({url: x.url, order}));
+			
 			KV.set([pathname, hash], save_obj);
-			console.log('saved', saved.length, [pathname, hash], save_obj);
+			KV.set([pathname, hash, version], save_obj);
+			KV.set([pathname, hash, 'version'], version);
+
+			console.log('saved', saved.length, pathname, hash, version, save_obj);
 		}
 
 		feeds = await fetchRSSLinks({urls: keys, limit});
@@ -314,12 +324,10 @@ async function handleRequest(req: Request) {
 		});
 	}
 
-	const filePath = `./frontend${pathname}`;
-	if (await exists(filePath)) {
-		const fileExt = extname(filePath)
-		return response(await Deno.readFile(filePath), {
+	if (await exists(localpath)) {
+		return response(await Deno.readFile(localpath), {
 			headers: {
-				"Content-Type": `${contentType(fileExt) ?? "text/plain"}; charset=utf-8`,
+				"Content-Type": `${extname(localpath) ?? "text/plain"}; charset=utf-8`,
 				"Cache-Control": "public, max-age=604800",
 			}
 		})
