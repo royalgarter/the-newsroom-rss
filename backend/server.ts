@@ -213,7 +213,7 @@ async function handleRequest(req: Request) {
 	const localpath = `./frontend${pathname}`;
 
 	let params = Object.fromEntries(searchParams);
-	let {urls='', limit, hash, ver} = params;
+	let {u: urls='', l: limit, x: hash, v: ver} = params;
 
 	// console.log(pathname, params);
 	const response = (data, options) => {
@@ -261,17 +261,17 @@ async function handleRequest(req: Request) {
 		let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
 		if (update && saved) {
-			let version = (await KV.get([pathname, hash, 'version']))?.value || '0';
+			let v = (await KV.get([pathname, hash, 'version']))?.value || '0';
 
-			version = (++version) + 1;
+			v = (~~v) + 1;
 
 			let save_obj = saved.map((x, order) => ({url: x.url, order}));
 			
 			KV.set([pathname, hash], save_obj);
-			KV.set([pathname, hash, version], save_obj);
-			KV.set([pathname, hash, 'version'], version);
+			KV.set([pathname, hash, v], save_obj);
+			KV.set([pathname, hash, 'version'], v);
 
-			console.log('saved', saved.length, pathname, hash, version, save_obj);
+			console.log('saved', saved.length, pathname, hash, v, save_obj);
 		}
 
 		feeds = await fetchRSSLinks({urls: keys, limit});
