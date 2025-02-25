@@ -203,7 +203,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 	})));
 
 	render = render.filter(x => x);
-	console.log(' render: ', render.map(x => [x?.order, x?.rss_url, x?.items.length].join()).join(' '))
+	console.log(' render:', render.map(x => [x?.order, x?.rss_url, x?.items?.length].join()).join(' '))
 	return render;
 }
 

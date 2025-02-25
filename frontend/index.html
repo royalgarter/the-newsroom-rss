@@ -729,8 +729,21 @@
 		@apply text-gray-800;
 	}
 </style>
+<script>
+	tailwind.config = {
+		theme: {
+		},
+		corePlugins: {
+			preflight: false,
+		},
+		experimental: {
+			optimizeUniversalDefaults: true,
+		}
+	}
+</script>
 
 <script>
+
 function alpineHead() {
 	return {
 		title: 'The Newsroom RSS',
