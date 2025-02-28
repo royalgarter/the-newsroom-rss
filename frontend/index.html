@@ -68,11 +68,18 @@
 	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
 		<template x-if="ready">
 			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-between max-w-auto">
+				<ul class="pt-1" x-show="profile?.picture">
+					<li>
+						<img class="self-center size-6 mx-2" onerror="this.src = '/favicons/ios/128.png';" :src="profile?.picture">
+					</li>
+				</ul>
+				
 				<a href="/#title" name="title" class="mx-auto pl-6 text-center">
 					<h1 :class="loading ? 'animate-pulse italic' : ''" class="text-2xl font-bold"
 						x-html="title">
 					</h1>
 				</a>
+				
 				<ul class="pt-1">
 					<li>
 						<button class="rounded-md focus:outline-none focus:shadow-outline-purple" @click="toggleDarkMode()" aria-label="Toggle Dark Mode">
@@ -803,8 +810,8 @@ function alpineRSS() {
 
 		review_feed: null,
 
+		profile: null,
 		persona: null,
-
 		editor_options: null,
 
 		K: {
@@ -1605,6 +1612,8 @@ function alpineRSS() {
 
 			this.ready = true;
 			this.loading = true;
+
+			this.profile = this.storageGet(this.K.profile) || {};
 
 			this.storageSet(this.K.style, this.params.s);
 			console.log('inited params', this.params)
