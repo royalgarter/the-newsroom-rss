@@ -89,7 +89,9 @@
 							</template>
 						</button>
 					</li>
-					<li x-show="profile?.picture">
+				</ul>
+				<ul class="pt-1" x-show="profile?.picture">
+					<li>
 						<img class="self-center size-6" onerror="this.src = '//dash.deno.com/assets/logo.svg';" :src="profile?.picture">
 					</li>
 				</ul>
