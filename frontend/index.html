@@ -79,7 +79,7 @@
 						x-html="title">
 					</h1>
 				</a>
-				
+
 				<ul class="pt-1">
 					<li>
 						<button class="rounded-md focus:outline-none focus:shadow-outline-purple" @click="toggleDarkMode()" aria-label="Toggle Dark Mode">
@@ -1724,8 +1724,8 @@ function alpineRSS() {
 
 				if (!x) return;
 
-				document.querySelector('#json-editor [id="root[hash]"]').value = x;
-
+				let is_reload = THIS.params.x && (x != THIS.params.x)
+				
 				THIS.params.x = x;
 				THIS.storageSet(THIS.K.hash, THIS.params.x);
 				THIS.storageSet(THIS.K.profile, event?.detail?.profile);
@@ -1733,6 +1733,13 @@ function alpineRSS() {
 				const url = new URL(location);
 				url.searchParams.set("x", x);
 				history.pushState({}, "", url);
+
+				document.querySelector('#json-editor [id="root[hash]"]').value = x;
+
+				if (is_reload) {
+					location = url.toString();
+					location.reload();
+				}
 			});
 
 			// setInterval(async () => {
