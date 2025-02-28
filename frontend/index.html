@@ -663,6 +663,9 @@
 		<div id="g_id_onload"
 			data-client_id="547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com"
 			data-auto_prompt="true"
+			data-use_fedcm_for_prompt="true"
+			data-skip_prompt_cookie="sid"
+			data-size="small"
 			data-callback="handleCredentialResponse">
 		</div>
 	</body>
@@ -1583,18 +1586,6 @@ function alpineRSS() {
 
 			let limit = this.params?.l || this.K.LIMIT;
 
-			let THIS = this;
-			window.addEventListener('params-x-changed', function(event) {
-				console.log('params-x-changed', event?.detail);
-
-				let x = event?.detail?.x || Object.fromEntries(new URLSearchParams(location.search))?.x;
-
-				if (!x) return;
-				THIS.params.x = x;
-				THIS.storageSet(THIS.K.hash, THIS.params.x);
-				THIS.storageSet(THIS.K.profile, event?.detail?.profile);
-			});
-
 			this.ready = true;
 			this.loading = true;
 
@@ -1649,7 +1640,8 @@ function alpineRSS() {
 			;
 			console.log('inited old localStorage')
 
-			let this_params = this.params;
+			let THIS = this;
+
 			let editor_options = new JSONEditor(document.getElementById('json-editor'), {
 				schema: {
 					type: "object",
@@ -1692,12 +1684,30 @@ function alpineRSS() {
 				const url = new URL(location);
 				Object.entries(opts).forEach( ([k, v]) => {
 					url.searchParams.set(k, v);
-					this_params[k] = v;
+					THIS.params[k] = v;
 				});
 				history.pushState({}, "", url);
 			});
 			this.editor_options = editor_options;
 			console.log('inited editor')
+
+			window.addEventListener('params-x-changed', function(event) {
+				console.log('params-x-changed', event?.detail);
+
+				let x = event?.detail?.x || Object.fromEntries(new URLSearchParams(location.search))?.x;
+
+				if (!x) return;
+
+				document.querySelector('#json-editor [id="root[hash]"]').value = x;
+
+				THIS.params.x = x;
+				THIS.storageSet(THIS.K.hash, THIS.params.x);
+				THIS.storageSet(THIS.K.profile, event?.detail?.profile);
+
+				const url = new URL(location);
+				url.searchParams.set("x", x);
+				history.pushState({}, "", url);
+			});
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
@@ -1715,10 +1725,6 @@ function handleCredentialResponse(response) {
 
 	let username = responsePayload?.email?.split('@')?.[0];
 	if (!username) return;
-
-	const url = new URL(location);
-	url.searchParams.set("x", username);
-	history.pushState({}, "", url);
 
 	window.dispatchEvent(new CustomEvent('params-x-changed', {
 		detail: {
