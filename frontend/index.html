@@ -1717,7 +1717,7 @@ function handleCredentialResponse(response) {
 	if (!username) return;
 
 	const url = new URL(location);
-	url.searchParams.set("x", x);
+	url.searchParams.set("x", username);
 	history.pushState({}, "", url);
 
 	window.dispatchEvent(new CustomEvent('params-x-changed', {
