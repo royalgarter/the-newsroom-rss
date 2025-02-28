@@ -10,13 +10,13 @@ import * as yaml from "https://deno.land/std@0.170.0/encoding/yaml.ts";
 
 import { OAuth2Client } from "jsr:@cmd-johnson/oauth2-client";
 const client_info = {
-	clientId: "547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com",
-	clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+	clientId: Deno.env.get('GOOGLE_CLIENT_ID'),
+	clientSecret: Deno.env.get('GOOGLE_CLIENT_SECRET'),
 	authorizationEndpointUri: "https://accounts.google.com/o/oauth2/auth",
 	tokenUri: "https://oauth2.googleapis.com/token",
-	redirectUri: "http://localhost:17385/api/auth/google",
+	redirectUri: Deno.env.get('GOOGLE_CLIENT_REDIRECT_URI'),
 	defaults: {
-		scope: "https://www.googleapis.com/auth/userinfo",
+		scope: "https://www.googleapis.com/auth/userinfo.profile",
 	},
 };
 // const client_info = {
