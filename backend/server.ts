@@ -19,16 +19,6 @@ const client_info = {
 		scope: "https://www.googleapis.com/auth/userinfo.profile",
 	},
 };
-// const client_info = {
-// 	clientId: GOOGLE_CLIENT.web.client_id,
-// 	clientSecret: GOOGLE_CLIENT.web.client_secret,
-// 	authorizationEndpointUri: GOOGLE_CLIENT.web.auth_uri,
-// 	tokenUri: GOOGLE_CLIENT.web.token_uri,
-// 	redirectUri: GOOGLE_CLIENT.web.redirect_uris[0],
-// 	defaults: {
-// 		scope: "https://www.googleapis.com/auth/userinfo",
-// 	},
-// };
 console.dir(client_info)
 const oauth2Client  = new OAuth2Client(client_info);
 
@@ -57,28 +47,6 @@ async function test() {
 	// await KV.set(['hello'], 'world');console.log(await KV.get(['hello']));
 	// const myUUID = crypto.randomUUID();
 	// console.log("Random UUID:", myUUID);
-}
-
-function handleCredentialResponse(response) {
-	// Decode the JWT token
-	const responsePayload = decodeJwtResponse(response.credential);
-
-	console.log("ID: " + responsePayload.sub);
-	console.log('Full Name: ' + responsePayload.name);
-	console.log('Given Name: ' + responsePayload.given_name);
-	console.log('Family Name: ' + responsePayload.family_name);
-	console.log("Image URL: " + responsePayload.picture);
-	console.log("Email: " + responsePayload.email);
-}
-
-function decodeJwtResponse(token) {
-	const base64Url = token.split('.')[1];
-	const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-	const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-		return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-	}).join(''));
-
-	return JSON.parse(jsonPayload);
 }
 
 async function parseRSS(url: string, content: string) {
