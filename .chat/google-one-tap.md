@@ -9,18 +9,18 @@ First, add the Google Sign-In script to your HTML file:
 
 ```html:d:\GIT\rss-render\public\index.html
 <head>
-    // ... existing code ...
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    // ... existing code ...
+	// ... existing code ...
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	// ... existing code ...
 </head>
 <body>
-    // ... existing code ...
-    <div id="g_id_onload"
-         data-client_id="YOUR_GOOGLE_CLIENT_ID"
-         data-auto_prompt="true"
-         data-callback="handleCredentialResponse">
-    </div>
-    // ... existing code ...
+	// ... existing code ...
+	<div id="g_id_onload"
+		 data-client_id="YOUR_GOOGLE_CLIENT_ID"
+		 data-auto_prompt="true"
+		 data-callback="handleCredentialResponse">
+	</div>
+	// ... existing code ...
 </body>
 ```
 
@@ -28,25 +28,25 @@ Now, create a new file to handle the Google Sign In:
 
 ```javascript:d:\GIT\rss-render\src\services\googleAuth.js
 function handleCredentialResponse(response) {
-    // Decode the JWT token
-    const responsePayload = decodeJwtResponse(response.credential);
-    
-    console.log("ID: " + responsePayload.sub);
-    console.log('Full Name: ' + responsePayload.name);
-    console.log('Given Name: ' + responsePayload.given_name);
-    console.log('Family Name: ' + responsePayload.family_name);
-    console.log("Image URL: " + responsePayload.picture);
-    console.log("Email: " + responsePayload.email);
+	// Decode the JWT token
+	const responsePayload = decodeJwtResponse(response.credential);
+	
+	console.log("ID: " + responsePayload.sub);
+	console.log('Full Name: ' + responsePayload.name);
+	console.log('Given Name: ' + responsePayload.given_name);
+	console.log('Family Name: ' + responsePayload.family_name);
+	console.log("Image URL: " + responsePayload.picture);
+	console.log("Email: " + responsePayload.email);
 }
 
 function decodeJwtResponse(token) {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
+	const base64Url = token.split('.')[1];
+	const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+	const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+		return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+	}).join(''));
 
-    return JSON.parse(jsonPayload);
+	return JSON.parse(jsonPayload);
 }
 
 export { handleCredentialResponse };
@@ -78,39 +78,39 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Add this route handler
 app.post('/api/auth/google', async (req, res) => {
-    try {
-        const { credential } = req.body;
-        
-        const ticket = await client.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID
-        });
-        
-        const payload = ticket.getPayload();
-        
-        if (!payload) {
-            return res.status(400).json({ error: 'Invalid token' });
-        }
+	try {
+		const { credential } = req.body;
+		
+		const ticket = await client.verifyIdToken({
+			idToken: credential,
+			audience: process.env.GOOGLE_CLIENT_ID
+		});
+		
+		const payload = ticket.getPayload();
+		
+		if (!payload) {
+			return res.status(400).json({ error: 'Invalid token' });
+		}
 
-        const { sub: googleId, email, name, picture } = payload;
+		const { sub: googleId, email, name, picture } = payload;
 
-        // Here you can:
-        // 1. Check if user exists in your database
-        // 2. Create new user if they don't exist
-        // 3. Generate session token or JWT
-        
-        res.json({
-            user: {
-                googleId,
-                email,
-                name,
-                picture
-            }
-        });
-    } catch (error) {
-        console.error('Google authentication error:', error);
-        res.status(401).json({ error: 'Authentication failed' });
-    }
+		// Here you can:
+		// 1. Check if user exists in your database
+		// 2. Create new user if they don't exist
+		// 3. Generate session token or JWT
+		
+		res.json({
+			user: {
+				googleId,
+				email,
+				name,
+				picture
+			}
+		});
+	} catch (error) {
+		console.error('Google authentication error:', error);
+		res.status(401).json({ error: 'Authentication failed' });
+	}
 });
 
 // ... existing code ...
@@ -132,21 +132,21 @@ Now update your frontend googleAuth.js to send the credential to the server:
 
 ```javascript:d:\GIT\rss-render\src\services\googleAuth.js
 function handleCredentialResponse(response) {
-    fetch('/api/auth/google', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ credential: response.credential })
-    })
-    .then(res => res.json())
-    .then(data => {
-        // Handle successful authentication
-        console.log('Authenticated user:', data.user);
-    })
-    .catch(error => {
-        console.error('Authentication error:', error);
-    });
+	fetch('/api/auth/google', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ credential: response.credential })
+	})
+	.then(res => res.json())
+	.then(data => {
+		// Handle successful authentication
+		console.log('Authenticated user:', data.user);
+	})
+	.catch(error => {
+		console.error('Authentication error:', error);
+	});
 }
 
 export { handleCredentialResponse };

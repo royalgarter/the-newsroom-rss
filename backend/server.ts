@@ -8,6 +8,31 @@ import { parseFeed } from "https://deno.land/x/rss/mod.ts";
 import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import * as yaml from "https://deno.land/std@0.170.0/encoding/yaml.ts";
 
+import { OAuth2Client } from "jsr:@cmd-johnson/oauth2-client";
+const client_info = {
+	clientId: "547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com",
+	clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+	authorizationEndpointUri: "https://accounts.google.com/o/oauth2/auth",
+	tokenUri: "https://oauth2.googleapis.com/token",
+	redirectUri: "http://localhost:17385/api/auth/google",
+	defaults: {
+		scope: "https://www.googleapis.com/auth/userinfo",
+	},
+};
+// const client_info = {
+// 	clientId: GOOGLE_CLIENT.web.client_id,
+// 	clientSecret: GOOGLE_CLIENT.web.client_secret,
+// 	authorizationEndpointUri: GOOGLE_CLIENT.web.auth_uri,
+// 	tokenUri: GOOGLE_CLIENT.web.token_uri,
+// 	redirectUri: GOOGLE_CLIENT.web.redirect_uris[0],
+// 	defaults: {
+// 		scope: "https://www.googleapis.com/auth/userinfo",
+// 	},
+// };
+console.dir(client_info)
+const oauth2Client  = new OAuth2Client(client_info);
+
+
 const crypto = await import('node:crypto');
 
 const cors = {
@@ -32,6 +57,28 @@ async function test() {
 	// await KV.set(['hello'], 'world');console.log(await KV.get(['hello']));
 	// const myUUID = crypto.randomUUID();
 	// console.log("Random UUID:", myUUID);
+}
+
+function handleCredentialResponse(response) {
+	// Decode the JWT token
+	const responsePayload = decodeJwtResponse(response.credential);
+
+	console.log("ID: " + responsePayload.sub);
+	console.log('Full Name: ' + responsePayload.name);
+	console.log('Given Name: ' + responsePayload.given_name);
+	console.log('Family Name: ' + responsePayload.family_name);
+	console.log("Image URL: " + responsePayload.picture);
+	console.log("Email: " + responsePayload.email);
+}
+
+function decodeJwtResponse(token) {
+	const base64Url = token.split('.')[1];
+	const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+	const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+		return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+	}).join(''));
+
+	return JSON.parse(jsonPayload);
 }
 
 async function parseRSS(url: string, content: string) {
@@ -282,6 +329,45 @@ async function handleRequest(req: Request) {
 				"Content-Type": "application/json; charset=utf-8",
 			},
 		});
+	}
+
+	if (pathname === "/api/auth/google") {
+		try {
+			const body = await req.json();
+
+			console.dir({pathname: body});
+
+			const { credential } = body;
+			
+			const ticket = await client.verifyIdToken({
+				idToken: credential,
+				audience: GOOGLE_CLIENT.web.client_id,
+			});
+			
+			const payload = ticket.getPayload();
+			
+			if (!payload) {
+				return response(JSON.stringify({error: 'E:Invalid token'}), {status: 400});
+			}
+	
+			const { sub: googleId, email, name, picture } = payload;
+		
+			return response(JSON.stringify({
+				user: {
+					googleId,
+					email,
+					name,
+					picture
+				}
+			}), {
+				headers: {
+					"Content-Type": "application/json; charset=utf-8",
+				},
+			});
+		} catch (error) {
+			console.error('Google authentication error:', error);
+			return response(JSON.stringify({error: 'E:Authentication failed'}), {status: 401});
+		}
 	}
 
 	if (pathname === "/html") {

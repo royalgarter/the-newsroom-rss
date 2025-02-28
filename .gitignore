@@ -129,3 +129,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 deno.lock
+.cred/client_secret_547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com.json

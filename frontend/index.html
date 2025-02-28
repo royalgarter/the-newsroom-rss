@@ -49,12 +49,14 @@
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js" />
-
+		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
+		
 		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
 		<script src="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+		<script async defer src="//accounts.google.com/gsi/client"></script>
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
@@ -658,6 +660,11 @@
 				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
 			</footer>
 		</template>
+		<div id="g_id_onload"
+			data-client_id="547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com"
+			data-auto_prompt="true"
+			data-callback="handleCredentialResponse">
+		</div>
 	</body>
 </html>
 
