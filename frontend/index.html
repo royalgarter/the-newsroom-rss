@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth"> <!-- Added "dark" class here for initial dark mode, remove if you want light mode by default -->
+<html amp lang="en" class="scroll-smooth"> <!-- Added "dark" class here for initial dark mode, remove if you want light mode by default -->
 	<head x-data="alpineHead()">
 		<title x-html="title">The Newsroom RSS</title>
 
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width">
 		<meta name="color-scheme" content="light dark">
 		<meta name="description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
 		<meta name="keyworks" content="news, rss, feed, aggregator, reader, alpinejs, tailwindcss">
@@ -44,13 +43,18 @@
 		<meta name="twitter:card" content="summary">
 		<meta name="twitter:creator" content="@royalgarter">
 
+		<meta name="referrer" content="no-referrer-when-downgrade">
+		<meta name="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+
 		<link rel="preload" as="script" href="//unpkg.com/@tailwindcss/browser@4" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js" />
 		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
+		<link rel="preload" as="script" href="//cdn.ampproject.org/v0.js" />
 		
+		<script async src="//cdn.ampproject.org/v0.js"></script>
 		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
@@ -660,13 +664,27 @@
 				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
 			</footer>
 		</template>
+
+
 		<div id="g_id_onload"
 			data-client_id="547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com"
+			data-context="use"
+			data-ux_mode="popup"
 			data-auto_prompt="true"
 			data-use_fedcm_for_prompt="true"
 			data-skip_prompt_cookie="SID"
-			data-size="small"
-			data-callback="handleCredentialResponse">
+			data-auto_select="true"
+			data-itp_support="true"
+			data-callback="handleGoogle1tapSignin">
+		</div>
+
+		<div class="g_id_signin"
+			data-type="standard"
+			data-shape="rectangular"
+			data-theme="outline"
+			data-text="continue_with"
+			data-size="medium"
+			data-logo_alignment="left">
 		</div>
 	</body>
 </html>
@@ -1719,11 +1737,12 @@ function alpineRSS() {
 
 navigator?.serviceWorker?.register?.('sw.js');
 
-function handleCredentialResponse(response) {
+function handleGoogle1tapSignin(response) {
 	const responsePayload = decodeJwtResponse(response?.credential);
-	console.dir({responsePayload});
+	console.dir({response});
 
-	let username = responsePayload?.email?.split('@')?.[0];
+	let username = responsePayload?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
+
 	if (!username) return;
 
 	window.dispatchEvent(new CustomEvent('params-x-changed', {
