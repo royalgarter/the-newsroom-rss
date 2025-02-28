@@ -804,6 +804,7 @@ function alpineRSS() {
 			cache: VERSION + '_cache_',
 			hash: VERSION + '_hash_',
 			style: VERSION + '_style_',
+			profile: VERSION + '_profile_',
 
 			noClientFetch: VERSION + '_ncf_',
 
@@ -1588,10 +1589,13 @@ function alpineRSS() {
 				let x = event?.detail?.x || Object.fromEntries(new URLSearchParams(location.search))?.x;
 
 				if (!x) return;
-
 				this.params.x = x;
-
 				this.storageSet(this.K.hash, this.params.x);
+				this.storageSet(this.K.profile, event?.detail?.profile);
+
+				const url = new URL(location);
+				url.searchParams.set("x", x);
+				history.pushState({}, "", url);
 			})
 
 			this.ready = true;
@@ -1713,16 +1717,11 @@ function handleCredentialResponse(response) {
 	console.dir({responsePayload});
 
 	let username = responsePayload?.email?.split('@')?.[0];
-
 	if (!username) return;
-
-	const url = new URL(location);
-	url.searchParams.set("x", username);
-	history.pushState({}, "", url);
-
 	window.dispatchEvent(new CustomEvent('params-x-changed', {
 		detail: {
 			x: username,
+			profile: responsePayload,
 		},
 	}));
 }

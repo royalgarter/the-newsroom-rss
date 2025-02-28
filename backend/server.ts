@@ -307,7 +307,7 @@ async function handleRequest(req: Request) {
 
 			const { credential } = body;
 			
-			const ticket = await client.verifyIdToken({
+			const ticket = await oauth2Client?.verifyIdToken({
 				idToken: credential,
 				audience: GOOGLE_CLIENT.web.client_id,
 			});
