@@ -1583,16 +1583,15 @@ function alpineRSS() {
 			let limit = this.params?.l || this.K.LIMIT;
 
 			window.addEventListener('params-x-changed', function(event) {
-				console.dir({'params-x-changed': event});
+				console.log('params-x-changed', event);
 
-				if (!event.x) return;
+				let x = Object.fromEntries(new URLSearchParams(location.search))?.x;
 
-				this.params.x = event.x;
+				if (!x) return;
+
+				this.params.x = x;
 
 				this.storageSet(this.K.hash, this.params.x);
-				const url = new URL(location);
-				url.searchParams.set("x", this.params.x);
-				history.pushState({}, "", url);
 			})
 
 			this.ready = true;
@@ -1717,9 +1716,11 @@ function handleCredentialResponse(response) {
 
 	if (!username) return;
 
-	window.dispatchEvent(new CustomEvent('params-x-changed', {
-		x: username
-	}));
+	const url = new URL(location);
+	url.searchParams.set("x", username);
+	history.pushState({}, "", url);
+
+	window.dispatchEvent(new CustomEvent('params-x-changed', {x: username}));
 }
 
 function decodeJwtResponse(token) {
