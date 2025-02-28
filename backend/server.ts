@@ -8,6 +8,21 @@ import { parseFeed } from "https://deno.land/x/rss/mod.ts";
 import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import * as yaml from "https://deno.land/std@0.170.0/encoding/yaml.ts";
 
+import { OAuth2Client } from "jsr:@cmd-johnson/oauth2-client";
+const client_info = {
+	clientId: Deno.env.get('GOOGLE_CLIENT_ID'),
+	clientSecret: Deno.env.get('GOOGLE_CLIENT_SECRET'),
+	authorizationEndpointUri: "https://accounts.google.com/o/oauth2/auth",
+	tokenUri: "https://oauth2.googleapis.com/token",
+	redirectUri: Deno.env.get('GOOGLE_CLIENT_REDIRECT_URI'),
+	defaults: {
+		scope: "https://www.googleapis.com/auth/userinfo.profile",
+	},
+};
+console.dir(client_info)
+const oauth2Client  = new OAuth2Client(client_info);
+
+
 const crypto = await import('node:crypto');
 
 const cors = {
@@ -203,7 +218,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 	})));
 
 	render = render.filter(x => x);
-	console.log(' render: ', render.map(x => [x?.order, x?.rss_url, x?.items.length].join()).join(' '))
+	console.log(' render:', render.map(x => [x?.order, x?.rss_url, x?.items?.length].join()).join(' '))
 	return render;
 }
 
@@ -282,6 +297,45 @@ async function handleRequest(req: Request) {
 				"Content-Type": "application/json; charset=utf-8",
 			},
 		});
+	}
+
+	if (pathname === "/api/auth/google") {
+		try {
+			const body = await req.json();
+
+			console.dir({pathname: body});
+
+			const { credential } = body;
+			
+			const ticket = await oauth2Client?.verifyIdToken({
+				idToken: credential,
+				audience: GOOGLE_CLIENT.web.client_id,
+			});
+			
+			const payload = ticket.getPayload();
+			
+			if (!payload) {
+				return response(JSON.stringify({error: 'E:Invalid token'}), {status: 400});
+			}
+	
+			const { sub: googleId, email, name, picture } = payload;
+		
+			return response(JSON.stringify({
+				user: {
+					googleId,
+					email,
+					name,
+					picture
+				}
+			}), {
+				headers: {
+					"Content-Type": "application/json; charset=utf-8",
+				},
+			});
+		} catch (error) {
+			console.error('Google authentication error:', error);
+			return response(JSON.stringify({error: 'E:Authentication failed'}), {status: 401});
+		}
 	}
 
 	if (pathname === "/html") {

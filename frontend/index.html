@@ -49,12 +49,14 @@
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js" />
-
+		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
+		
 		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
 		<script src="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+		<script async defer src="//accounts.google.com/gsi/client"></script>
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
@@ -658,6 +660,14 @@
 				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
 			</footer>
 		</template>
+		<div id="g_id_onload"
+			data-client_id="547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com"
+			data-auto_prompt="true"
+			data-use_fedcm_for_prompt="true"
+			data-skip_prompt_cookie="SID"
+			data-size="small"
+			data-callback="handleCredentialResponse">
+		</div>
 	</body>
 </html>
 
@@ -729,8 +739,21 @@
 		@apply text-gray-800;
 	}
 </style>
+<script>
+	tailwind.config = {
+		theme: {
+		},
+		corePlugins: {
+			preflight: false,
+		},
+		experimental: {
+			optimizeUniversalDefaults: true,
+		}
+	}
+</script>
 
 <script>
+
 function alpineHead() {
 	return {
 		title: 'The Newsroom RSS',
@@ -784,6 +807,7 @@ function alpineRSS() {
 			cache: VERSION + '_cache_',
 			hash: VERSION + '_hash_',
 			style: VERSION + '_style_',
+			profile: VERSION + '_profile_',
 
 			noClientFetch: VERSION + '_ncf_',
 
@@ -1616,7 +1640,8 @@ function alpineRSS() {
 			;
 			console.log('inited old localStorage')
 
-			let this_params = this.params;
+			let THIS = this;
+
 			let editor_options = new JSONEditor(document.getElementById('json-editor'), {
 				schema: {
 					type: "object",
@@ -1659,12 +1684,30 @@ function alpineRSS() {
 				const url = new URL(location);
 				Object.entries(opts).forEach( ([k, v]) => {
 					url.searchParams.set(k, v);
-					this_params[k] = v;
+					THIS.params[k] = v;
 				});
 				history.pushState({}, "", url);
 			});
 			this.editor_options = editor_options;
 			console.log('inited editor')
+
+			window.addEventListener('params-x-changed', function(event) {
+				console.log('params-x-changed', event?.detail);
+
+				let x = event?.detail?.x || Object.fromEntries(new URLSearchParams(location.search))?.x;
+
+				if (!x) return;
+
+				document.querySelector('#json-editor [id="root[hash]"]').value = x;
+
+				THIS.params.x = x;
+				THIS.storageSet(THIS.K.hash, THIS.params.x);
+				THIS.storageSet(THIS.K.profile, event?.detail?.profile);
+
+				const url = new URL(location);
+				url.searchParams.set("x", x);
+				history.pushState({}, "", url);
+			});
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
@@ -1675,6 +1718,34 @@ function alpineRSS() {
 };
 
 navigator?.serviceWorker?.register?.('sw.js');
+
+function handleCredentialResponse(response) {
+	const responsePayload = decodeJwtResponse(response?.credential);
+	console.dir({responsePayload});
+
+	let username = responsePayload?.email?.split('@')?.[0];
+	if (!username) return;
+
+	window.dispatchEvent(new CustomEvent('params-x-changed', {
+		detail: {
+			x: username,
+			profile: responsePayload,
+		},
+	}));
+}
+
+function decodeJwtResponse(token) {
+	try {
+		const base64Url = token.split('.')[1];
+		const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+		const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+			return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+		}).join(''));
+
+		return JSON.parse(jsonPayload);
+	} catch { return {}}
+}
+
 </script>
 
  
