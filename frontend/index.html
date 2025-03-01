@@ -68,12 +68,15 @@
 	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
 		<template x-if="ready">
 			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-between max-w-auto">
-				<ul class="pt-1" x-show="profile?.picture">
-					<li>
-						<img class="self-center size-6 pb-1" onerror="this.src = '//dash.deno.com/assets/logo.svg';" :src="profile?.picture">
+				<ul class="pt-1 cursor-pointer"  @click="clickedProfile()">
+					<li x-show="profile?.picture">
+						<img title="Logout" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile.png';" :src="profile?.picture">
+					</li>
+					<li x-show="google && !profile?.picture">
+						<img title="Login Google Profile" class="self-center size-8 pb-1 rounded-full" src="/default-profile.png">
 					</li>
 				</ul>
-				<a href="/#title" name="title" class="mx-auto pl-6 text-center">
+				<a href="/#title" name="title" class="mx-auto text-center">
 					<h1 :class="loading ? 'animate-pulse italic' : ''" class="text-2xl font-bold"
 						x-html="title">
 					</h1>
@@ -674,7 +677,7 @@
 			data-client_id="547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com"
 			data-context="use"
 			data-ux_mode="popup"
-			data-auto_prompt="true"
+			data-auto_prompt="false"
 			data-use_fedcm_for_prompt="true"
 			data-skip_prompt_cookie="SID"
 			data-auto_select="true"
@@ -682,7 +685,7 @@
 			data-callback="handleGoogle1tapSignin">
 		</div>
 
-		<div class="g_id_signin"
+		<div id="g_id_signin" class="g_id_signin"
 			data-type="standard"
 			data-shape="rectangular"
 			data-theme="outline"
@@ -808,6 +811,7 @@ function alpineRSS() {
 
 		review_feed: null,
 
+		google: null,
 		profile: null,
 		persona: null,
 		editor_options: null,
@@ -1585,8 +1589,26 @@ function alpineRSS() {
 			}
 		},
 
+		async clickedProfile() {
+			if (google.accounts && !this.profile?.email) {
+				google.accounts.id.prompt();
+				return;
+			}
+
+			google?.accounts.id.revoke(this.profile.email);
+
+			this.profile = null;
+			this.storageDel(this.K.profile);
+
+			let hash_local = await this.digest(JSON.stringify(this.tasks) + Date.now());
+			this.params.x = hash_local.slice(0, 6);
+			this.storageSet(this.K.hash, this.params.x);
+		},
+
 		async init() {
 			// console.log('init')
+
+			let THIS = this;
 
 			if ( localStorage.getItem('theme') === 'dark' ||
 				 (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -1664,8 +1686,6 @@ function alpineRSS() {
 			;
 			console.log('inited old localStorage')
 
-			let THIS = this;
-
 			let editor_options = new JSONEditor(document.getElementById('json-editor'), {
 				schema: {
 					type: "object",
@@ -1739,6 +1759,17 @@ function alpineRSS() {
 					location.reload();
 				}
 			});
+
+			google.accounts.id.initialize({
+				client_id: document.querySelector('#g_id_onload').getAttribute('data-client_id'),
+				callback: handleGoogle1tapSignin,
+			});
+			google.accounts.id.renderButton(
+				document.getElementById("g_id_signin"),
+				{ theme: "outline", size: "medium" }  // customization attributes
+			);
+			THIS.google = google;
+			
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
