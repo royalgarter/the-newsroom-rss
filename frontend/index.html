@@ -141,8 +141,8 @@
 										<div class="rss-meta relative min-h-36">
 											<a class="rss-thumb" :href="item.link" target="_blank">
 												<link rel="prefetch" as="image" :href="
-													item.images?.[0]?.startsWith?.('/')
-													? (new URL(feed.link).origin + item.images?.[0])
+													(feed.link && item.images?.[0]?.startsWith?.('/'))
+													? (new URL(feed.link).origin.replace('http:', 'https:') + item.images?.[0])
 													: item.images?.[0]
 												" />
 												<img class="rss-thumb w-full min-h-36 max-h-[320px]"
@@ -151,8 +151,8 @@
 													:alt="item.title"
 													:domain="new URL(feed.link).hostname"
 													:src="
-														item.images?.[0]?.startsWith?.('/')
-														? (new URL(feed.link).origin + item.images?.[0])
+														(feed.link && item.images?.[0]?.startsWith?.('/'))
+														? (new URL(feed.link).origin.replace('http:', 'https:') + item.images?.[0])
 														: item.images?.[0]
 													"
 													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
