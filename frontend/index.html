@@ -72,7 +72,7 @@
 					<li x-show="profile?.picture">
 						<img title="Logout" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile.png';" :src="profile?.picture">
 					</li>
-					<li x-show="google && !profile?.picture">
+					<li x-show="!profile?.picture">
 						<img title="Login Google Profile" class="self-center size-8 pb-1 rounded-full" src="/default-profile.png">
 					</li>
 				</ul>
