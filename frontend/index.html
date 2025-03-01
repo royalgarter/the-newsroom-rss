@@ -161,7 +161,7 @@
 													class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
 												</div>
 											</a>
-											<a class="rss-tags" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
+											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-4 py-2 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
 													x-html="item.author?.toString().substr(0, 12).trim()">
 												</div>
@@ -190,15 +190,18 @@
 										</span>
 
 										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+											
 											:class="( item.images?.[0]?.length &&
 														(!params?.style?.includes?.('no') && !params?.style?.includes?.('title'))
 													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
-											x-html="decodeHTML(item.title) + (
+											:title="item.title"
+											x-html="decodeHTML(item.title).substr(0, 150) + (
 														params?.style?.includes?.('title')
 															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
 															: ''
 													)"
+											rel="external"
 										>
 										</a>
 										<template x-if="!params?.style?.includes?.('title')">
@@ -1238,7 +1241,7 @@ function alpineRSS() {
 			txt.innerHTML = html;
 			let decoded = txt.value;
 			delete txt;
-			return decoded;
+			return decoded || '';
 		},
 
 		timeSince(date) {
