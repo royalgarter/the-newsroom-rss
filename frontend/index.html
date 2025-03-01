@@ -1768,16 +1768,15 @@ function alpineRSS() {
 				}
 			});
 
-			google.accounts.id.initialize({
-				client_id: document.querySelector('#g_id_onload').getAttribute('data-client_id'),
-				callback: handleGoogle1tapSignin,
-			});
-			google.accounts.id.renderButton(
-				document.getElementById("g_id_signin"),
-				{ theme: "outline", size: "medium" }  // customization attributes
-			);
-			THIS.google = google;
-			
+			// google.accounts.id.initialize({
+			// 	client_id: document.querySelector('#g_id_onload').getAttribute('data-client_id'),
+			// 	callback: handleGoogle1tapSignin,
+			// });
+			// google.accounts.id.renderButton(
+			// 	document.getElementById("g_id_signin"),
+			// 	{ theme: "outline", size: "medium" }  // customization attributes
+			// );
+			// THIS.google = google;
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
