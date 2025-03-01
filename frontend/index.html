@@ -70,10 +70,10 @@
 			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-between max-w-auto">
 				<ul class="pt-1 cursor-pointer"  @click="clickedProfile()">
 					<li x-show="profile?.picture">
-						<img title="Logout" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile.png';" :src="profile?.picture">
+						<img id="img-profile" title="Logout" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile.png';" :src="profile?.picture">
 					</li>
 					<li x-show="!profile?.picture">
-						<img title="Login Google Profile" class="self-center size-8 pb-1 rounded-full" src="/default-profile.png">
+						<img id="btn-login" title="Login Google Profile" class="self-center size-8 pb-1 rounded-full" src="/default-profile.png">
 					</li>
 				</ul>
 				<a href="/#title" name="title" class="mx-auto text-center">
@@ -1746,7 +1746,11 @@ function alpineRSS() {
 			window.addEventListener('params-x-changed', function(event) {
 				console.log('params-x-changed', event?.detail);
 
-				let x = event?.detail?.x || Object.fromEntries(new URLSearchParams(location.search))?.x;
+				let detail = event.detail;
+
+				if (detail) return;
+
+				let x = detail.x || Object.fromEntries(new URLSearchParams(location.search))?.x;
 
 				if (!x) return;
 
@@ -1754,13 +1758,18 @@ function alpineRSS() {
 				
 				THIS.params.x = x;
 				THIS.storageSet(THIS.K.hash, THIS.params.x);
-				THIS.storageSet(THIS.K.profile, event?.detail?.profile);
+				
+				THIS.profile = detail.profile;
+				THIS.storageSet(THIS.K.profile, detail.profile);
 
 				const url = new URL(location);
 				url.searchParams.set("x", x);
 				history.pushState({}, "", url);
 
 				document.querySelector('#json-editor [id="root[hash]"]').value = x;
+				
+				if (document.querySelector('#img-profile').src != detail.profile?.picture)
+					document.querySelector('#img-profile').src = detail.profile?.picture;
 
 				if (is_reload) {
 					location = url.toString();
