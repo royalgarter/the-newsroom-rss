@@ -853,7 +853,7 @@ function alpineRSS() {
 		},
 
 		TRIGGER: {
-			LIMIT: 20e3, // time to read article
+			LIMIT: 12e3, // time to read article
 		},
 
 		CACHE: {},
@@ -1330,7 +1330,9 @@ function alpineRSS() {
 
 							feed.items.filter(x => x.link != item.link).forEach(x => x.read_more = false);
 
-							this.storageSet(this.K.viewed + item.link, new Date().toString().split(' GMT').shift());
+							item.viewed = new Date().toString().split(' GMT').shift();
+
+							this.storageSet(this.K.viewed + item.link, item.viewed);
 
 							setTimeout(() => {
 								let fa = document.querySelector('#rss-feed-article-' + feedIdx);
