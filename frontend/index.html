@@ -45,6 +45,7 @@
 
 		<meta name="referrer" content="no-referrer-when-downgrade">
 		<meta name="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+		<style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
 
 		<link rel="preload" as="script" href="//unpkg.com/@tailwindcss/browser@4" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js" />
@@ -56,11 +57,11 @@
 		
 		<script async src="//cdn.ampproject.org/v0.js"></script>
 		<script async src="//unpkg.com/@tailwindcss/browser@4"></script>
+		<script async defer src="//accounts.google.com/gsi/client"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
 		<script src="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
-		<script async defer src="//accounts.google.com/gsi/client"></script>
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
@@ -693,17 +694,17 @@
 			data-skip_prompt_cookie="SID"
 			data-auto_select="true"
 			data-itp_support="true"
-			data-callback="handleGoogle1tapSignin">
+			data-callback="handleGoogle1TapSignin">
 		</div>
 
-		<div id="g_id_signin" class="g_id_signin"
+		<!-- <div id="g_id_signin" class="g_id_signin"
 			data-type="standard"
 			data-shape="rectangular"
 			data-theme="outline"
 			data-text="continue_with"
 			data-size="medium"
 			data-logo_alignment="left">
-		</div>
+		</div> -->
 	</body>
 </html>
 
@@ -1763,7 +1764,7 @@ function alpineRSS() {
 				THIS.storageSet(THIS.K.hash, THIS.params.x);
 				
 				THIS.profile = detail.profile;
-				THIS.storageSet(THIS.K.profile, detail.profile);
+				THIS.storageSet(THIS.K.profile, THIS.profile);
 
 				const url = new URL(location);
 				url.searchParams.set("x", x);
@@ -1771,8 +1772,9 @@ function alpineRSS() {
 
 				document.querySelector('#json-editor [id="root[hash]"]').value = x;
 				
-				if (document.querySelector('#img-profile').src != detail.profile?.picture)
+				if (document.querySelector('#img-profile').src != detail.profile?.picture) {
 					document.querySelector('#img-profile').src = detail.profile?.picture;
+				}
 
 				if (is_reload) {
 					location = url.toString();
@@ -1782,7 +1784,7 @@ function alpineRSS() {
 
 			// google.accounts.id.initialize({
 			// 	client_id: document.querySelector('#g_id_onload').getAttribute('data-client_id'),
-			// 	callback: handleGoogle1tapSignin,
+			// 	callback: handleGoogle1TapSignin,
 			// });
 			// google.accounts.id.renderButton(
 			// 	document.getElementById("g_id_signin"),
@@ -1800,7 +1802,7 @@ function alpineRSS() {
 
 navigator?.serviceWorker?.register?.('sw.js');
 
-function handleGoogle1tapSignin(response) {
+function handleGoogle1TapSignin(response) {
 	const responsePayload = decodeJwtResponse(response?.credential);
 	console.dir({response});
 
