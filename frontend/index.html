@@ -108,7 +108,7 @@
 			<!-- rss-feed -->
 			<template x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed bg-white dark:bg-gray-800 rounded mb-4"
-					:class="params?.style?.includes?.('shadow') ? 'shadow' : ''"
+					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
 				>
@@ -135,11 +135,11 @@
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
 									:class="item.viewed && 'opacity-90 italic'"
-									:class="params?.style?.includes?.('shadow') ? 'shadow' : ''"
+									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 								>
 									<!-- thumbnail -->
-									<template x-if="!params?.style?.includes?.('no') && item.images?.[0]?.length">
-										<div class="rss-meta relative min-h-36">
+									<template x-if="!params?.s?.includes?.('no') && item.images?.[0]?.length">
+										<div class="rss-meta relative aspect-3/2 min-h-36">
 											<a class="rss-thumb" :href="item.link" target="_blank">
 												<link rel="prefetch" as="image" :href="
 													(feed.link && item.images?.[0]?.startsWith?.('/'))
@@ -193,19 +193,19 @@
 										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											
 											:class="( item.images?.[0]?.length &&
-														(!params?.style?.includes?.('no') && !params?.style?.includes?.('title'))
+														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
 													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
 											:title="item.title"
 											x-html="decodeHTML(item.title).substr(0, 150) + (
-														params?.style?.includes?.('title')
+														params?.s?.includes?.('title')
 															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
 															: ''
 													)"
 											rel="external"
 										>
 										</a>
-										<template x-if="!params?.style?.includes?.('title')">
+										<template x-if="!params?.s?.includes?.('title')">
 											<p class="rss-desc text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
 											>
@@ -213,7 +213,7 @@
 										</template>
 									</div>
 									<!-- item article -->
-									<template x-if="!params?.style?.includes?.('title')">
+									<template x-if="!params?.s?.includes?.('title')">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
 											<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggleReadmore()" class="cursor-pointer px-4 py-2 flex flex-row items-center">
 												<span :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
@@ -246,11 +246,11 @@
 						<!-- feed article -->
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
-								:class="params?.style?.includes?.('shadow') ? 'shadow' : ''"
+								:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 								class="hidden sm:block pt-4 grid grid-cols-1 gap-6 transition-all transition-discrete"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
-								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.style?.includes?.('shadow') ? 'shadow' : ''">
+								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
 									<div class="px-4 py-2 flex flex-row items-center">
 										<span class="py-1 text-xl font-bold flex flex-row items-center">
 											<p class="rss-article-title text-gray-600 dark:text-gray-300 whitespace-pre-line break-words" x-html="feed.article?.title || ''">
@@ -321,7 +321,7 @@
 										<div class="rss-item bg-slate-50 dark:bg-slate-800 rounded overflow-hidden">
 											<!-- thumbnail -->
 											<template x-if="item.images?.[0]?.length">
-												<div class="rss-meta relative min-h-[240px]">
+												<div class="rss-meta relative aspect-3/2 min-h-[240px]">
 													<link rel="prefetch" as="image" :href="item.images[0]" />
 													<img class="rss-thumb w-full min-h-24 max-h-[240px]"
 														:loading="index <= 1 ? 'eager' : 'lazy'"
