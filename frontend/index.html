@@ -71,10 +71,10 @@
 			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-between max-w-auto">
 				<ul class="pt-1 cursor-pointer"  @click="clickedProfile()">
 					<li x-show="profile?.picture">
-						<img id="img-profile" title="Logout" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile.png';" :src="profile?.picture">
+						<img id="img-profile" title="Back to Anonymous" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile.png';" :src="profile?.picture">
 					</li>
 					<li x-show="!profile?.picture">
-						<img id="btn-login" title="Login Google Profile" class="self-center size-8 pb-1 rounded-full" src="/default-profile.png">
+						<img id="btn-login" title="Sync with Google" class="self-center size-8 pb-1 rounded-full" src="/default-profile.png">
 					</li>
 				</ul>
 				<a href="/#title" name="title" class="mx-auto text-center">
@@ -146,7 +146,7 @@
 													? (new URL(feed.link).origin.replace('http:', 'https:') + item.images?.[0])
 													: item.images?.[0]
 												" />
-												<img class="rss-thumb w-full min-h-36 max-h-[320px]"
+												<img class="rss-thumb w-full min-h-36 max-h-[200px]"
 													:loading="index <= 1 ? 'eager' : 'lazy'"
 													:fetchpriority="index <= 1 ? 'high' : 'low'"
 													:alt="item.title"
@@ -1783,16 +1783,6 @@ function alpineRSS() {
 					location.reload();
 				}
 			});
-
-			// google.accounts.id.initialize({
-			// 	client_id: document.querySelector('#g_id_onload').getAttribute('data-client_id'),
-			// 	callback: handleGoogle1TapSignin,
-			// });
-			// google.accounts.id.renderButton(
-			// 	document.getElementById("g_id_signin"),
-			// 	{ theme: "outline", size: "medium" }  // customization attributes
-			// );
-			// THIS.google = google;
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
