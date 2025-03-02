@@ -146,7 +146,7 @@
 													? (new URL(feed.link).origin.replace('http:', 'https:') + item.images?.[0])
 													: item.images?.[0]
 												" />
-												<img class="rss-thumb w-full min-h-36 max-h-[200px]"
+												<img class="rss-thumb w-full min-h-36 max-h-[320px]"
 													:loading="index <= 1 ? 'eager' : 'lazy'"
 													:fetchpriority="index <= 1 ? 'high' : 'low'"
 													:alt="item.title"
