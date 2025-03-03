@@ -75,10 +75,10 @@
 			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-between max-w-auto">
 				<ul class="pt-1 cursor-pointer"  @click="clickedProfile()">
 					<li x-show="profile?.picture">
-						<img width="32" height="32" id="img-profile" title="Back to Anonymous" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile-64x64.png';" :src="profile?.picture">
+						<img width="32" height="32" id="img-profile" alt="Back to Anonymous" title="Back to Anonymous" class="self-center size-8 pb-1 rounded-full" onerror="this.src = '/default-profile-64x64.png';" :src="profile?.picture">
 					</li>
 					<li x-show="!profile?.picture">
-						<img width="32" height="32" id="btn-login" title="Sync with Google" class="self-center size-8 pb-1 rounded-full" src="/default-profile-64x64.png">
+						<img width="32" height="32" id="btn-login" alt="Sync with Google" title="Sync with Google" class="self-center size-8 pb-1 rounded-full" src="/default-profile-64x64.png">
 					</li>
 				</ul>
 				<a href="/#title" name="title" class="mx-auto text-center">
@@ -122,7 +122,8 @@
 					</span>
 					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
-							<img width="32" height="32" class="self-center size-6 mr-2 md:mr-4"
+							<img width="32" height="32" class="rss-favicon self-center size-6 mr-2 md:mr-4"
+								:alt="feed.short || feed.title"
 								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
 								onerror="this.src = '/favicons/ios/128.png';"
 								/>
@@ -311,7 +312,7 @@
 						<section class="rss-feed bg-white dark:bg-gray-800 rounded mb-4 italic opacity-90">
 							<a :name="review_feed.anchor" :href="review_feed.rss_url" target="_blank">
 								<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
-									<img width="32" height="32" class="self-center size-6 mr-2 md:mr-4"
+									<img width="32" height="32" class="rss-favicon self-center size-6 mr-2 md:mr-4"
 										:src="'https://www.google.com/s2/favicons?domain=' + new URL(review_feed.link).hostname +'&sz=128'"
 										onerror="this.src = '/favicons/ios/128.png';"
 										/>
@@ -724,6 +725,14 @@
 		height: auto;
 	}
 
+	img.rss-favicon {
+		width: 10%;
+	}
+
+	img.rss-thumb {
+		width: 100%;
+	}
+
 	p [id*="readability-page"] svg {
 		display: none;
 	}
@@ -783,7 +792,7 @@
 	}
 </style>
 <script>
-	tailwind.config = {
+	/*tailwind.config = {
 		theme: {
 		},
 		corePlugins: {
@@ -792,7 +801,7 @@
 		experimental: {
 			optimizeUniversalDefaults: true,
 		}
-	}
+	}*/
 </script>
 
 <script>
@@ -801,7 +810,7 @@ function alpineHead() {
 	return {
 		title: 'The Newsroom RSS',
 		description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
-		host: '//rss.phamthanh.me',
+		host: 'https://rss.shaunsocial.com',
 	}
 };
 
