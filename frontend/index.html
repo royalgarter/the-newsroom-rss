@@ -50,9 +50,6 @@
 		<link rel="preload" as="script" href="//unpkg.com/@tailwindcss/browser@4" />
 		<script src="//unpkg.com/@tailwindcss/browser@4"></script>
 
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js" />
-		<script src="//cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
-
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
@@ -122,7 +119,7 @@
 					</span>
 					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
-							<img width="32" height="32" class="rss-favicon self-center size-6 mr-2 md:mr-4"
+							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4"
 								:alt="feed.short || feed.title"
 								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
 								onerror="this.src = '/favicons/ios/128.png';"
@@ -447,6 +444,46 @@
 												</template>
 											</div>
 
+											<div class="w-full pt-4">
+												<div class="flex items-center px-4 py-2">
+													<div class="min-w-32">
+														<label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="settings-hash">
+														Hash Identity
+														</label>
+													</div>
+													<div class="w-full cursor-pointer">
+														<input class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="settings-hash" type="text" x-model.debounce.500ms="params.x">
+													</div>
+												</div>
+												<div class="flex items-center px-4 py-2">
+													<div class="min-w-32">
+														<label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="settings-limit">
+														Items per Feed
+														</label>
+													</div>
+													<div class="w-full cursor-pointer">
+														<select class="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="settings-limit" x-model="params.l">
+															<template x-for="lim in [3,6,9,12,15,20,24,30,36,48,64,100]">
+																<option x-text="lim"></option>
+															</template>
+														</select>
+													</div>
+												</div>
+												<div class="flex items-center px-4 py-2">
+													<div class="min-w-32">
+														<label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="settings-style">
+														Display Style
+														</label>
+													</div>
+													<div class="w-full cursor-pointer">
+														<select class="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="settings-style" x-model="params.s">
+															<template x-for="sty in ['full','noimg','nopreview','title']">
+																<option x-text="sty"></option>
+															</template>
+														</select>
+													</div>
+												</div>
+											</div>
 										</div>
 
 										<!-- Buttons -->
@@ -459,39 +496,29 @@
 												Import Sample RSS
 											</button>
 											<button
-												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 dark:bg-rose-800 p-2 font-bold rounded shadow"
+												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-rose-600 dark:bg-rose-800 px-4 py-2 font-bold rounded shadow"
 												x-show="tasks.length > 0"
 												@click="clearAllTasks()"
 											>
-												Clear All
+												Clear
 											</button>
 											<button
-												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-500 dark:bg-emerald-700 p-2 font-bold rounded shadow"
+												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-500 dark:bg-emerald-700 px-4 py-2 font-bold rounded shadow"
 												x-show="tasks.length > 0"
 												@click="exportTasks()"
 											>
-												Export CSV
+												Export
 											</button>
 											<button
-												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 dark:bg-emerald-800 p-2 font-bold rounded shadow"
+												class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 dark:bg-emerald-800 px-4 py-2 font-bold rounded shadow"
 												x-show="tasks.length > 0"
 												@click="buildTasks()"
 											>
-												Build Feeds
+												Save
 											</button>
 										</div>
 									</div>
 								</template>
-
-
-								<div class="rounded-lg overflow-hidden bg-gray-300 dark:bg-gray-700">
-									<div id='json-editor' class="px-4 py-2"></div>
-									<div class="bg-blue-500 dark:bg-blue-700 px-4 py-3 sm:px-6 flex justify-end">
-										<button id='json-editor-submit' class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 dark:bg-emerald-800 p-2 font-bold rounded shadow">
-											Saved
-										</button>
-									</div>
-								</div>
 							</div>
 						</div>
 					</div>
@@ -703,15 +730,6 @@
 			data-itp_support="true"
 			data-callback="handleGoogle1TapSignin">
 		</div>
-
-		<!-- <div id="g_id_signin" class="g_id_signin"
-			data-type="standard"
-			data-shape="rectangular"
-			data-theme="outline"
-			data-text="continue_with"
-			data-size="medium"
-			data-logo_alignment="left">
-		</div> -->
 	</body>
 </html>
 
@@ -726,7 +744,8 @@
 	}
 
 	img.rss-favicon {
-		width: 10%;
+		width: 24px;
+		height: 24px;
 	}
 
 	img.rss-thumb {
@@ -755,40 +774,6 @@
 	p.rss-article-content img {
 		padding: 1rem;
 		place-self: center;
-	}
-
-	.card-title {
-		@apply float-right;
-	}
-	.card-title > span {
-		@apply hidden;
-	}
-	.card-body {
-		@apply block items-center relative max-w-full;
-	}
-	.card-body row {
-		@apply flex items-center relative max-w-full w-full;
-	}
-	.form-group {
-		@apply px-3 py-4 text-base bg-gray-200 rounded flex items-center relative max-w-full;
-	}
-	.form-group label{
-		@apply mr-2 font-bold w-1/5 flex items-center relative;
-	}
-	.form-group .form-control{
-		@apply border bg-gray-50 focus:outline-none rounded max-w-full w-4/5 flex items-center relative text-center;
-	}
-	button.btn-secondary {
-		@apply cursor-pointer focus:outline-none uppercase text-xs text-gray-100 border-none bg-blue-600 p-2 mx-2 font-bold rounded shadow;
-	}
-	.dark .form-group {
-		@apply bg-gray-700;
-	}
-	.dark .form-group .form-control{
-		@apply bg-gray-800;
-	}
-	.dark button.btn-secondary {
-		@apply text-gray-800;
 	}
 </style>
 <script>
@@ -827,7 +812,10 @@ function alpineRSS() {
 		feeds: [],
 		loading: false,
 		error: null,
-		params: {},
+		params: {
+			limit: 6,
+			style: 'full',
+		},
 
 		input: '',
 		tasks: [],
@@ -1583,6 +1571,16 @@ function alpineRSS() {
 
 			let limit = this.params?.l || this.K.LIMIT;
 
+			this.storageSet(this.K.hash, this.params.x);
+			this.storageSet(this.K.limit, this.params.l);
+			this.storageSet(this.K.style, this.params.s);
+
+			const url = new URL(location);
+			Object.entries(this.params).forEach( ([k, v]) => {
+				url.searchParams.set(k, v);
+			});
+			history.pushState({}, "", url);
+
 			this.loading = true;
 			this.storageSet(this.K.tasks, this.tasks);
 			if (this.params.x) {
@@ -1715,55 +1713,6 @@ function alpineRSS() {
 			;
 			console.log('inited old localStorage')
 
-			let editor_options = new JSONEditor(document.getElementById('json-editor'), {
-				schema: {
-					type: "object",
-					title: "RSS Options",
-					properties: {
-						hash: {
-							type: "string",
-							title: "Hash Identity",
-							default: this.params.x,
-						},
-						limit: {
-							type: "integer",
-							title: "Items per Feed",
-							enum: [ 3, 6, 9, 12, 15, 20, 24, 30, 36, 48, 64, 100 ],
-							default: this.params.l || this.K.LIMIT,
-						},
-						style: {
-							type: "string",
-							title: "Display Style",
-							enum: [
-								"default",
-								"full",
-								"nopreview",
-								"noimg",
-								"title",
-							],
-							default: this.params.s || 'default',
-						},
-					}
-				},
-				theme: 'bootstrap4',
-				disable_collapse: true,
-				disable_edit_json: true,
-				disable_properties: true,
-				no_additional_properties: true,
-			});
-			document.getElementById('json-editor-submit').addEventListener('click', function () {
-				let opts = editor_options.getValue();
-
-				const url = new URL(location);
-				Object.entries(opts).forEach( ([k, v]) => {
-					url.searchParams.set(k, v);
-					THIS.params[k] = v;
-				});
-				history.pushState({}, "", url);
-			});
-			this.editor_options = editor_options;
-			console.log('inited editor')
-
 			window.addEventListener('params-x-changed', function(event) {
 				console.log('params-x-changed', event?.detail);
 
@@ -1786,8 +1735,6 @@ function alpineRSS() {
 				const url = new URL(location);
 				url.searchParams.set("x", x);
 				history.pushState({}, "", url);
-
-				document.querySelector('#json-editor [id="root[hash]"]').value = x;
 				
 				if (document.querySelector('#img-profile').src != detail.profile?.picture) {
 					document.querySelector('#img-profile').src = detail.profile?.picture;

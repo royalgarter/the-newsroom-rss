@@ -246,7 +246,7 @@ async function handleRequest(req: Request) {
 
 		if (!keys?.length && hash) {
 			let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
-			console.log('fallback keys = KV', kv_keys, kv_keys.length);
+			console.log('fallback keys = KV', kv_keys, kv_keys?.length);
 			keys = kv_keys || [];
 		}
 
