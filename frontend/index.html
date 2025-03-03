@@ -146,8 +146,8 @@
 												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
-													:loading="(false && (index <= 1)) ? 'eager' : 'lazy'"
-													:fetchpriority="index <= 1 ? 'high' : 'low'"
+													:loading="(index <= 1) ? 'eager' : 'lazy'"
+													:fetchpriority="(index <= 1) ? 'high' : 'low'"
 													:alt="item.title"
 													:domain="new URL(feed.link).hostname"
 													:src="item.image_thumb"
