@@ -152,7 +152,7 @@
 												" />
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
-													:loading="index <= 1 ? 'eager' : 'lazy'"
+													:loading="(false && (index <= 1)) ? 'eager' : 'lazy'"
 													:fetchpriority="index <= 1 ? 'high' : 'low'"
 													:alt="item.title"
 													:domain="new URL(feed.link).hostname"
