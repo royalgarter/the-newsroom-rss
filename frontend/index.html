@@ -1578,6 +1578,7 @@ function alpineRSS() {
 			Object.entries(this.params).forEach( ([k, v]) => {
 				url.searchParams.set(k, v);
 			});
+			console.log('url:', url);
 			history.pushState({}, "", url);
 
 			this.loading = true;
@@ -1593,7 +1594,7 @@ function alpineRSS() {
 				.then(done => {
 					console.log('build tasks done');
 					this.loading = false;
-					window.open(`/?l=${limit}&x=${this.params.x||''}`, '_self')
+					window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s}`, '_self')
 				});
 		},
 
