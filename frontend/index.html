@@ -56,13 +56,13 @@
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
-		<script defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
+		<script async defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
 
 		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
 		<script async defer src="//accounts.google.com/gsi/client"></script>
 
-		<link rel="preload" as="script" href="//cdn.ampproject.org/v0.js" />
-		<script async defer src="//cdn.ampproject.org/v0.js"></script>
+		<!-- <link rel="preload" as="script" href="//cdn.ampproject.org/v0.js" /> -->
+		<!-- <script async defer src="//cdn.ampproject.org/v0.js"></script> -->
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
@@ -140,25 +140,17 @@
 									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 								>
 									<!-- thumbnail -->
-									<template x-if="!params?.s?.includes?.('no') && item.images?.[0]?.length">
+									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
 											<a class="rss-thumb" :href="item.link" target="_blank">
-												<link rel="prefetch" as="image" :href="
-													(feed.link && item.images?.[0]?.startsWith?.('/'))
-													? (new URL(feed.link).origin.replace('http:', 'https:') + item.images?.[0])
-													: item.images?.[0]
-												" />
+												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
 													:loading="(false && (index <= 1)) ? 'eager' : 'lazy'"
 													:fetchpriority="index <= 1 ? 'high' : 'low'"
 													:alt="item.title"
 													:domain="new URL(feed.link).hostname"
-													:src="
-														(feed.link && item.images?.[0]?.startsWith?.('/'))
-														? (new URL(feed.link).origin.replace('http:', 'https:') + item.images?.[0])
-														: item.images?.[0]
-													"
+													:src="item.image_thumb"
 													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
 												/>
 												<div
@@ -195,7 +187,7 @@
 
 										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											
-											:class="( item.images?.[0]?.length &&
+											:class="( item.image_thumb &&
 														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
 													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
@@ -1295,6 +1287,7 @@ function alpineRSS() {
 						.substr(0, 400)
 						.trim()
 					|| '';
+					
 
 					if (len_full <= limit) return true;
 
@@ -1316,6 +1309,12 @@ function alpineRSS() {
 				feed.items.forEach(item => {
 					item.read_more = false;
 					item.prefetching = false;
+
+					let img0 = item.images?.[0];
+
+					item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
+						? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
+						: img0;
 
 					item.toggleReadmore = () => {
 						item.read_more = !item.read_more;
