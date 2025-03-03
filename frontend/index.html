@@ -1572,7 +1572,6 @@ function alpineRSS() {
 			let limit = this.params?.l || this.K.LIMIT;
 
 			this.storageSet(this.K.hash, this.params.x);
-			this.storageSet(this.K.limit, this.params.l);
 			this.storageSet(this.K.style, this.params.s);
 
 			const url = new URL(location);
