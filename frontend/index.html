@@ -1552,7 +1552,7 @@ function alpineRSS() {
 		buildTasks() {
 			let encodedUrls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 
-			let limit = this.params?.l || this.K.LIMIT;
+			let limit = ~~(this.params?.l || this.K.LIMIT);
 
 			this.storageSet(this.K.hash, this.params.x);
 			this.storageSet(this.K.style, this.params.s);
@@ -1565,6 +1565,7 @@ function alpineRSS() {
 			history.pushState({}, "", url.toString());
 
 			this.loading = true;
+			this.storageDel(this.K.feeds);
 			this.storageSet(this.K.tasks, this.tasks);
 			if (this.params.x) {
 				this.storageSet(this.K.tasks + this.params.x, this.tasks);
@@ -1638,8 +1639,8 @@ function alpineRSS() {
 			this.params.x = this.params.x || this.storageGet(this.K.hash);
 			this.params.s = this.params.s || this.storageGet(this.K.style);
 
-			let limit = this.params?.l || this.K.LIMIT;
-			this.params.l = limit;
+			let limit = this.params.l || this.K.LIMIT;
+			this.params.l = ~~limit;
 
 			this.ready = true;
 			this.loading = true;
