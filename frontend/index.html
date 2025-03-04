@@ -439,8 +439,8 @@
 											</div>
 											<div class="w-full cursor-pointer">
 												<select class="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="settings-limit" x-model.number="params.l">
-													<template x-for="lim in [6,9,12,15,20,24,30,36,48,64,100]">
-														<option :value="lim" x-text="lim"></option>
+													<template x-for="lim in [3,6,9,12,15,20,24,30,36,48,64,100]">
+														<option :value="lim" x-text="lim" :selected="params.l == lim"></option>
 													</template>
 												</select>
 											</div>
@@ -454,7 +454,7 @@
 											<div class="w-full cursor-pointer">
 												<select class="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="settings-style" x-model="params.s">
 													<template x-for="sty in ['full','noimg','nopreview','title']">
-														<option :value="sty" x-text="sty"></option>
+														<option :value="sty" x-text="sty" :selected="params.s == sty"></option>
 													</template>
 												</select>
 											</div>
