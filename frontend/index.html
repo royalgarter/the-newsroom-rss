@@ -1705,7 +1705,7 @@ function alpineRSS() {
 
 				let detail = event.detail;
 
-				if (detail) return;
+				if (!detail) return;
 
 				let x = detail.x || Object.fromEntries(new URLSearchParams(location.search))?.x;
 
