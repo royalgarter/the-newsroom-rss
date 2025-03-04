@@ -1084,7 +1084,7 @@ function alpineRSS() {
 					this.storageSet(this.K.hash, this.params.x);
 				}
 
-				// console.log('datas:', data);
+				console.log('datas:', data.length);
 
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
@@ -1119,7 +1119,7 @@ function alpineRSS() {
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
 								.flat().filter(x => x);
 
-				// console.log('respFeeds:', respFeeds);
+				console.log('respFeeds:', respFeeds.length);
 
 				if (this.feeds?.length && !respFeeds?.length) {
 					this.loading = false;
@@ -1639,6 +1639,7 @@ function alpineRSS() {
 			this.params.s = this.params.s || this.storageGet(this.K.style);
 
 			let limit = this.params?.l || this.K.LIMIT;
+			this.params.l = limit;
 
 			this.ready = true;
 			this.loading = true;
