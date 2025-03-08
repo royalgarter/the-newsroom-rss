@@ -15,6 +15,16 @@
   "related_applications" : [],
   "prefer_related_applications" : false,
   "iarc_rating_id": "e58c174a-81d2-5c3c-32cc-34b8de4a52e9",
+  "share_target": {
+    "action": "/api/share_target",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "url": "url",
+      "title": "title",
+      "text": "desc"
+    }
+  },
   "scope_extensions": [
     {"origin": "rss.phamthanh.me"}
   ],

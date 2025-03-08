@@ -326,6 +326,14 @@ async function handleRequest(req: Request) {
 			return response('', {status: 403});
 		}
 	}
+	
+	if (pathname === "/api/share_target") {
+		return response(JSON.stringify(params), {
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+			},
+		});
+	}
 
 	if (pathname === "/api/readlater") {
 		const userId = searchParams.get('userId') || 'default';
