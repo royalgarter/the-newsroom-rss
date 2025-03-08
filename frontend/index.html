@@ -50,10 +50,10 @@
 		<link rel="preload" as="script" href="//unpkg.com/@tailwindcss/browser@4" />
 		<script src="//unpkg.com/@tailwindcss/browser@4"></script>
 
-		<link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" />
+		<!-- <link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" /> -->
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
-		<script defer src="//unpkg.com/alpinejs-component@latest/dist/component.min.js"></script>
+		<!-- <script defer src="//unpkg.com/alpinejs-component@latest/dist/component.min.js"></script> -->
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
 		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
 
@@ -97,12 +97,14 @@
 				</button>
 			</header>
 		</template>
-		<main class="container mx-auto p-2 flex-1">
+		<main id="main" class="container mx-auto p-2 flex-1">
+
+			<!-- errors -->
 			<div class="flex gap-4 items-center mb-4 justify-self-center">
 				<span x-show="error" class="text-red-500" x-text="error"></span>
 			</div>
 
-			<!-- rss-feed -->
+			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed bg-white dark:bg-gray-800 rounded mb-4"
 					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
@@ -128,7 +130,7 @@
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
-								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden"
+								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
@@ -172,8 +174,9 @@
 											</a>
 										</div>
 									</template>
+
 									<!-- title & description -->
-									<div class="p-4 text-gray-400 dark:text-gray-300">
+									<div id="rss-item-title-desc" class="p-4 text-gray-400 dark:text-gray-300">
 										<span x-show="item.viewed" class="py-1 text-xs font-regular mr-1 flex flex-row items-center">
 											<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
@@ -203,11 +206,12 @@
 											</p>
 										</template>
 									</div>
+
 									<!-- item article -->
 									<template x-if="!params?.s?.includes?.('title')">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
-											<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggleReadmore()" class="cursor-pointer px-4 py-2 flex flex-row items-center">
-												<span :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
+											<div :class="item.article ? 'visible' : 'invisible'" class="cursor-pointer px-4 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
+												<span @click="item.toggleReadmore()" :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
 													<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
 													</svg>
@@ -285,11 +289,11 @@
 				</section>
 			</template>
 
-			<!-- rss-configuration -->
+			<!-- expanders -->
 			<div class="divide-y divide-slate-200 dark:divide-gray-700">
 				
-				<!-- read-later -->
-				<div x-data="{ expanded: true }" class="py-2">
+				<!-- readlater -->
+				<div x-data="{ expanded: readlater?.items?.length }" class="py-2">
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-03"
@@ -299,7 +303,7 @@
 							:aria-expanded="expanded"
 							aria-controls="collapse-03"
 						>
-							<span>Read Later</span>
+							<span x-html="'Bookmarks' + (readlater?.items?.length ? ' [' + readlater?.items?.length + ']' : '')"></span>
 							<svg x-cloak class="fill-indigo-500 dark:fill-indigo-300 shrink-0 ml-8" width="16" height="16">
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
 								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
@@ -313,16 +317,115 @@
 						class="grid text-sm text-slate-600 dark:text-slate-300 overflow-hidden w-full transition-all duration-300 ease-in-out"
 						:class="expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] hidden'"
 						>
-						<div class="m-auto my-4 p-2 max-w-auto rounded-md bg-gray-100 dark:bg-gray-800">
-							<template id="tpl_read_later">
-								<x-component template="tpl_feeds" x-data="{ feeds: [readlater] }"></x-component>
+						<div class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+							<!-- readlater item -->
+							<template x-for="(item, itemIndex) in readlater.items" :key="itemIndex">
+								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
+									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
+								>
+									<!-- readlater thumbnail -->
+									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
+										<div class="rss-meta relative min-h-36">
+											<a class="rss-thumb" :href="item.link" target="_blank">
+												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
+												<img width="320" height="320"
+													class="rss-thumb w-full min-h-36 max-h-[320px]"
+													:alt="item.title"
+													:src="item.image_thumb"
+												/>
+												<div
+													class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+												</div>
+											</a>
+											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
+												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-4 py-2 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
+													x-html="item.author?.toString().substr(0, 12).trim()">
+												</div>
+											</a>
+										</div>
+									</template>
+									<!-- readlater title & description -->
+									<div class="p-4 text-gray-400 dark:text-gray-300">
+										<span x-show="item.viewed" class="py-1 text-xs font-regular mr-1 flex flex-row items-center">
+											<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+											</svg>
+											<span class="ml-1" x-text="item.viewed"></span>
+										</span>
+
+										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+											
+											:class="( item.image_thumb &&
+														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
+													) ? 'pointer-events-none' : ''"
+											:href="item.link" target="_blank"
+											:title="item.title"
+											x-html="decodeHTML(item.title).substr(0, 150) + (
+														params?.s?.includes?.('title')
+															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
+															: ''
+													)"
+											rel="external"
+										>
+										</a>
+										<template x-if="!params?.s?.includes?.('title')">
+											<p class="rss-desc text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
+												x-html="item.description ? decodeHTML(item.description) : ''"
+											>
+											</p>
+										</template>
+									</div>
+									<!-- readlater article -->
+									<template x-if="!params?.s?.includes?.('title')">
+										<div :id="'rss-item-readlater-article-' + itemIndex">
+											<div :class="item.article ? 'visible' : 'invisible'" class="cursor-pointer px-4 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
+												<span @click="item.read_more = !item.read_more" :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
+													<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
+													</svg>
+													<svg x-cloak x-show="item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
+													</svg>
+													<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Content'"></span>
+												</span>
+												<span @click="saveReadLater(item)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
+													<svg 
+														x-cloak 
+														:fill="item.read_later ? 'currentColor' : 'none'" 
+														viewBox="0 0 24 24" 
+														stroke-width="1.5" 
+														stroke="currentColor" 
+														class="size-4"
+													>
+														<path 
+															stroke-linecap="round" 
+															stroke-linejoin="round" 
+															d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" 
+														/>
+													</svg>
+												</span>
+											</div>
+											<template x-if="item.read_more">
+												<div :class="item.read_more ? 'block' : 'hidden'"
+													class="px-4 py-2 flex flex-row items-center bg-amber-50 dark:bg-stone-800 transition-all transition-discrete"
+													x-intersect:leave="false && (item.read_more = false)"
+												>
+													<span class="py-1 text-xs font-regular text-gray-600 dark:text-gray-300 flex flex-row items-center">
+														<p class="rss-article-content text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
+														</p>
+													</span>
+												</div>
+											</template>
+										</div>
+									</template>
+								</div>
 							</template>
 						</div>
 					</div>
 				</div>
 
-				<!-- rss-settings -->
-				<div x-data="{ expanded: (document.querySelectorAll('.rss-task-item').length == 0) }" class="py-2">
+				<!-- settings -->
+				<div x-data="{ expanded: !tasks?.length }" class="py-2">
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-01"
@@ -547,7 +650,7 @@
 					</div>
 				</div>
 
-				<!-- rss-declarations -->
+				<!-- declarations -->
 				<div x-data="{ expanded: false }" class="py-2">
 					<h3 class="text-xl">
 						<button
@@ -729,6 +832,7 @@
 				</div>
 			</div>
 		</main>
+
 		<template id="tpl_footer" x-if="ready">
 			<footer class="bg-gray-300 dark:bg-gray-800 p-4 mt-6 text-center text-sm text-stone-900 dark:text-stone-200">
 				<blockquote class="m-2 text-base italic font-semibold">
@@ -751,191 +855,6 @@
 		</div>
 	</body>
 </html>
-
-<template id="tpl_feeds">
-	<template x-for="(feed, index) in feeds" :key="index">
-		<section class="rss-feed bg-white dark:bg-gray-800 rounded mb-4"
-			:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-			x-cloak x-show="feed?.items?.length > 0"
-			x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
-		>
-			<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
-				<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
-				<span class="relative inline-flex size-2 rounded-full bg-orange-500"></span>
-			</span>
-			<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank">
-				<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
-					<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4"
-						:alt="feed.short || feed.title"
-						:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
-						onerror="this.src = '/favicons/ios/128.png';"
-						/>
-					<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
-						x-text="feed.short || feed.title"></h2>
-				</span>
-			</a>
-			<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
-				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
-					<!-- rss-item -->
-					<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
-						<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden"
-							x-intersect:enter="triggerIntersect('enter', item.link)"
-							x-intersect:leave="triggerIntersect('leave', item.link)"
-							x-intersect.full="triggerIntersect('full', item.link)"
-							:class="item.viewed && 'opacity-90 italic'"
-							:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-						>
-							<!-- thumbnail -->
-							<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
-								<div class="rss-meta relative min-h-36">
-									<a class="rss-thumb" :href="item.link" target="_blank">
-										<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
-										<img width="320" height="320"
-											class="rss-thumb w-full min-h-36 max-h-[320px]"
-											:loading="(index <= 1) ? 'eager' : 'lazy'"
-											:fetchpriority="(index <= 1) ? 'high' : 'low'"
-											:alt="item.title"
-											:domain="new URL(feed.link).hostname"
-											:src="item.image_thumb"
-											onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
-										/>
-										<div
-											class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
-										</div>
-									</a>
-									<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
-										<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-4 py-2 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
-											x-html="item.author?.toString().substr(0, 12).trim()">
-										</div>
-									</a>
-
-									<a class="rss-author" :href="item.link" target="_blank">
-										<div class="text-xs p-2 h-12 w-12 absolute top-0 right-0 bg-indigo-600 dark:bg-indigo-400 text-white dark:text-gray-900 rounded-full flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out">
-											<small class="break-words text-center"
-												x-html="
-													(timeSince(new Date(item.published)) + ' ago')
-													|| new Date(item.published).toString().split(' GMT').shift()
-													|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()
-												">
-											</small>
-										</div>
-									</a>
-								</div>
-							</template>
-							<!-- title & description -->
-							<div class="p-4 text-gray-400 dark:text-gray-300">
-								<span x-show="item.viewed" class="py-1 text-xs font-regular mr-1 flex flex-row items-center">
-									<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
-									</svg>
-									<span class="ml-1" x-text="item.viewed"></span>
-								</span>
-
-								<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
-									
-									:class="( item.image_thumb &&
-												(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
-											) ? 'pointer-events-none' : ''"
-									:href="item.link" target="_blank"
-									:title="item.title"
-									x-html="decodeHTML(item.title).substr(0, 150) + (
-												params?.s?.includes?.('title')
-													? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
-													: ''
-											)"
-									rel="external"
-								>
-								</a>
-								<template x-if="!params?.s?.includes?.('title')">
-									<p class="rss-desc text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
-										x-html="item.description ? decodeHTML(item.description) : ''"
-									>
-									</p>
-								</template>
-							</div>
-							<!-- item article -->
-							<template x-if="!params?.s?.includes?.('title')">
-								<div :id="'rss-item-article-' + index + '-' + itemIndex">
-									<div :class="item.article ? 'visible' : 'invisible'" @click="item.toggleReadmore()" class="cursor-pointer px-4 py-2 flex flex-row items-center">
-										<span :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
-											<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-											  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
-											</svg>
-											<svg x-cloak x-show="item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-												<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
-											</svg>
-											<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Preview'"></span>
-										</span>
-										<span @click="saveReadLater(item)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
-											<svg 
-												x-cloak 
-												:fill="item.read_later ? 'currentColor' : 'none'" 
-												viewBox="0 0 24 24" 
-												stroke-width="1.5" 
-												stroke="currentColor" 
-												class="size-4"
-											>
-												<path 
-													stroke-linecap="round" 
-													stroke-linejoin="round" 
-													d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" 
-												/>
-											</svg>
-										</span>
-									</div>
-									<template x-if="item.read_more">
-										<div :class="item.read_more ? 'block' : 'hidden'"
-											class="block sm:hidden px-4 py-2 flex flex-row items-center bg-amber-50 dark:bg-stone-800 transition-all transition-discrete"
-											x-intersect:leave="false && (item.read_more = false)"
-										>
-											<span class="py-1 text-xs font-regular text-gray-600 dark:text-gray-300 flex flex-row items-center">
-												<p class="rss-article-content text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
-												</p>
-											</span>
-										</div>
-									</template>
-								</div>
-							</template>
-						</div>
-					</template>
-				</div>
-
-				<!-- feed article -->
-				<template x-if="feed.read_more && feed.article">
-					<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
-						:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-						class="hidden sm:block pt-4 grid grid-cols-1 gap-6 transition-all transition-discrete"
-						x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
-					>
-						<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
-							<div class="px-4 py-2 flex flex-row items-center">
-								<span class="py-1 text-xl font-bold flex flex-row items-center">
-									<p class="rss-article-title text-gray-600 dark:text-gray-300 whitespace-pre-line break-words" x-html="feed.article?.title || ''">
-									</p>
-								</span>
-							</div>
-							<div class="px-4 py-2 flex flex-row items-center">
-								<span class="py-1 text-sm font-regular flex flex-row items-center">
-									<p class="rss-article-content text-gray-500 dark:text-gray-400 whitespace-pre-line break-words" x-html="feed.article?.content || ''">
-									</p>
-								</span>
-							</div>
-							<div @click="feed.read_more_item.toggleReadmore()" class="cursor-pointer p-2 flex flex-row items-center float-right">
-								<span class="p-3 text-xs font-regular text-fuchsia-950 dark:text-fuchsia-200 flex flex-row items-center">
-									<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
-									  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5" />
-									  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 7.5-7.5 7.5 7.5" />
-									</svg>
-								</span>
-							</div>
-						</div>
-					</div>
-				</template>
-			</div>
-		</section>
-	</template>
-</template>
-
 
 <style type="text/tailwindcss">
 	[x-cloak] { display: none !important; }
@@ -1013,7 +932,7 @@ function alpineRSS() {
 		dark: false,
 		ready: false,
 
-		readlater: [],
+		readlater: {},
 
 		feeds: [],
 		loading: false,
@@ -1288,19 +1207,29 @@ function alpineRSS() {
 			item.read_later = !item.read_later;
 			
 			try {
+				let readLaterItems = this.storageGet(this.K.readlater) || [];
+
 				if (item.read_later) {
 					// Save to local storage first for immediate feedback
-					let readLaterItems = this.storageGet(this.K.readlater) || [];
-					if (!readLaterItems.some(i => i.link === item.link)) {
-						readLaterItems.push({
-							link: item.link,
-							title: item.title,
-							description: item.description,
-							published: item.published,
-							image_thumb: item.image_thumb,
-							feed_title: this.feeds.find(f => f.items.includes(item))?.title || '',
-							saved_at: new Date().toISOString()
-						});
+
+					let obj = {
+						link: item.link,
+						title: item.title,
+						description: item.description,
+						published: item.published,
+						image_thumb: item.image_thumb,
+						feed_title: this.feeds.find(f => f.items.includes(item))?.title || '',
+						saved_at: new Date().toISOString(),
+						read_later: item.read_later,
+						article: {
+							title: item.article?.title,
+							content: item.article?.content,
+						}
+					}
+
+					if (!readLaterItems?.some(i => i.link === item.link)) {
+						readLaterItems.push(obj);
+						this.readlater = {items: readLaterItems};
 						this.storageSet(this.K.readlater, readLaterItems);
 					}
 					
@@ -1312,22 +1241,16 @@ function alpineRSS() {
 							body: JSON.stringify({
 								action: 'save',
 								user_id: this.params.x,
-								item: {
-									link: item.link,
-									title: item.title,
-									description: item.description,
-									published: item.published,
-									image_thumb: item.image_thumb,
-									feed_title: this.feeds.find(f => f.items.includes(item))?.title || '',
-									saved_at: new Date().toISOString()
-								}
+								item: obj,
 							})
 						}).catch(err => console.error('Failed to save to KV:', err));
 					}
 				} else {
 					// Remove from local storage
-					let readLaterItems = this.storageGet(this.K.readlater) || [];
-					this.storageSet(this.K.readlater, readLaterItems.filter(i => i.link !== item.link));
+					readLaterItems = readLaterItems.filter(i => i.link !== item.link);
+
+					this.readlater = {items: readLaterItems};
+					this.storageSet(this.K.readlater, readLaterItems);
 					
 					// Remove from Deno KV
 					if (this.params.x) {
@@ -1350,7 +1273,7 @@ function alpineRSS() {
 		
 		async loadReadLaterItems() {
 			// Load from local storage first
-			let readLaterItems = this.storageGet(this.K.readlater) || [];
+			let readLaterItems = this.storageGet(this.K.readlater) || this.readlater || [];
 			
 			// If user is identified, try to load from Deno KV
 			if (this.params.x) {
@@ -1378,13 +1301,7 @@ function alpineRSS() {
 				}
 			}
 
-			this.readlater = {
-				achor: 'readlater',
-				short: 'Read Later',
-				rss_url: location.href,
-				link: location.href,
-				items: readLaterItems,
-			};
+			this.readlater = {items: readLaterItems};
 			
 			// Mark items in feeds as read_later if they're in the readLaterItems list
 			this.feeds.forEach(feed => {
