@@ -1273,7 +1273,7 @@ function alpineRSS() {
 		
 		async loadReadLaterItems() {
 			// Load from local storage first
-			let readLaterItems = this.storageGet(this.K.readlater) || this.readlater || [];
+			let readLaterItems = this.storageGet(this.K.readlater) || [];
 			
 			// If user is identified, try to load from Deno KV
 			if (this.params.x) {
