@@ -2064,6 +2064,24 @@ function alpineRSS() {
 				}
 			});
 
+			setInterval(() => {
+				if (document.hasFocus()) return;
+
+				this.loadFeedsWithContent({limit});
+			}, 15 * 60e3);
+
+			setIdle(
+				5 * 60e3,
+				() => {
+					console.log("User is idle!"); 
+					this.loadFeedsWithContent({limit});
+				},
+				() => {
+					console.log("User is active!"); 
+					this.loadFeedsWithContent({limit});
+				}
+			);
+
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
 			// 	console.log('vector2', vector2);
@@ -2100,6 +2118,47 @@ function decodeJwtResponse(token) {
 
 		return JSON.parse(jsonPayload);
 	} catch { return {}}
+}
+
+function setIdle(idleTimeout, onIdle, onActive) {
+	let lastActivityTime = Date.now();
+	let idle = false;
+	let timeoutId;
+
+	function resetIdleTimer() {
+		lastActivityTime = Date.now();
+		if (idle) {
+			idle = false;
+			if (onActive) {
+				onActive();
+			}
+		}
+		clearTimeout(timeoutId);
+		timeoutId = setTimeout(goIdle, idleTimeout);
+	}
+
+	function goIdle() {
+		idle = true;
+		if (onIdle) {
+			onIdle();
+		}
+	}
+
+	// Attach event listeners for user activity
+	document.addEventListener('mousemove', resetIdleTimer);
+	document.addEventListener('mousedown', resetIdleTimer);
+	document.addEventListener('keydown', resetIdleTimer);
+	document.addEventListener('touchstart', resetIdleTimer);
+	document.addEventListener('wheel', resetIdleTimer);  //scroll
+
+	// Initialize the timer
+	resetIdleTimer();
+
+	// Optional:  Return a function to manually reset the timer
+	return {
+		reset: resetIdleTimer,
+		isIdle: () => idle // Function to check the current idle state
+	};
 }
 
 </script>
