@@ -1285,10 +1285,9 @@ function alpineRSS() {
 					// Remove from Deno KV
 					if (this.params.x) {
 						await fetch('/api/readlater', {
-							method: 'POST',
+							method: 'DELETE',
 							headers: {"content-type": "application/json"},
 							body: JSON.stringify({
-								action: 'remove',
 								x: this.params.x,
 								link: item.link
 							})
