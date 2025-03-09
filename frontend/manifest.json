@@ -26,8 +26,7 @@
     }
   },
   "scope_extensions": [
-    {"origin": "rss.shaunsocial.com"},
-    {"origin": "rss.phamthanh.me"}
+    {"origin": "rss.shaunsocial.com"}
   ],
   "launch_handler": {
     "client_mode": "auto"
