@@ -1913,7 +1913,7 @@ function alpineRSS() {
 			this.loading = true;
 
 			if (this.params.url) {
-				console.log('share_tarter', this.params);
+				console.log('share_target', this.params);
 
 				const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 				const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
@@ -1940,8 +1940,8 @@ function alpineRSS() {
 					})
 				})
 				.then(resp => resp.json())
-				.then(json => console.dir({share_tarter: json}))
-				.catch(err => console.dir({share_tarter: err}))
+				.then(json => console.dir({share_target: json}))
+				.catch(err => console.dir({share_target: err}))
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
