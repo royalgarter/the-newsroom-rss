@@ -345,6 +345,19 @@ async function handleRequest(req: Request) {
 
 				console.dir({data, hash});
 
+				if (!data?.item?.image_thumb || !data?.item?.description) {
+					const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+					const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+					const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+
+					let html = await fetch(data.item.link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
+								.then(resp => resp.text()).catch(null) || '';
+
+					data.item.image_thumb = html.match(REGEX_IMAGE)?.[1];
+					data.item.title = data.item.title || html.match(REGEX_TITLE)?.[1];
+					data.item.description = data.item.description || html.match(REGEX_DESC)?.[1];
+				}
+
 				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
 				
 				// If item with same URL exists, update it, otherwise add new item

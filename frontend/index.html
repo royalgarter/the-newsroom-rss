@@ -1914,6 +1914,13 @@ function alpineRSS() {
 
 			if (this.params.url) {
 				console.log('share_tarter', this.params);
+
+				const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+				const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+				const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+
+				let html = await fetch(this.params.url, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
+							.then(resp => resp.text()).catch(null) || '';
 				
 				fetch('/api/readlater', {
 					method: 'POST',
@@ -1923,9 +1930,10 @@ function alpineRSS() {
 						x: this.params.x,
 						item: {
 							link: this.params.url,
-							title: this.params.title || '',
-							description: this.params.text || '',
-							feed_title: this.params.title || '',
+							title: this.params.title || html.match(REGEX_TITLE)?.[1] || '',
+							description: this.params.text || html.match(REGEX_DESC)?.[1] || '',
+							feed_title: this.params.title || html.match(REGEX_TITLE)?.[1] || '',
+							image_thumb: html.match(REGEX_IMAGE)?.[1],
 							saved_at: new Date().toISOString(),
 							read_later: true,
 						},
