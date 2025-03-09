@@ -341,7 +341,7 @@ async function handleRequest(req: Request) {
 			try {
 				const data = await req.json();
 
-				hash = hash || data.x;
+				hash = hash || data.x || 'default';
 
 				const {item} = data || {};
 
@@ -377,7 +377,7 @@ async function handleRequest(req: Request) {
 					headers: head_json
 				});
 			} catch (error) {
-				return response(JSON.stringify({ error: 'Failed to process request' + error }), {
+				return response(JSON.stringify({ error }), {
 					status: 400,
 					headers: head_json
 				});
@@ -385,7 +385,12 @@ async function handleRequest(req: Request) {
 		} else if (req.method === 'DELETE') {
 			try {
 				const data = await req.json();
+				
+				hash = hash || data.x || 'default';
+
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
+
+				console.dir({delete: data, existingItems})
 				
 				// Remove item with matching URL if it exists
 				const updatedItems = data.link ? 
@@ -398,7 +403,9 @@ async function handleRequest(req: Request) {
 					headers: head_json
 				});
 			} catch (error) {
-				return response(JSON.stringify({ error: 'Failed to process request' }), {
+				console.log(error);
+
+				return response(JSON.stringify({ error }), {
 					status: 400,
 					headers: head_json
 				});
