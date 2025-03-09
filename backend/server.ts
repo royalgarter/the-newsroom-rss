@@ -328,13 +328,13 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/api/readlater") {
+		let head_json = {"Content-Type": "application/json; charset=utf-8"};
+
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user
-			const items = await KV.get(['readlater', hash]);
+			const items = await KV.get([pathname, hash]);
 			return response(JSON.stringify(items?.value || []), {
-				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-				},
+				headers: head_json
 			});
 		} else if (req.method === 'POST') {
 			// Add or update read later items
@@ -364,59 +364,49 @@ async function handleRequest(req: Request) {
 				
 				console.dir({item, hash});
 
-				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
+				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 				
 				// If item with same URL exists, update it, otherwise add new item
 				const updatedItems = item ? 
 					upsertBookmark(existingItems, item) : 
 					existingItems;
 				
-				await KV.set(['readlater', hash], updatedItems);
+				await KV.set([pathname, hash], updatedItems);
 				
 				return response(JSON.stringify({ success: true, items: updatedItems, data}), {
-					headers: {
-						"Content-Type": "application/json; charset=utf-8",
-					},
+					headers: head_json
 				});
 			} catch (error) {
 				return response(JSON.stringify({ error: 'Failed to process request' + error }), {
 					status: 400,
-					headers: {
-						"Content-Type": "application/json; charset=utf-8",
-					},
+					headers: head_json
 				});
 			}
 		} else if (req.method === 'DELETE') {
 			try {
 				const data = await req.json();
-				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
+				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 				
 				// Remove item with matching URL if it exists
 				const updatedItems = data.url ? 
 					existingItems.filter(item => item.url !== data.url) : 
 					existingItems;
 				
-				await KV.set(['readlater', hash], updatedItems);
+				await KV.set([pathname, hash], updatedItems);
 				
 				return response(JSON.stringify({ success: true, items: updatedItems }), {
-					headers: {
-						"Content-Type": "application/json; charset=utf-8",
-					},
+					headers: head_json
 				});
 			} catch (error) {
 				return response(JSON.stringify({ error: 'Failed to process request' }), {
 					status: 400,
-					headers: {
-						"Content-Type": "application/json; charset=utf-8",
-					},
+					headers: head_json
 				});
 			}
 		} else {
 			return response(JSON.stringify({ error: 'Method not allowed' }), {
 				status: 405,
-				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-				},
+				headers: head_json
 			});
 		}
 	}
