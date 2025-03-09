@@ -8,8 +8,8 @@
   "dir" : "ltr",
   "lang" : "en",
   "scope" : "/",
-  "start_url": "https://rss.phamthanh.me",
-  "url" : "https://rss.phamthanh.me/",
+  "start_url": "https://rss.shaunsocial.com",
+  "url" : "https://rss.shaunsocial.com/",
   "description" : "We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.",
   "orientation" : "any",
   "related_applications" : [],
@@ -26,7 +26,7 @@
     }
   },
   "scope_extensions": [
-    {"origin": "rss.phamthanh.me"}
+    {"origin": "rss.shaunsocial.com"}
   ],
   "launch_handler": {
     "client_mode": "auto"
