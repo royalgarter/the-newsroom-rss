@@ -326,8 +326,10 @@ async function handleRequest(req: Request) {
 			return response('', {status: 403});
 		}
 	}
-	
+
 	if (pathname === "/api/share_target") {
+		console.dir({share_target: params});
+		
 		return response(JSON.stringify(params), {
 			headers: {
 				"Content-Type": "application/json; charset=utf-8",

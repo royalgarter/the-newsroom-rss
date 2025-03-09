@@ -16,17 +16,18 @@
   "prefer_related_applications" : false,
   "iarc_rating_id": "e58c174a-81d2-5c3c-32cc-34b8de4a52e9",
   "share_target": {
-    "action": "/api/share_target",
+    "action": "/",
     "method": "GET",
     "enctype": "application/x-www-form-urlencoded",
     "params": {
       "url": "url",
       "title": "title",
-      "text": "desc"
+      "text": "text"
     }
   },
   "scope_extensions": [
-    {"origin": "rss.shaunsocial.com"}
+    {"origin": "rss.shaunsocial.com"},
+    {"origin": "rss.phamthanh.me"}
   ],
   "launch_handler": {
     "client_mode": "auto"

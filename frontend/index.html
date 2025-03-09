@@ -1912,7 +1912,16 @@ function alpineRSS() {
 			this.ready = true;
 			this.loading = true;
 
-
+			if (this.params.url) {
+				console.log('share_tarter', this.params);
+				fetch(`/api/share_target?x=${this.params.x}&url=${this.params.url}&title=${this.params.title}&text=${this.params.text}`, {
+					method: 'GET',
+					headers: {"content-type": "application/json"},
+				})
+				.then(resp => resp.json())
+				.then(json => console.dir({share_tarter: json}))
+				.catch(err => console.dir({share_tarter: err}));
+			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
 
