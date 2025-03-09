@@ -638,7 +638,7 @@
 									<button
 										class="cursor-pointer focus:outline-none uppercase text-xs text-blue-100 border-none bg-emerald-600 dark:bg-emerald-800 px-4 py-2 font-bold rounded shadow"
 										x-show="tasks.length > 0"
-										@click="buildTasks()"
+										@click="saveTasks()"
 									>
 										Save
 									</button>
@@ -1315,12 +1315,7 @@ function alpineRSS() {
 						// Merge items from KV with local storage, prioritizing KV
 						if (Array.isArray(kvItems)) {
 							// Remove local items that aren't in KV
-							readLaterItems = readLaterItems.filter(localItem => 
-								!kvItems.some(kvItem => kvItem.link === localItem.link)
-							);
-							
-							// Add KV items
-							readLaterItems = [...readLaterItems, ...kvItems];
+							readLaterItems = kvItems;
 							
 							// Update local storage
 							this.storageSet(this.K.readlater, readLaterItems);
@@ -1846,7 +1841,7 @@ function alpineRSS() {
 			}
 		},
 
-		buildTasks() {
+		saveTasks() {
 			let encodedUrls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 
 			let limit = ~~(this.params?.l || this.K.LIMIT);
