@@ -327,25 +327,12 @@ async function handleRequest(req: Request) {
 		}
 	}
 
-	if (pathname === "/api/share_target") {
-		console.dir({share_target: params});
-		
-		return response(JSON.stringify(params), {
-			headers: {
-				"Content-Type": "application/json; charset=utf-8",
-			},
-		});
-	}
-
 	if (pathname === "/api/readlater") {
-		const userId = searchParams.get('userId') || 'default';
-		
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user
-			const items = await KV.get(['readlater', userId]);
+			const items = await KV.get(['readlater', hash]);
 			return response(JSON.stringify(items?.value || []), {
 				headers: {
-					...cors,
 					"Content-Type": "application/json; charset=utf-8",
 				},
 			});
@@ -353,18 +340,17 @@ async function handleRequest(req: Request) {
 			// Add or update read later items
 			try {
 				const data = await req.json();
-				const existingItems = (await KV.get(['readlater', userId]))?.value || [];
+				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
 				
 				// If item with same URL exists, update it, otherwise add new item
 				const updatedItems = data.item ? 
 					updateOrAddItem(existingItems, data.item) : 
 					existingItems;
 				
-				await KV.set(['readlater', userId], updatedItems);
+				await KV.set(['readlater', hash], updatedItems);
 				
-				return response(JSON.stringify({ success: true, items: updatedItems }), {
+				return response(JSON.stringify({ success: true, items: updatedItems, data}), {
 					headers: {
-						...cors,
 						"Content-Type": "application/json; charset=utf-8",
 					},
 				});
@@ -372,7 +358,6 @@ async function handleRequest(req: Request) {
 				return response(JSON.stringify({ error: 'Failed to process request' }), {
 					status: 400,
 					headers: {
-						...cors,
 						"Content-Type": "application/json; charset=utf-8",
 					},
 				});
@@ -380,18 +365,17 @@ async function handleRequest(req: Request) {
 		} else if (req.method === 'DELETE') {
 			try {
 				const data = await req.json();
-				const existingItems = (await KV.get(['readlater', userId]))?.value || [];
+				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
 				
 				// Remove item with matching URL if it exists
 				const updatedItems = data.url ? 
 					existingItems.filter(item => item.url !== data.url) : 
 					existingItems;
 				
-				await KV.set(['readlater', userId], updatedItems);
+				await KV.set(['readlater', hash], updatedItems);
 				
 				return response(JSON.stringify({ success: true, items: updatedItems }), {
 					headers: {
-						...cors,
 						"Content-Type": "application/json; charset=utf-8",
 					},
 				});
@@ -399,7 +383,6 @@ async function handleRequest(req: Request) {
 				return response(JSON.stringify({ error: 'Failed to process request' }), {
 					status: 400,
 					headers: {
-						...cors,
 						"Content-Type": "application/json; charset=utf-8",
 					},
 				});
@@ -408,7 +391,6 @@ async function handleRequest(req: Request) {
 			return response(JSON.stringify({ error: 'Method not allowed' }), {
 				status: 405,
 				headers: {
-					...cors,
 					"Content-Type": "application/json; charset=utf-8",
 				},
 			});

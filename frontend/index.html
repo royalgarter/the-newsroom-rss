@@ -1240,7 +1240,7 @@ function alpineRSS() {
 							headers: {"content-type": "application/json"},
 							body: JSON.stringify({
 								action: 'save',
-								user_id: this.params.x,
+								x: this.params.x,
 								item: obj,
 							})
 						}).catch(err => console.error('Failed to save to KV:', err));
@@ -1259,7 +1259,7 @@ function alpineRSS() {
 							headers: {"content-type": "application/json"},
 							body: JSON.stringify({
 								action: 'remove',
-								user_id: this.params.x,
+								x: this.params.x,
 								link: item.link
 							})
 						}).catch(err => console.error('Failed to remove from KV:', err));
@@ -1278,7 +1278,7 @@ function alpineRSS() {
 			// If user is identified, try to load from Deno KV
 			if (this.params.x) {
 				try {
-					const response = await fetch(`/api/readlater?user_id=${this.params.x}`);
+					const response = await fetch(`/api/readlater?x=${this.params.x}`);
 					if (response.ok) {
 						const kvItems = await response.json();
 						
@@ -1914,13 +1914,26 @@ function alpineRSS() {
 
 			if (this.params.url) {
 				console.log('share_tarter', this.params);
-				fetch(`/api/share_target?x=${this.params.x}&url=${this.params.url}&title=${this.params.title}&text=${this.params.text}`, {
-					method: 'GET',
+				
+				fetch('/api/readlater', {
+					method: 'POST',
 					headers: {"content-type": "application/json"},
+					body: JSON.stringify({
+						action: 'save',
+						x: this.params.x,
+						item: {
+							link: this.params.url,
+							title: this.params.title || '',
+							description: this.params.text || '',
+							feed_title: this.params.title || '',
+							saved_at: new Date().toISOString(),
+							read_later: true,
+						},
+					})
 				})
 				.then(resp => resp.json())
 				.then(json => console.dir({share_tarter: json}))
-				.catch(err => console.dir({share_tarter: err}));
+				.catch(err => console.dir({share_tarter: err}))
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
