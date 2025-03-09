@@ -387,7 +387,7 @@
 												</svg>
 												<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Content'"></span>
 											</span>
-											<span @click="saveReadLater(item)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
+											<span @click="saveReadLater(item, true)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
 												<svg 
 													x-cloak 
 													:fill="item.read_later ? 'currentColor' : 'none'" 
@@ -1231,7 +1231,7 @@ function alpineRSS() {
 			this.TRIGGER[link] = trig;
 		},
 
-		async saveReadLater(item) {
+		async saveReadLater(item, is_remove) {
 			if (!item || !item.link) return;
 			
 			item.read_later = !item.read_later;
@@ -1239,7 +1239,7 @@ function alpineRSS() {
 			try {
 				let readLaterItems = this.storageGet(this.K.readlater) || [];
 
-				if (item.read_later) {
+				if (!is_remove && item.read_later) {
 					// Save to local storage first for immediate feedback
 
 					let obj = {
