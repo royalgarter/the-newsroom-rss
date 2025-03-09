@@ -1919,8 +1919,13 @@ function alpineRSS() {
 				const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 				const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
-				let html = await fetch(this.params.url, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
-							.then(resp => resp.text()).catch(null) || '';
+				
+				let html = '';
+				
+				try {
+					html = await fetch(this.params.url, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
+								.then(resp => resp.text()).catch(null) || '';
+				} catch {}
 				
 				fetch('/api/readlater', {
 					method: 'POST',
