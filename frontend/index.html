@@ -842,7 +842,7 @@
 			</footer>
 		</template>
 
-		<div x-data="{ is_visible: false }"
+		<div id="scroll_to_top" x-data="{ is_visible: false }"
 			x-init="window.addEventListener('scroll', () => { is_visible = window.scrollY > 1e3; })"
 			x-show="is_visible"
 			x-transition:enter="transition ease-out duration-300"
@@ -855,7 +855,7 @@
 			class="fixed font-bold bottom-2 right-2 bg-green-500 text-white flex items-center justify-center h-10 w-10 rounded-full cursor-pointer opacity-80 hover:opacity-100 z-100"
 		>▲</div>
 
-		<div x-data="{ is_open: false, anchors: [] }" x-init="
+		<div id="anchor_jump" x-data="{ is_open: false, anchors: [] }" x-init="
 			anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map(a => ({
 				href: '#' + a.name,
 				text: '#' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100),
@@ -863,7 +863,7 @@
 			"
 			class="fixed left-2 bottom-2 text-sm z-100"
 		>
-			<div x-show="is_open" @click.away="is_open = false" class="bg-stone-200 shadow-md rounded mb-2">
+			<div x-show="is_open" @click.away="is_open = false" class="bg-stone-200 shadow-md rounded mb-2 overflow-y-auto max-h-128">
 				<template x-for="(anchor, index) in anchors" :key="index">
 					<a :href="anchor.href" class="block p-2 text-gray-800 hover:bg-gray-200" x-text="anchor.text"></a>
 				</template>
