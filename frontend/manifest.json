@@ -8,7 +8,7 @@
   "dir" : "ltr",
   "lang" : "en",
   "scope" : "/",
-  "start_url": "https://rss.shaunsocial.com",
+  "start_url": "https://rss.shaunsocial.com/",
   "url" : "https://rss.shaunsocial.com/",
   "description" : "We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.",
   "orientation" : "any",
@@ -18,7 +18,6 @@
   "share_target": {
     "action": "/",
     "method": "GET",
-    "enctype": "application/x-www-form-urlencoded",
     "params": {
       "url": "url",
       "title": "title",
