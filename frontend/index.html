@@ -1998,6 +1998,7 @@ function alpineRSS() {
 			if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
 				this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
 
+			this.loadReadLaterItems();
 			this.postProcessFeeds({limit});
 			console.log('inited feeds', this.feeds.length)
 
