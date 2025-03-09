@@ -340,6 +340,11 @@ async function handleRequest(req: Request) {
 			// Add or update read later items
 			try {
 				const data = await req.json();
+
+				hash = hash || data.x;
+
+				console.dir({data, hash});
+
 				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
 				
 				// If item with same URL exists, update it, otherwise add new item
@@ -355,7 +360,7 @@ async function handleRequest(req: Request) {
 					},
 				});
 			} catch (error) {
-				return response(JSON.stringify({ error: 'Failed to process request' }), {
+				return response(JSON.stringify({ error: 'Failed to process request' + error }), {
 					status: 400,
 					headers: {
 						"Content-Type": "application/json; charset=utf-8",
