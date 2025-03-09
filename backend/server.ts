@@ -345,20 +345,24 @@ async function handleRequest(req: Request) {
 
 				const {item} = data || {};
 
-				console.dir({item, hash});
 
 				if (!item?.image_thumb || !item?.description) {
 					const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 					const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 					const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
-					let html = await fetch(item.link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
-								.then(resp => resp.text()).catch(null) || '';
+					let html = '';
+					try {
+						html = await fetch(item.link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
+									.then(resp => resp.text()).catch(null) || '';
+					} catch {}
 
 					item.title = item.title || html.match(REGEX_TITLE)?.[1];
 					item.description = item.description || html.match(REGEX_DESC)?.[1];
 					item.image_thumb = item.image_thumb || html.match(REGEX_IMAGE)?.[1];
 				}
+				
+				console.dir({item, hash});
 
 				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
 				

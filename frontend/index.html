@@ -1946,6 +1946,7 @@ function alpineRSS() {
 				})
 				.then(resp => resp.json())
 				.then(json => console.dir({share_target: json}))
+				.then(this.loadReadLaterItems)
 				.catch(err => console.dir({share_target: err}))
 			}
 
