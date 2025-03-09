@@ -207,7 +207,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 	return render;
 }
 
-function updateOrAddItem(items, newItem) {
+function upsertBookmark(items, newItem) {
 	const index = items.findIndex(item => item.url === newItem.url);
 	if (index !== -1) {
 		// Update existing item
@@ -343,26 +343,28 @@ async function handleRequest(req: Request) {
 
 				hash = hash || data.x;
 
-				console.dir({data, hash});
+				const {item} = data || {};
 
-				if (!data?.item?.image_thumb || !data?.item?.description) {
+				console.dir({item, hash});
+
+				if (!item?.image_thumb || !item?.description) {
 					const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 					const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 					const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
-					let html = await fetch(data.item.link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
+					let html = await fetch(item.link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
 								.then(resp => resp.text()).catch(null) || '';
 
-					data.item.image_thumb = html.match(REGEX_IMAGE)?.[1];
-					data.item.title = data.item.title || html.match(REGEX_TITLE)?.[1];
-					data.item.description = data.item.description || html.match(REGEX_DESC)?.[1];
+					item.title = item.title || html.match(REGEX_TITLE)?.[1];
+					item.description = item.description || html.match(REGEX_DESC)?.[1];
+					item.image_thumb = item.image_thumb || html.match(REGEX_IMAGE)?.[1];
 				}
 
 				const existingItems = (await KV.get(['readlater', hash]))?.value || [];
 				
 				// If item with same URL exists, update it, otherwise add new item
-				const updatedItems = data.item ? 
-					updateOrAddItem(existingItems, data.item) : 
+				const updatedItems = item ? 
+					upsertBookmark(existingItems, item) : 
 					existingItems;
 				
 				await KV.set(['readlater', hash], updatedItems);
