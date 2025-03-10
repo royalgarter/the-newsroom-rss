@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html amp lang="en" class="scroll-smooth"> <!-- Added "dark" class here for initial dark mode, remove if you want light mode by default -->
+<html amp lang="en" class="scroll-smooth">
 	<head x-data="alpineHead()">
 		<title x-html="title">The Newsroom RSS</title>
 
@@ -81,6 +81,7 @@
 					class="self-center size-8 pb-1 rounded-full cursor-pointer"
 					onerror="this.src = '/default-profile-64x64.png';">
 
+				<a id="anchor_home" href="#home" name="home" class="scroll-smooth"></a>
 				<h1 :class="loading ? 'animate-pulse italic' : ''" class="mx-auto text-center text-2xl font-bold" x-html="title"></h1>
 
 				<button class="rounded-md focus:outline-none focus:shadow-outline-purple cursor-pointe" 
@@ -115,7 +116,7 @@
 						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
 						<span class="relative inline-flex size-2 rounded-full bg-orange-500"></span>
 					</span>
-					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank" class="rss-feed-anchor">
+					<a :name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url" target="_blank" class="rss-feed-anchor scroll-smooth">
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
 							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4"
 								:alt="feed.short || feed.title"
@@ -291,9 +292,10 @@
 
 			<!-- expanders -->
 			<div class="divide-y divide-slate-200 dark:divide-gray-700">
-				
+
 				<!-- readlater -->
 				<div x-data="{ expanded: readlater?.items?.length }" class="py-2">
+					<a id="anchor_bookmarks" href="#bookmarks" name="bookmarks" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-03"
@@ -840,7 +842,7 @@
 			</footer>
 		</template>
 
-		<div id="scroll_to_top" x-data="{ is_visible: false }"
+		<!-- <div id="scroll_to_top" x-data="{ is_visible: false }"
 			x-init="window.addEventListener('scroll', () => { is_visible = window.scrollY > 1e3; })"
 			x-show="is_visible"
 			x-transition:enter="transition ease-out duration-300"
@@ -851,13 +853,19 @@
 			x-transition:leave-end="opacity-0 transform translate-y-2"
 			@click="window.scrollTo({ top: 0, behavior: 'smooth' })"
 			class="fixed font-bold bottom-2 right-2 bg-green-500 text-white flex items-center justify-center h-10 w-10 rounded-full cursor-pointer opacity-80 hover:opacity-100 z-100"
-		>▲</div>
+		>▲</div> -->
 
 		<div id="anchor_jump" x-data="{ is_open: false, anchors: [] }" x-init="
 			anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map(a => ({
 				href: '#' + a.name,
-				text: '#' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100),
+				text: '#' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim(),
 			}));
+
+			anchors = [
+				{href: '#home', text: '#[Home]'},
+				...anchors,
+				{href: '#bookmarks', text: '#[Bookmarks]'},
+			];
 			"
 			class="fixed left-2 bottom-2 text-sm z-100"
 		>
@@ -2067,7 +2075,7 @@ function alpineRSS() {
 				if (document.hasFocus()) return;
 
 				this.loadFeedsWithContent({limit});
-			}, 15 * 60e3);
+			}, 30 * 60e3);
 
 			setIdle(
 				5 * 60e3,
