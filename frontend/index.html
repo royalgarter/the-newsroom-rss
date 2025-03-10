@@ -45,6 +45,7 @@
 
 		<meta name="referrer" content="no-referrer-when-downgrade">
 		<meta name="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
 		<link rel="preload" as="script" href="//unpkg.com/@tailwindcss/browser@4" />
@@ -106,7 +107,7 @@
 
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
-				<section class="rss-feed bg-white dark:bg-gray-800 rounded mb-4"
+				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
 					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 					x-cloak x-show="feed?.items?.length > 0"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
@@ -126,10 +127,10 @@
 								x-text="feed.short || feed.title"></h2>
 						</span>
 					</a>
-					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10">
+					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10 pb-10 ">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
-							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
+							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
@@ -253,6 +254,14 @@
 								</div>
 							</template>
 						</div>
+
+						<span id="load_more"
+							@click="feed.loadMore()"
+							:class="feed.loadMore ? 'visible' : 'invisible'"
+							class="absolute right-3 bottom-3 text-sm font-bold flex items-center cursor-pointer text-slate-300 dark:text-slate-500"
+						>
+							Read more
+						</span>
 
 						<!-- feed article -->
 						<template x-if="feed.read_more && feed.article">
@@ -1342,13 +1351,13 @@ function alpineRSS() {
 			});
 		},
 
-		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=0, init_urls, force_update}) {
+		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
 			if (this.loading && !force_update) return;
 
 			this.loading = true;
 			this.error = null;
 
-			console.log('loadFeedsWithContent');
+			console.log('loadFeedsWithContent', limit, limit_adjust);
 
 			try {
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
@@ -1386,7 +1395,7 @@ function alpineRSS() {
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
-						fetch(`/api/feeds?l=${limit}&x=${this.params.x || ''}`, {
+						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
@@ -1400,7 +1409,7 @@ function alpineRSS() {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
-							body: JSON.stringify({keys :[item], batch: data}),
+							body: JSON.stringify({keys: [item], batch: data}),
 						})
 						.then(resp => resp.json())
 						.then(json => {
@@ -1560,19 +1569,6 @@ function alpineRSS() {
 				feed.items = feed.items.filter(item => {
 					let {link} = item;
 
-					if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
-						item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
-					}
-
-					item.description = item.description
-						?.replace(/\<\/?[^>]*\>/g, '\n\n')
-						.replace(/\n\n+/g, '\n\n')
-						.replace(/\s+/g, ' ')
-						.substr(0, 400)
-						.trim()
-					|| '';
-					
-
 					if (len_full <= limit) return true;
 
 					let viewed = this.storageGet(this.K.viewed + link);
@@ -1588,158 +1584,197 @@ function alpineRSS() {
 				let delta = Math.abs(len_full - len_filter);
 				count = Math.max(count, delta);
 
-				feed.items = feed.items.slice(0, limit);
+				// feed.items = feed.items.slice(0, limit);
 
-				feed.items.forEach(item => {
-					item.read_more = false;
-					item.prefetching = false;
-					item.read_later = false;
+				feed.postProcessItems = (skip_disable) => {
+					feed.items.forEach((item, idx) => {
+						item.disable = !skip_disable && (idx >= limit);
 
-					let img0 = item.images?.[0];
+						item.read_more = false;
+						item.prefetching = false;
+						item.read_later = false;
 
-					item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
-						? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
-						: img0;
-
-					item.toggleReadmore = () => {
-						item.read_more = !item.read_more;
-
-						if (item.read_more) {
-							feed.read_more_item = item;
-							feed.read_more = true;
-							feed.article = item.article;
-
-							feed.items.filter(x => x.link != item.link).forEach(x => x.read_more = false);
-
-							item.viewed = new Date().toString().split(' GMT').shift();
-
-							this.storageSet(this.K.viewed + item.link, item.viewed);
-
-							setTimeout(() => {
-								let fa = document.querySelector('#rss-feed-article-' + feedIdx);
-
-								if (window.getComputedStyle(fa).display == 'none') return;
-
-								fa.scrollIntoView(true)
-							}, 0.1e3)
-
-							let intervalImg = setInterval(() => {
-								let doms = [...document.querySelectorAll('p.rss-article-content img')]
-									.filter(x => x.complete && (x.naturalHeight == 0));
-
-								if (doms.length == 0) return clearInterval(intervalImg);
-
-								doms.forEach(x => x.remove())
-							}, 0.3e3);
-
-							item.updatePersona?.();
-						} else {
-							feed.read_more = false;
-							feed.read_more_item.read_more = false;
-
-							setTimeout(() => {
-								let ia = document.querySelector(`a[href="${item.link}"]`);
-
-								if (window.getComputedStyle(ia).display == 'none') return;
-
-								ia.scrollIntoView(true)
-							}, 0.1e3)
-						}
-					};
-
-					item.prefetchContent = async () => {
-						if (this.params?.s?.includes?.('nopreview')) return;
-
-						// console.log('prefetchContent', item.title);
-
-						if (!auto_fetch_content || item.article?.content || item.prefetching) return;
-						item.prefetching = true;
-
-						let resp = null;
-						let opts = {redirect: 'follow'};
-						let key_nofetch = this.K.noClientFetch + new URL(item.link).hostname;
-
-						let noClientFetch = this.storageGet(key_nofetch);
-						try {
-							resp = noClientFetch
-									? await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null)
-									: await fetch(item.link, opts).catch(() => {
-										this.storageSet(key_nofetch, true);
-										return null;
-									});
-						} catch (ex) {
-							this.storageSet(key_nofetch, true);
-							resp = await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null);
+						if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
+							item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
 						}
 
-						// item.prefetching = false;
+						item.description = item.description
+							?.replace(/\<\/?[^>]*\>/g, '\n\n')
+							.replace(/\n\n+/g, '\n\n')
+							.replace(/\s+/g, ' ')
+							.substr(0, 400)
+							.trim()
+						|| '';
 
-						if (!resp || resp?.status >= 400) return /*console.log(item.link, resp)*/;
+						let img0 = item.images?.[0];
 
-						let html = await resp?.text?.().catch(null);
+						item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
+							? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
+							: img0;
 
-						if (!html) return;
+						item.toggleReadmore = () => {
+							item.read_more = !item.read_more;
 
-						let doc = new DOMParser().parseFromString(html, "text/html");
-						item.article = new Readability(doc).parse();
+							if (item.read_more) {
+								feed.read_more_item = item;
+								feed.read_more = true;
+								feed.article = item.article;
 
-						let content = item.article?.content;
-						if (content?.length) {
-							item.article.content = content
-								.trim()
-								.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
-								.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')
-								.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
-								.replace(/(\<br\>\s*\n*)+/gi, '<br>')
-								.replace(/\s+/gi, ' ');
-						}
-					};
+								feed.items.filter(x => x.link != item.link).forEach(x => x.read_more = false);
 
-					if (feedIdx <= 1) {
-						item.prefetchContent();
-						this.triggerIntersect('full', item.link);
-					}
+								item.viewed = new Date().toString().split(' GMT').shift();
 
-					item.updatePersona = async () => {
-						item.vector = item.vector || await this.embedSentence(item.title);
+								this.storageSet(this.K.viewed + item.link, item.viewed);
 
-						// console.log('updatePersona', item.vector)
+								setTimeout(() => {
+									let fa = document.querySelector('#rss-feed-article-' + feedIdx);
 
-						if (item.vector) {
-							// console.log('currentPersona', this.persona);
+									if (window.getComputedStyle(fa).display == 'none') return;
 
-							if (!Array.isArray(this.persona?.vector) || (item.vector.length != this.persona.vector.length)) {
-								this.persona = {vector: item.vector, count: 1};
-								this.storageSet(this.K.persona, this.persona);
+									fa.scrollIntoView(true)
+								}, 0.1e3)
+
+								let intervalImg = setInterval(() => {
+									let doms = [...document.querySelectorAll('p.rss-article-content img')]
+										.filter(x => x.complete && (x.naturalHeight == 0));
+
+									if (doms.length == 0) return clearInterval(intervalImg);
+
+									doms.forEach(x => x.remove())
+								}, 0.3e3);
+
+								item.updatePersona?.();
 							} else {
-								let similarity = this.similarity(item.vector, this.persona.vector);
-								console.log('similarity', similarity);
+								feed.read_more = false;
+								feed.read_more_item.read_more = false;
 
-								let newVector = this.updateMeanVector(this.persona.vector, this.persona.count, item.vector);
-								// console.log('newVector', newVector);
+								setTimeout(() => {
+									let ia = document.querySelector(`a[href="${item.link}"]`);
 
-								if (newVector) {
-									this.persona = 	{vector: newVector, count: this.persona.count + 1};
-									this.storageSet(this.K.persona, this.persona);
-								}
+									if (window.getComputedStyle(ia).display == 'none') return;
+
+									ia.scrollIntoView(true)
+								}, 0.1e3)
+							}
+						};
+
+						item.prefetchContent = async () => {
+							if (this.params?.s?.includes?.('nopreview')) return;
+
+							// console.log('prefetchContent', item.title);
+
+							if (!auto_fetch_content || item.article?.content || item.prefetching) return;
+							item.prefetching = true;
+
+							let resp = null;
+							let opts = {redirect: 'follow'};
+							let key_nofetch = this.K.noClientFetch + new URL(item.link).hostname;
+
+							let noClientFetch = this.storageGet(key_nofetch);
+							try {
+								resp = noClientFetch
+										? await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null)
+										: await fetch(item.link, opts).catch(() => {
+											this.storageSet(key_nofetch, true);
+											return null;
+										});
+							} catch (ex) {
+								this.storageSet(key_nofetch, true);
+								resp = await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null);
 							}
 
-							// console.log('updatePersona', this.persona);
+							// item.prefetching = false;
+
+							if (!resp || resp?.status >= 400) return /*console.log(item.link, resp)*/;
+
+							let html = await resp?.text?.().catch(null);
+
+							if (!html) return;
+
+							let doc = new DOMParser().parseFromString(html, "text/html");
+							item.article = new Readability(doc).parse();
+
+							let content = item.article?.content;
+							if (content?.length) {
+								item.article.content = content
+									.trim()
+									.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
+									.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')
+									.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
+									.replace(/(\<br\>\s*\n*)+/gi, '<br>')
+									.replace(/\s+/gi, ' ');
+							}
+						};
+
+						if (feedIdx <= 1) {
+							item.prefetchContent();
+							this.triggerIntersect('full', item.link);
 						}
-					};
 
-					this.embedSentence(item.title).then(v => {
-						if (!v) return;
+						item.updatePersona = async () => {
+							item.vector = item.vector || await this.embedSentence(item.title);
 
-						item.vector = v;
+							// console.log('updatePersona', item.vector)
 
-						if (Array.isArray(this.persona?.vector)) {
-							let similarity = this.similarity(item.vector, this.persona.vector);
+							if (item.vector) {
+								// console.log('currentPersona', this.persona);
 
-							item.author = similarity ? Number(similarity).toFixed(2) : item.author;
-						}
+								if (!Array.isArray(this.persona?.vector) || (item.vector.length != this.persona.vector.length)) {
+									this.persona = {vector: item.vector, count: 1};
+									this.storageSet(this.K.persona, this.persona);
+								} else {
+									let similarity = this.similarity(item.vector, this.persona.vector);
+									console.log('similarity', similarity);
+
+									let newVector = this.updateMeanVector(this.persona.vector, this.persona.count, item.vector);
+									// console.log('newVector', newVector);
+
+									if (newVector) {
+										this.persona = 	{vector: newVector, count: this.persona.count + 1};
+										this.storageSet(this.K.persona, this.persona);
+									}
+								}
+
+								// console.log('updatePersona', this.persona);
+							}
+						};
+
+						this.embedSentence(item.title).then(v => {
+							if (!v) return;
+
+							item.vector = v;
+
+							if (Array.isArray(this.persona?.vector)) {
+								let similarity = this.similarity(item.vector, this.persona.vector);
+
+								item.author = similarity ? Number(similarity).toFixed(2) : item.author;
+							}
+						});
 					});
-				})
+				};
+
+				feed.loadMore = () => {
+					feed.items.forEach(x => x.disable = false);
+
+					fetch(`/api/feeds?l=${feed.items.length*2}&x=${this.params.x || ''}`, {
+						method: 'POST',
+						headers: {"content-type": "application/json"},
+						signal: AbortSignal.timeout(20e3),
+						body: JSON.stringify({keys: [{url: feed.rss_url}]}),
+					})
+					.then(resp => resp.json())
+					.then(resp => {
+						let new_items = resp?.feeds?.[0]?.items;
+						
+						if (!new_items?.length) return;
+						
+						feed.items = new_items;
+						feed.postProcessItems(true);
+					})
+					.catch(null)
+				};
+
+				feed.postProcessItems();
 			});
 
 			setTimeout(() => {
