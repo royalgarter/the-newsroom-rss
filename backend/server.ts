@@ -26,6 +26,7 @@ const CACHE = {
 setInterval(() => console.log('CACHE.MAP.size:', CACHE.MAP.size), 60*60e3);
 
 async function test() {
+
 	
 	// console.log(Deno.env.get("DENO_KV_ACCESS_TOKEN"));
 	// console.log(Deno.env.get("DENO_KV_URL"));
