@@ -2127,46 +2127,34 @@ function decodeJwtResponse(token) {
 }
 
 function setIdle(idleTimeout, onIdle, onActive) {
-	let lastActivityTime = Date.now();
 	let idle = false;
 	let timeoutId;
 
-	function resetIdleTimer() {
-		lastActivityTime = Date.now();
+	const resetIdleTimer = () => {
 		if (idle) {
 			idle = false;
-			if (onActive) {
-				onActive();
-			}
+			onActive?.();
 		}
 		clearTimeout(timeoutId);
 		timeoutId = setTimeout(goIdle, idleTimeout);
-	}
+	};
 
-	function goIdle() {
+	const goIdle = () => {
 		idle = true;
-		if (onIdle) {
-			onIdle();
-		}
-	}
+		onIdle?.();
+	};
 
-	// Attach event listeners for user activity
-	document.addEventListener('mousemove', resetIdleTimer);
-	document.addEventListener('mousedown', resetIdleTimer);
-	document.addEventListener('keydown', resetIdleTimer);
-	document.addEventListener('touchstart', resetIdleTimer);
-	document.addEventListener('wheel', resetIdleTimer);  //scroll
+	[ 'mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel' ].forEach((event) =>
+		document.addEventListener(event, resetIdleTimer)
+	);
 
-	// Initialize the timer
 	resetIdleTimer();
 
-	// Optional:  Return a function to manually reset the timer
 	return {
 		reset: resetIdleTimer,
-		isIdle: () => idle // Function to check the current idle state
+		isIdle: () => idle
 	};
 }
-
 </script>
  
 <!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3" /> -->
