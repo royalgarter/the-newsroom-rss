@@ -296,37 +296,6 @@ async function handleRequest(req: Request) {
 		});
 	}
 
-	if (pathname === "/html") {
-		if (!urls) return response(JSON.stringify({error: 'E_urls_missing'}));
-
-		let link = decodeURIComponent(urls);
-		let key_link = 'HTML:' + link;
-
-		try {
-			let html = CACHE.get(key_link);
-
-			// if (html) console.log(' cached:', link);
-
-			if (!html) {
-				let response = await fetch(link, {redirect: 'follow', signal: AbortSignal.timeout(20e3)});
-				html = await response?.text?.();
-
-				CACHE.set(key_link, html);
-			}
-
-			if (!html) return response(JSON.stringify({error: 'E403_html'}), {status: 403});
-
-			return response(html, {
-				headers: {
-					"Content-Type": "text/html",
-					"Cache-Control": "public, max-age=604800",
-				}
-			});
-		} catch {
-			return response('', {status: 403});
-		}
-	}
-
 	if (pathname === "/api/readlater") {
 		let head_json = {"Content-Type": "application/json; charset=utf-8"};
 
@@ -415,6 +384,37 @@ async function handleRequest(req: Request) {
 				status: 405,
 				headers: head_json
 			});
+		}
+	}
+
+	if (pathname === "/html") {
+		if (!urls) return response(JSON.stringify({error: 'E_urls_missing'}));
+
+		let link = decodeURIComponent(urls);
+		let key_link = 'HTML:' + link;
+
+		try {
+			let html = CACHE.get(key_link);
+
+			// if (html) console.log(' cached:', link);
+
+			if (!html) {
+				let response = await fetch(link, {redirect: 'follow', signal: AbortSignal.timeout(20e3)});
+				html = await response?.text?.();
+
+				CACHE.set(key_link, html);
+			}
+
+			if (!html) return response(JSON.stringify({error: 'E403_html'}), {status: 403});
+
+			return response(html, {
+				headers: {
+					"Content-Type": "text/html",
+					"Cache-Control": "public, max-age=604800",
+				}
+			});
+		} catch {
+			return response('', {status: 403});
 		}
 	}
 
