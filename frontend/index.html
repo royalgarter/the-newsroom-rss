@@ -80,7 +80,6 @@
 					:title="profile?.picture ? 'Back to Anonymous' : 'Sync with Google'"
 					class="self-center size-8 pb-1 rounded-full cursor-pointer"
 					onerror="this.src = '/default-profile-64x64.png';">
-
 				<a id="anchor_home" href="#home" name="home" class="scroll-smooth"></a>
 				<h1 :class="loading ? 'animate-pulse italic' : ''" class="mx-auto text-center text-2xl font-bold" x-html="title"></h1>
 
