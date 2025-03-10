@@ -1,15 +1,15 @@
-import {serve} from "https://deno.land/std@0.170.0/http/server.ts";
-import {extname} from "https://deno.land/std@0.170.0/path/mod.ts";
-import {contentType} from "https://deno.land/std@0.170.0/media_types/mod.ts";
-import {walk} from "https://deno.land/std@0.170.0/fs/walk.ts";
-import {ensureFile} from "https://deno.land/std@0.170.0/fs/ensure_file.ts";
-import {exists} from "https://deno.land/std@0.170.0/fs/exists.ts";
-import { parseFeed } from "https://deno.land/x/rss/mod.ts";
-import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
-import * as yaml from "https://deno.land/std@0.170.0/encoding/yaml.ts";
+import {serve} from "https://deno.land/std/http/server.ts";
+import {extname} from "https://deno.land/std/path/mod.ts";
+import {exists} from "https://deno.land/std/fs/mod.ts";
+
+import {parseFeed} from "https://deno.land/x/rss/mod.ts";
+import {titleCase, upperCase} from "https://deno.land/x/case/mod.ts";
 
 const crypto = await import('node:crypto');
 
+const head_json = {
+	"Content-Type": "application/json; charset=utf-8"
+};
 const cors = {
 	"Access-Control-Allow-Origin": "*",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -289,21 +289,17 @@ async function handleRequest(req: Request) {
 		feeds = await fetchRSSLinks({urls: keys, limit});
 
 		return response(JSON.stringify({feeds, hash}), {
-			headers: {
-				...cors,
-				"Content-Type": "application/json; charset=utf-8",
-			},
+			headers: { ...cors, ...head_json },
 		});
 	}
 
 	if (pathname === "/api/readlater") {
-		let head_json = {"Content-Type": "application/json; charset=utf-8"};
 
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user
 			const items = await KV.get([pathname, hash]);
 			return response(JSON.stringify(items?.value || []), {
-				headers: head_json
+				headers: { ...cors, ...head_json },
 			});
 		} else if (req.method === 'POST') {
 			// Add or update read later items
@@ -343,12 +339,12 @@ async function handleRequest(req: Request) {
 				await KV.set([pathname, hash], updatedItems);
 				
 				return response(JSON.stringify({ success: true, items: updatedItems, data}), {
-					headers: head_json
+					headers: { ...cors, ...head_json },
 				});
 			} catch (error) {
 				return response(JSON.stringify({ error }), {
 					status: 400,
-					headers: head_json
+					headers: { ...cors, ...head_json },
 				});
 			}
 		} else if (req.method === 'DELETE') {
@@ -369,20 +365,20 @@ async function handleRequest(req: Request) {
 				await KV.set([pathname, hash], updatedItems);
 				
 				return response(JSON.stringify({ success: true, items: updatedItems }), {
-					headers: head_json
+					headers: { ...cors, ...head_json },
 				});
 			} catch (error) {
 				console.log(error);
 
 				return response(JSON.stringify({ error }), {
 					status: 400,
-					headers: head_json
+					headers: { ...cors, ...head_json },
 				});
 			}
 		} else {
 			return response(JSON.stringify({ error: 'Method not allowed' }), {
 				status: 405,
-				headers: head_json
+				headers: { ...cors, ...head_json },
 			});
 		}
 	}
