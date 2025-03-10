@@ -2075,10 +2075,10 @@ function alpineRSS() {
 				if (document.hasFocus()) return;
 
 				this.loadFeedsWithContent({limit});
-			}, 30 * 60e3);
+			}, 60 * 60e3);
 
 			setIdle(
-				5 * 60e3,
+				30 * 60e3,
 				() => {
 					console.log("User is idle!"); 
 					this.loadFeedsWithContent({limit});
