@@ -309,7 +309,8 @@ async function handleRequest(req: Request) {
 				hash = hash || data.x || 'default';
 
 				const {item} = data || {};
-
+				
+				console.dir({share_target: hash, item});
 
 				if (!item?.image_thumb || !item?.description) {
 					const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
@@ -326,8 +327,6 @@ async function handleRequest(req: Request) {
 					item.description = item.description || html.match(REGEX_DESC)?.[1];
 					item.image_thumb = item.image_thumb || html.match(REGEX_IMAGE)?.[1];
 				}
-				
-				console.dir({item, hash});
 
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 				
