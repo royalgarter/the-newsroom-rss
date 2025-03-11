@@ -1388,7 +1388,7 @@ function alpineRSS() {
 					this.storageSet(this.K.hash, this.params.x);
 				}
 
-				console.log('datas:', data.length);
+				// console.log('datas:', data.length);
 
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
@@ -1565,9 +1565,9 @@ function alpineRSS() {
 				feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 
 				feed.postProcessItems = (is_load_more) => {
-					feed.items.forEach((item, idx) => {
-						// item.disable = !is_load_more && (idx >= limit);
+					// console.log('viewed_0.1', feed.items.length, limit)
 
+					feed.items.forEach((item, idx) => {
 						item.read_more = false;
 						item.prefetching = false;
 						item.read_later = false;
@@ -1641,7 +1641,7 @@ function alpineRSS() {
 						item.prefetchContent = async () => {
 							if (this.params?.s?.includes?.('nopreview')) return;
 
-							console.log('prefetchContent', item.title);
+							// console.log('prefetchContent', item.title);
 
 							if (!auto_fetch_content || item.article?.content || item.prefetching) return;
 							item.prefetching = true;
@@ -1732,19 +1732,31 @@ function alpineRSS() {
 						});
 					});
 
+					// console.log('viewed_0', feed.items.length, limit)
 					if ((feed.items.length > limit) && !show_viewed) {
-						feed.items = feed.items.filter(item => {
-							let viewed = item.viewed || this.storageGet(this.K.viewed + item.link);
+						// console.log('viewed_1', feed.items.length)
+						let unviewed_items = feed.items.filter(item => {
+							let viewed = this.storageGet(this.K.viewed + item.link);
 							if (viewed) return false;
 
 							return true;
 						});
+
+						if (unviewed_items.length > limit) feed.items = unviewed_items;
+
+						// console.log('viewed_2', feed.items.length)
 					}
 
 					// feed.items = feed.items.slice(0, limit);
+					feed.items.forEach((item, idx) => {
+						// console.log('is_load_more', is_load_more, idx, limit);
+
+						item.disable = (!is_load_more) && (idx >= limit);
+					});
 				};
 
 				feed.loadMore = () => {
+					auto_fetch_content = true;
 					show_viewed = true;
 
 					feed.items.forEach(x => x.disable = false);
@@ -1771,6 +1783,7 @@ function alpineRSS() {
 				feed.postProcessItems();
 
 				let len_filter = feed.items.length;
+				// console.dir({len_full, len_filter, limit})
 				count = Math.max(count, Math.abs(len_full - len_filter));
 			});
 
@@ -1783,8 +1796,6 @@ function alpineRSS() {
 
 				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 			}, 0.5e3);
-
-			console.dir({count})
 
 			return {count};
 		},
