@@ -1566,7 +1566,7 @@ function alpineRSS() {
 
 				feed.postProcessItems = (is_load_more) => {
 					feed.items.forEach((item, idx) => {
-						item.disable = !is_load_more && (idx >= limit);
+						// item.disable = !is_load_more && (idx >= limit);
 
 						item.read_more = false;
 						item.prefetching = false;
