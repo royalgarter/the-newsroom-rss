@@ -208,12 +208,10 @@ async function fetchRSSLinks({urls, limit=12}) {
 }
 
 function upsertBookmark(items, newItem) {
-	const index = items.findIndex(item => item.url === newItem.url);
+	const index = items.findIndex(item => item.link === newItem.link);
 	if (index !== -1) {
-		// Update existing item
 		items[index] = { ...items[index], ...newItem, updatedAt: new Date().toISOString() };
 	} else {
-		// Add new item
 		items.push({ ...newItem, addedAt: new Date().toISOString() });
 	}
 	return items;
@@ -329,11 +327,8 @@ async function handleRequest(req: Request) {
 				}
 
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
-				
-				// If item with same URL exists, update it, otherwise add new item
-				const updatedItems = item ? 
-					upsertBookmark(existingItems, item) : 
-					existingItems;
+
+				const updatedItems = item ? upsertBookmark(existingItems, item) : existingItems;
 				
 				await KV.set([pathname, hash], updatedItems);
 				
