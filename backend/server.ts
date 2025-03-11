@@ -321,9 +321,9 @@ async function handleRequest(req: Request) {
 									.then(resp => resp.text()).catch(null) || '';
 					} catch {}
 
-					item.title = item.title || html.match(REGEX_TITLE)?.[1];
-					item.description = item.description || html.match(REGEX_DESC)?.[1];
-					item.image_thumb = item.image_thumb || html.match(REGEX_IMAGE)?.[1];
+					item.title = html.match(REGEX_TITLE)?.[1] || item.title ;
+					item.description = html.match(REGEX_DESC)?.[1] || item.description ;
+					item.image_thumb = html.match(REGEX_IMAGE)?.[1] || item.image_thumb ;
 				}
 
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];

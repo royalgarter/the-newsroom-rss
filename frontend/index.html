@@ -102,7 +102,7 @@
 
 			<!-- errors -->
 			<div class="flex gap-4 items-center mb-4 justify-self-center">
-				<span x-show="error" class="text-red-500" x-text="error"></span>
+				<span x-show="debug" class="text-red-500" x-text="debug"></span>
 			</div>
 
 			<!-- feeds -->
@@ -185,7 +185,7 @@
 											<span class="ml-1" x-text="item.viewed"></span>
 										</span>
 
-										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+										<a class="rss-title font-semibold truncate max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											
 											:class="( item.image_thumb &&
 														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
@@ -361,7 +361,7 @@
 											<span class="ml-1" x-text="item.viewed"></span>
 										</span>
 
-										<a class="rss-title font-semibold text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+										<a class="rss-title font-semibold truncate max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											
 											:class="( item.image_thumb &&
 														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
@@ -485,7 +485,7 @@
 										</template>
 										<!-- title & description -->
 										<div class="p-4">
-											<p class="rss-title font-semibold text-lg mb-2 inline-block text-indigo-800 dark:text-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out" x-html="item.title"></p>
+											<p class="rss-title font-semibold truncate max-w-full text-lg mb-2 inline-block text-indigo-800 dark:text-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out" x-html="item.title"></p>
 										</div>
 								</template>
 							</div>
@@ -980,7 +980,7 @@ function alpineRSS() {
 
 		feeds: [],
 		loading: false,
-		error: null,
+		debug: null,
 		params: {
 			l: 6,
 			s: 'full',
@@ -1487,7 +1487,7 @@ function alpineRSS() {
 				// console.log(this.tasks);
 			} catch (error) {
 				console.error("Error fetching feeds:", error);
-				this.error = "Failed to load feeds. Please check the server logs for more details";
+				this.debug = "Failed to load feeds. Please check the server logs for more details";
 				this.loading = false;
 			} finally {
 				console.log('loadFeedsWithContent.done');
@@ -1988,7 +1988,7 @@ function alpineRSS() {
 			this.loading = true;
 
 			if (this.params.url || this.params.text || this.params.title) {
-				this.error = JSON.stringify(this.params);
+				// this.debug = JSON.stringify(this.params);
 				
 				console.log('share_target', this.params);
 
@@ -2015,7 +2015,7 @@ function alpineRSS() {
 					read_later: true,
 				};
 
-				this.error = JSON.stringify(item);
+				// this.debug = JSON.stringify(item);
 				
 				fetch('/api/readlater', {
 					method: 'POST',
