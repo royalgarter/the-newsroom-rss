@@ -349,8 +349,6 @@ async function handleRequest(req: Request) {
 
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 
-				console.dir({delete: data, existingItems})
-				
 				// Remove item with matching URL if it exists
 				const updatedItems = data.link ? 
 					existingItems.filter(item => item.link !== data.link) : 

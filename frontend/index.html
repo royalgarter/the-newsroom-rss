@@ -861,18 +861,22 @@
 			class="fixed font-bold bottom-2 right-2 bg-green-500 text-white flex items-center justify-center h-10 w-10 rounded-full cursor-pointer opacity-80 hover:opacity-100 z-100"
 		>▲</div> -->
 
-		<div id="anchor_jump" x-data="{ is_open: false, anchors: [] }" x-init="
-			anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map(a => ({
-				href: '#' + a.name,
-				text: '# ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim(),
-			}));
+		<div id="anchor_jump" x-data="{
+			is_open: false, 
+			anchors: [], 
+			refresh: function() {
+				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map(a => ({
+					href: '#' + a.name,
+					text: '# ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim(),
+				}));
 
-			anchors = [
-				{href: '#home', text: '# [Home]'},
-				...anchors,
-				{href: '#bookmarks', text: '# [Bookmarks]'},
-			];
-			"
+				this.anchors = [
+					{href: '#home', text: '# [Home]'},
+					...this.anchors,
+					{href: '#bookmarks', text: '# [Bookmarks]'},
+				];
+			} }" 
+			x-init="refresh()"
 			class="fixed left-2 bottom-2 text-sm z-100"
 		>
 			<div x-show="is_open" @click.away="is_open = false" class="bg-stone-200 shadow-md rounded mb-2 overflow-y-auto max-h-128">
@@ -1795,6 +1799,8 @@ function alpineRSS() {
 
 				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 			}, 0.5e3);
+
+			Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 
 			return {count};
 		},
