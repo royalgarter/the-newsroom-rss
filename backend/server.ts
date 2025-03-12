@@ -284,7 +284,11 @@ async function handleRequest(req: Request) {
 			console.log('saved', saved.length, pathname, hash, v, save_obj);
 		}
 
-		feeds = await fetchRSSLinks({urls: keys, limit});
+		if (params.is_tasks) {
+			feeds = saved.map((x, order) => ({url: x.url, order}));
+		} else {
+			feeds = await fetchRSSLinks({urls: keys, limit});
+		}
 
 		return response(JSON.stringify({feeds, hash}), {
 			headers: { ...cors, ...head_json },
