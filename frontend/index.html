@@ -124,7 +124,7 @@
 								onerror="this.src = '/favicons/ios/128.png';"
 								/>
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
-								x-text="feed.short || feed.title"></h2>
+								x-text="'[' + (index + 1) + '] ' + feed.short || feed.title"></h2>
 						</span>
 					</a>
 					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10 pb-12 sm:pb-12 md:pb-12">
@@ -559,7 +559,7 @@
 													<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
 												</svg>
 												<div class="mx-2">
-													<a :href="item.url" target="_blank"><span x-text="item.url"></span></a>
+													<a :href="item.url" target="_blank"><span x-text="'[' + (index+1) + '] '+ item.url"></span></a>
 												</div>
 												<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
 													class="size-3 cursor-pointer text-red-500"
