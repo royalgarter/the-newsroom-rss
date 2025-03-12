@@ -185,7 +185,7 @@
 											<span class="ml-1" x-text="item.viewed"></span>
 										</span>
 
-										<a class="rss-title font-semibold truncate max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+										<a class="rss-title font-semibold max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											
 											:class="( item.image_thumb &&
 														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
@@ -300,7 +300,7 @@
 			<div class="divide-y divide-slate-200 dark:divide-gray-700">
 
 				<!-- readlater -->
-				<div x-data="{ expanded: readlater?.items?.length }" class="py-2">
+				<div x-data="{ expanded: (readlater?.items?.length || is_hide_feeds) }" class="py-2">
 					<a id="anchor_bookmarks" href="#bookmarks" name="bookmarks" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
@@ -361,7 +361,7 @@
 											<span class="ml-1" x-text="item.viewed"></span>
 										</span>
 
-										<a class="rss-title font-semibold truncate max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+										<a class="rss-title font-semibold max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											
 											:class="( item.image_thumb &&
 														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
@@ -485,7 +485,7 @@
 										</template>
 										<!-- title & description -->
 										<div class="p-4">
-											<p class="rss-title font-semibold truncate max-w-full text-lg mb-2 inline-block text-indigo-800 dark:text-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out" x-html="item.title"></p>
+											<p class="rss-title font-semibold max-w-full text-lg mb-2 inline-block text-indigo-800 dark:text-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out" x-html="item.title"></p>
 										</div>
 								</template>
 							</div>
@@ -865,9 +865,9 @@
 			is_open: false, 
 			anchors: [], 
 			refresh: function() {
-				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map(a => ({
+				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
 					href: '#' + a.name,
-					text: '# ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim(),
+					text: '# [' + (i+1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim(),
 				}));
 
 				this.anchors = [
@@ -983,6 +983,7 @@ function alpineRSS() {
 		readlater: {},
 
 		feeds: [],
+		is_hide_feeds: false,
 		loading: false,
 		debug: null,
 		params: {
@@ -1354,6 +1355,8 @@ function alpineRSS() {
 		},
 
 		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
+			if (this.is_hide_feeds) return;
+
 			if (this.loading && !force_update) return;
 
 			this.loading = true;
@@ -1556,6 +1559,8 @@ function alpineRSS() {
 		},
 
 		postProcessFeeds({limit=this.K.LIMIT, auto_fetch_content=false, show_viewed}) {
+			if (this.is_hide_feeds) return;
+
 			let count = 1;
 
 			if (!this.feeds?.length) return {count};
@@ -1993,6 +1998,8 @@ function alpineRSS() {
 			this.ready = true;
 			this.loading = true;
 
+			if (this.params.f == 'bookmarks') this.is_hide_feeds = true;
+
 			if (this.params.url || this.params.text || this.params.title) {
 				// this.debug = JSON.stringify(this.params);
 				
@@ -2041,24 +2048,26 @@ function alpineRSS() {
 			this.profile = this.storageGet(this.K.profile) || {};
 
 			this.storageSet(this.K.style, this.params.s);
-			console.log('inited params', this.params)
+			// console.log('inited params', this.params)
 
 			this.tasks = this.storageGet(this.K.tasks) || [];
-			console.log('inited tasks_0', this.tasks.length)
+			// console.log('inited tasks_0', this.tasks.length)
 
 			if (this.params.x)
 				this.tasks = this.storageGet(this.K.tasks + this.params.x) || this.tasks;
-			console.log('inited tasks', this.tasks.length)
+			// console.log('inited tasks', this.tasks.length)
 
-			this.feeds = this.storageGet(this.K.feeds) || [];
-			console.log('inited feeds_0', this.feeds.length, this.params.x, this.storageGet(this.K.feeds + this.params.x))
+			if (!this.is_hide_feeds) {
+				this.feeds = this.storageGet(this.K.feeds) || [];
+				// console.log('inited feeds_0', this.feeds.length, this.params.x, this.storageGet(this.K.feeds + this.params.x))
 
-			if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
-				this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
+				if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
+					this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
 
-			this.loadReadLaterItems();
-			this.postProcessFeeds({limit});
-			console.log('inited feeds', this.feeds.length)
+				this.loadReadLaterItems();
+				this.postProcessFeeds({limit});
+				// console.log('inited feeds', this.feeds.length)
+			}
 
 			this.loading = false;
 
@@ -2072,7 +2081,7 @@ function alpineRSS() {
 					this.loadReadLaterItems();
 				})
 				.catch(null);
-			console.log('inited contents')
+			// console.log('inited contents')
 
 			if (this.storageGet(this.K.persona)) {
 				this.persona = this.storageGet(this.K.persona);
@@ -2083,7 +2092,7 @@ function alpineRSS() {
 					this.persona.vector = Object.values(this.persona.vector);
 				}
 			}
-			console.log('inited persona')
+			// console.log('inited persona')
 
 			Object.entries({...localStorage})
 				.filter(
@@ -2092,7 +2101,7 @@ function alpineRSS() {
 				)
 				.forEach( ([k, v]) => localStorage.removeItem(k) )
 			;
-			console.log('inited old localStorage')
+			// console.log('inited old localStorage')
 
 			window.addEventListener('params-x-changed', function(event) {
 				console.log('params-x-changed', event?.detail);
