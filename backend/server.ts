@@ -237,7 +237,7 @@ async function handleRequest(req: Request) {
 		if (req.method == 'GET') {
 			urls = decodeURIComponent(urls).split(',');
 
-			let v = urls.map(x => ({url: x}));
+			let v = urls.filter(x => x).map(x => ({url: x}));
 			data = {keys: v, batch: v};
 		}
 
@@ -285,6 +285,7 @@ async function handleRequest(req: Request) {
 		}
 
 		if (params.is_tasks) {
+			// console.log('is_tasks')
 			feeds = saved.map((x, order) => ({url: x.url, order}));
 		} else {
 			feeds = await fetchRSSLinks({urls: keys, limit});

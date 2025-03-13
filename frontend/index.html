@@ -1366,6 +1366,15 @@ function alpineRSS() {
 			try {
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
+				let resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}`, {
+					method: 'GET',
+					headers: {"content-type": "application/json"},
+					signal: AbortSignal.timeout(20e3),
+				})
+				.then(resp => resp.json())
+				.catch(null);
+				if (resp_tasks) urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
+
 				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
 					if (force_update) return resolve({url});
 
