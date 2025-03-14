@@ -145,6 +145,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 						// console.dir(images)
 						let link = item?.links?.[0]?.href;
+						let url = new URL(link).searchParams.get('url');
 
 						if (link.includes('news.google.com/rss/articles/')) {
 							let ggnews = await fetch(`https://feed24hsyste-ulu.stack-us3.st4as.com/api/feeds/decode-ggnews`
@@ -158,6 +159,11 @@ async function fetchRSSLinks({urls, limit=12}) {
 								link = ggnews.data.originUrl;
 								images = [];
 							}
+						}
+
+						if (link.includes('bing.com/news') && url) {
+							link = url;
+							images = [];
 						}
 
 						if (link && (images.filter(x => x).length == 0)) { try {
