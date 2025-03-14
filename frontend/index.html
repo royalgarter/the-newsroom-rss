@@ -215,7 +215,10 @@
 									<template x-if="!params?.s?.includes?.('title')">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
 											<div class="cursor-pointer px-4 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
-												<span @click="item.toggleReadmore()" :class="item.article ? 'visible' : 'invisible'" :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
+												<span class="py-1 text-xs font-regular flex flex-row items-center"
+													@click="item.toggleReadmore()" 
+													:class="[(item.article ? 'visible' : 'invisible'), (item.read_more ? 'text-fuchsia-600' : 'text-teal-600')].join(' ')" 
+												>
 													<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
 													</svg>
@@ -1369,7 +1372,7 @@ function alpineRSS() {
 			try {
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
-				let resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}`, {
+				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
 					signal: AbortSignal.timeout(20e3),

@@ -147,11 +147,17 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let link = item?.links?.[0]?.href;
 
 						if (link.includes('news.google.com/rss/articles/')) {
-							let ggnews = await fetch('https://feed24hsyste-ulu.stack-us3.st4as.com/api/feeds/decode-ggnews?url=' + encodeURIComponent(link), {
-								headers: head_json, redirect: 'follow', signal: AbortSignal.timeout(5e3)
+							let ggnews = await fetch(`https://feed24hsyste-ulu.stack-us3.st4as.com/api/feeds/decode-ggnews`
+								+ `?url=${encodeURIComponent(link)}`
+								+ `&source=${encodeURIComponent(item?.source?.url)}`
+								+ `&title=${encodeURIComponent(item?.title?.value)}`, {
+								headers: head_json, redirect: 'follow', signal: AbortSignal.timeout(10e3)
 							}).then(res => res.json()).catch(null);
 
-							if (ggnews?.data?.originUrl) link = ggnews.data.originUrl;
+							if (ggnews?.data?.originUrl) {
+								link = ggnews.data.originUrl;
+								images = [];
+							}
 						}
 
 						if (link && (images.filter(x => x).length == 0)) { try {
@@ -174,7 +180,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						// console.dir(images)
 
 						if (images.filter(x => x).length == 0) {
-							images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(head.link).hostname}&sz=256`)
+							images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(link).hostname}&sz=256`)
 							images.push(head.image);
 						}
 
@@ -188,6 +194,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 							images: images.filter(x => x && (typeof x == 'string')),
 							categories: item?.categories?.map?.(x => x.label || x.term),
 							link_author: item?.author?.url || item?.author?.uri,
+							source: item?.source?.url,
 							statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
 						};
 
