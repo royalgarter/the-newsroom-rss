@@ -2174,7 +2174,7 @@ function alpineRSS() {
 	}
 };
 
-navigator?.serviceWorker?.register?.('sw.js');
+navigator?.serviceWorker?.register?.('./sw.js');
 
 function handleGoogle1TapSignin(response) {
 	const responsePayload = decodeJwtResponse(response?.credential);
