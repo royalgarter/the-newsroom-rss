@@ -145,6 +145,15 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 						// console.dir(images)
 						let link = item?.links?.[0]?.href;
+
+						if (link.includes('news.google.com/rss/articles/')) {
+							let ggnews = await fetch('https://feed24hsyste-ulu.stack-us3.st4as.com/api/feeds/decode-ggnews?url=' + encodeURIComponent(link), {
+								headers: head_json, redirect: 'follow', signal: AbortSignal.timeout(5e3)
+							}).then(res => res.json()).catch(null);
+
+							if (ggnews?.data?.originUrl) link = ggnews.data.originUrl;
+						}
+
 						if (link && (images.filter(x => x).length == 0)) { try {
 							let key_image = 'HTML_IMAGE:' + link;
 
@@ -170,6 +179,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						}
 
 						let x = {
+							link,
 							title: item?.title?.value,
 							author: item?.author?.name || item?.['dc:subject'] || '',
 							description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
@@ -177,7 +187,6 @@ async function fetchRSSLinks({urls, limit=12}) {
 							updated: item?.updated,
 							images: images.filter(x => x && (typeof x == 'string')),
 							categories: item?.categories?.map?.(x => x.label || x.term),
-							link: item?.links?.[0]?.href,
 							link_author: item?.author?.url || item?.author?.uri,
 							statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
 						};
