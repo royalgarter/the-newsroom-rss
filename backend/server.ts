@@ -404,12 +404,13 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/api/jwt/verify") {
-		let {jwt} = params;
+		let jwt = decodeURIComponent(params.jwt || '') || '';
+
 		if (!jwt) return response(JSON.stringify({error: 'E403_jwt'}), {status: 403});
 
 		try {
 			let jwk = (await fetch('https://www.googleapis.com/oauth2/v3/certs').then(r => r.json()).catch(null))?.keys?.[0];
-
+			console.dir({jwk, jwt})
 			const key = await crypto.subtle.importKey(
 				"jwk",
 				jwk,
@@ -426,6 +427,8 @@ async function handleRequest(req: Request) {
 
 			// verify the signature
 			const is_jwt_valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+
+			console.log(is_jwt_valid)
 
 			return response(JSON.stringify({is_jwt_valid}));
 		} catch (error) {

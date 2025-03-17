@@ -2216,7 +2216,7 @@ navigator?.serviceWorker?.register?.('./sw.js');
 function handleGoogle1TapSignin(response) {
 	let jwt = response?.credential;
 
-	fetch('/api/jwt/verify?jwt=' + jwt)
+	fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt))
 		.then(r => r.json())
 		.then(resp => {
 			let {is_jwt_valid} = resp || {};
