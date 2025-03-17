@@ -157,12 +157,14 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 							if (ggnews?.data?.originUrl) {
 								link = ggnews.data.originUrl;
+								item.author = item.author || {name: new URL(link).host};
 								images = [];
 							}
 						}
 
 						if (link.includes('bing.com/news') && url) {
 							link = url;
+							item.author = item.author || {name: new URL(link).host};
 							images = [];
 						}
 
@@ -193,7 +195,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let x = {
 							link,
 							title: item?.title?.value,
-							author: item?.author?.name || item?.['dc:subject'] || '',
+							author: item?.author?.name || item?.['dc:subject'] || new URL(link).host,
 							description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
 							published: item?.published,
 							updated: item?.updated,
