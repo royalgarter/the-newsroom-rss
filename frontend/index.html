@@ -2217,6 +2217,8 @@ function handleGoogle1TapSignin(response) {
 	const responsePayload = decodeJwtResponse(response?.credential);
 	console.dir({response});
 
+	fetch('/api/jwt/verify?jwt=response?.credential').then(r => r.json()).then(flag => console.log({flag})).catch(null);
+
 	let username = responsePayload?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
 
 	if (!username) return;
@@ -2231,6 +2233,7 @@ function handleGoogle1TapSignin(response) {
 
 function decodeJwtResponse(token) {
 	try {
+		// console.log('decodeJwtResponse', token)
 		const base64Url = token.split('.')[1];
 		const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
 		const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
