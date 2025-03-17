@@ -1,6 +1,7 @@
 import {serve} from "https://deno.land/std/http/server.ts";
 import {extname} from "https://deno.land/std/path/mod.ts";
 import {exists} from "https://deno.land/std/fs/mod.ts";
+import {decode} from "https://deno.land/std@0.95.0/encoding/base64url.ts"
 
 import {parseFeed} from "https://deno.land/x/rss/mod.ts";
 import {titleCase, upperCase} from "https://deno.land/x/case/mod.ts";
@@ -193,7 +194,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let x = {
 							link,
 							title: item?.title?.value,
-							author: item?.author?.name || item?.['dc:subject'] || '',
+							author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).sort((a,b)=>b.length-a.length)[0],
 							description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
 							published: item?.published,
 							updated: item?.updated,
@@ -298,7 +299,7 @@ async function handleRequest(req: Request) {
 			v = (~~v) + 1;
 
 			let save_obj = saved.map((x, order) => ({url: x.url, order}));
-			
+
 			KV.set([pathname, hash], save_obj);
 			KV.set([pathname, hash, v], save_obj);
 			KV.set([pathname, hash, 'version'], v);
@@ -334,7 +335,7 @@ async function handleRequest(req: Request) {
 				hash = hash || data.x || 'default';
 
 				const {item} = data || {};
-				
+
 				console.dir({share_target: hash, item});
 
 				if (!item?.image_thumb || !item?.description) {
@@ -356,9 +357,9 @@ async function handleRequest(req: Request) {
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 
 				const updatedItems = item ? upsertBookmark(existingItems, item) : existingItems;
-				
+
 				await KV.set([pathname, hash], updatedItems);
-				
+
 				return response(JSON.stringify({ success: true, items: updatedItems, data}), {
 					headers: { ...cors, ...head_json },
 				});
@@ -371,18 +372,18 @@ async function handleRequest(req: Request) {
 		} else if (req.method === 'DELETE') {
 			try {
 				const data = await req.json();
-				
+
 				hash = hash || data.x || 'default';
 
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 
 				// Remove item with matching URL if it exists
-				const updatedItems = data.link ? 
-					existingItems.filter(item => item.link !== data.link) : 
+				const updatedItems = data.link ?
+					existingItems.filter(item => item.link !== data.link) :
 					existingItems;
-				
+
 				await KV.set([pathname, hash], updatedItems);
-				
+
 				return response(JSON.stringify({ success: true, items: updatedItems }), {
 					headers: { ...cors, ...head_json },
 				});
@@ -399,6 +400,39 @@ async function handleRequest(req: Request) {
 				status: 405,
 				headers: { ...cors, ...head_json },
 			});
+		}
+	}
+
+	if (pathname === "/api/jwt/verify") {
+		let jwt = decodeURIComponent(params.jwt || '') || '';
+
+		if (!jwt) return response(JSON.stringify({error: 'E403_jwt'}), {status: 403});
+
+		try {
+			let jwk = (await fetch('https://www.googleapis.com/oauth2/v3/certs').then(r => r.json()).catch(null))?.keys?.[0];
+			console.dir({jwk, jwt})
+			const key = await crypto.subtle.importKey(
+				"jwk",
+				jwk,
+				{name: "RSASSA-PKCS1-v1_5", hash: "SHA-256"},
+				true,
+				["verify"],
+			);
+
+			// split the token into it's parts for verifcation
+			const [headerb64, payloadb64, signatureb64] = jwt.split(".")
+			const encoder = new TextEncoder()
+			const data = encoder.encode(headerb64 + '.' + payloadb64)
+			const signature = decode(signatureb64)
+
+			// verify the signature
+			const is_jwt_valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+
+			console.log(is_jwt_valid)
+
+			return response(JSON.stringify({is_jwt_valid}));
+		} catch (error) {
+			return response(JSON.stringify({error}), {status: 403});
 		}
 	}
 
