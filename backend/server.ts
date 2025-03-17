@@ -240,6 +240,19 @@ function upsertBookmark(items, newItem) {
 	return items;
 }
 
+function decodeJWT(token) {
+	try {
+		// console.log('decodeJWT', token)
+		const base64Url = token.split('.')[1];
+		const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+		const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+			return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+		}).join(''));
+
+		return JSON.parse(jsonPayload);
+	} catch { return {}}
+}
+
 async function handleRequest(req: Request) {
 	const {pathname, searchParams} = new URL(req.url);
 
@@ -410,7 +423,7 @@ async function handleRequest(req: Request) {
 
 		try {
 			let jwk = (await fetch('https://www.googleapis.com/oauth2/v3/certs').then(r => r.json()).catch(null))?.keys?.[0];
-			console.dir({jwk, jwt})
+
 			const key = await crypto.subtle.importKey(
 				"jwk",
 				jwk,
@@ -425,12 +438,17 @@ async function handleRequest(req: Request) {
 			const data = encoder.encode(headerb64 + '.' + payloadb64)
 			const signature = decode(signatureb64)
 
+			const profile = verified ? decodeJWT(jwt) : {};
+			
 			// verify the signature
-			const is_jwt_valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+			const verified = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
 
-			console.log(is_jwt_valid)
+			verified = verified 
+				&& (profile.iss?.includes('accounts.google.com'))
+				&& (profile.aud == '547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com')
+				&& (new Date(profile.exp) > Date.now());
 
-			return response(JSON.stringify({is_jwt_valid}));
+			return response(JSON.stringify({...verified, ...profile}));
 		} catch (error) {
 			return response(JSON.stringify({error}), {status: 403});
 		}

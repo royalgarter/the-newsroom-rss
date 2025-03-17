@@ -1548,6 +1548,7 @@ function alpineRSS() {
 				this.loading = false;
 			} finally {
 				console.log('loadFeedsWithContent.done');
+				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 			}
 		},
 
@@ -1854,8 +1855,6 @@ function alpineRSS() {
 
 				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 			}, 0.5e3);
-
-			Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 
 			return {count};
 		},
@@ -2217,45 +2216,26 @@ function alpineRSS() {
 navigator?.serviceWorker?.register?.('./sw.js');
 
 function handleGoogle1TapSignin(response) {
-	let jwt = response?.credential;
+	if (!response?.credential) return;
 
-	fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt))
+	fetch('/api/jwt/verify?jwt=' + encodeURIComponent(response?.credential))
 		.then(r => r.json())
-		.then(resp => {
-			let {is_jwt_valid} = resp || {};
+		.then(profile => {
+			if (!profile) return console.log('EPROFILENULL');
 
-			if (!is_jwt_valid) return console.log({is_jwt_valid});
+			if (!profile.verified) return console.log({verified});
 
-			const responsePayload = decodeJwtResponse(jwt);
+			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
 
-			let username = responsePayload?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
-
-			if (!username) return;
+			if (!username) return console.log('EUSERNAMENULL');
 
 			toast('Syncing with ' + username);
 
 			window.dispatchEvent(new CustomEvent('params-x-changed', {
-				detail: {
-					x: username,
-					profile: responsePayload,
-				},
+				detail: { x: username, profile },
 			}));
-
 		})
 		.catch(null);
-}
-
-function decodeJwtResponse(token) {
-	try {
-		// console.log('decodeJwtResponse', token)
-		const base64Url = token.split('.')[1];
-		const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-		const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-			return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-		}).join(''));
-
-		return JSON.parse(jsonPayload);
-	} catch { return {}}
 }
 
 function setIdle(idleTimeout, onIdle, onActive) {
