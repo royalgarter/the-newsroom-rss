@@ -261,7 +261,7 @@ async function handleRequest(req: Request) {
 	let params = Object.fromEntries(searchParams);
 	let {u: urls='', l: limit, x: hash, v: ver} = params;
 
-	// console.log(pathname, params);
+	console.log(pathname, params);
 	const response = (data, options) => {
 		// console.log(pathname, 'responsed');
 		return new Response(data, options);
@@ -438,13 +438,10 @@ async function handleRequest(req: Request) {
 			const data = encoder.encode(headerb64 + '.' + payloadb64)
 			const signature = decode(signatureb64)
 
-			const profile = verified ? decodeJWT(jwt) : {};
-
-			console.dir({jwt, jwk, profile, verified, signature});
-			
 			// verify the signature
-			const verified = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+			let verified = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
 
+			let profile = verified ? decodeJWT(jwt) : {};
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
 				&& (profile.aud == '547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com')
@@ -452,6 +449,7 @@ async function handleRequest(req: Request) {
 
 			return response(JSON.stringify({...verified, ...profile}));
 		} catch (error) {
+			console.log(error)
 			return response(JSON.stringify({error}), {status: 403});
 		}
 	}
