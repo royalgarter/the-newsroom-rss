@@ -2214,10 +2214,11 @@ function alpineRSS() {
 navigator?.serviceWorker?.register?.('./sw.js');
 
 function handleGoogle1TapSignin(response) {
-	const responsePayload = decodeJwtResponse(response?.credential);
+	let jwt = response?.credential;
+	const responsePayload = decodeJwtResponse(jwt);
 	console.dir({response});
 
-	fetch('/api/jwt/verify?jwt=response?.credential').then(r => r.json()).then(flag => console.log({flag})).catch(null);
+	fetch('/api/jwt/verify?jwt=' + jwt).then(r => r.json()).then(flag => console.log({flag})).catch(null);
 
 	let username = responsePayload?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
 
