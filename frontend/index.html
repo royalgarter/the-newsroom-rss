@@ -814,7 +814,7 @@
 											<strong class="font-bold">Goddammit, Use RSS! Are You People Trying to Stay Uncivilized?</strong>
 										</p>
 										<p class="text-base mb-4">Alright, listen up! I haven't got all day, and neither do you, unless you <em class="italic">enjoy</em> being spoon-fed drivel by Zuckerberg and his army of algorithm-pushing monkeys. I'm talking about RSS. Yes, RSS! The thing you millennials probably think is some kind of obscure bird disease. </p>
-										<p class="text-base mb-4">This isn't some newfangled social media crap. This is a <em class="italic">tool</em>. A way to get real goddamn information without having to wade through a swamp of cat videos and Kardashian updates. Are you journalists, or trained seals? </p>
+										<p class="text-base mb-4">This isn't some newfangled social media crap. This is a <em class="italic">tool</em>. A way to get real goddamn information without having to wade through a swamp of cat videos and Kardashian updates. Are you civilized, or trained seals? </p>
 										<p class="text-base mb-4">
 											<strong class="font-bold">Here's the deal, and listen close:</strong>
 										</p>
@@ -823,7 +823,7 @@
 												<strong class="font-bold">Time is Money, and You're Wasting Both:</strong> Stop clicking around like a bunch of caffeinated hamsters. RSS delivers the news you need, straight to your reader. No ads, no distractions, just the facts. It's called efficiency, people. Look it up.
 											</li>
 											<li class="mb-2">
-												<strong class="font-bold">Think for Yourselves, For Christ's Sake:</strong> You're letting some computer program decide what's important? You're journalists! You're supposed to be skeptical! RSS lets you choose your sources, so you can actually, you know, <em class="italic">think</em> for yourselves.
+												<strong class="font-bold">Think for Yourselves, For Christ's Sake:</strong> You're letting some computer program decide what's important? You're supposed to be skeptical! RSS lets you choose your sources, so you can actually, you know, <em class="italic">think</em> for yourselves.
 											</li>
 											<li class="mb-2">
 												<strong class="font-bold">Get the Whole Story, Not Just the Sound Bites:</strong> The world is complicated. It's messy. You're not going to understand it by reading 140-character tweets. RSS lets you dig deeper, explore different perspectives, and actually, you know, <em class="italic">report</em>.
@@ -831,11 +831,8 @@
 											<li class="mb-2">
 												<strong class="font-bold">Support Real Journalism, Not Just Corporate Garbage:</strong> There are still some good people out there, trying to do honest work. They need your support. RSS lets you connect directly with those sources, instead of lining the pockets of some soulless corporation.
 											</li>
-											<li class="mb-2">
-												<strong class="font-bold">It's Not Rocket Science!</strong> Download an RSS reader. Paste in a URL. Boom! News. If you can't figure that out, you're in the wrong business.
-											</li>
 										</ul>
-										<p class="text-base mb-4">Look, I'm not asking you to cure cancer. I'm asking you to use your goddamn brains. The internet is a powerful tool, but it can also make you stupid. RSS is the antidote. So get off your asses, download a reader, and start reading. The world isn't going to wait for you to catch up. Now get out of my office!</p>
+										<p class="text-base mb-4">Look, I'm not asking you to cure cancer. I'm asking you to use your goddamn brains. The internet is a powerful tool, but it can also make you stupid. RSS is the antidote. The world isn't going to wait for you to catch up. Now get out of my office!</p>
 									</div>
 								</div>
 								<div class="bg-stone-200 dark:bg-stone-600 hidden peer-checked/tab-four:block p-2 w-full transition-all transition-discrete">
@@ -887,6 +884,10 @@
 				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
 			</footer>
 		</template>
+
+		<div id="toast" class="fixed bottom-3 right-4 bg-slate-600 text-white text-sm pb-1 pt-2 px-2 rounded shadow transition-opacity duration-500 opacity-0 max-w-[350px]">
+			<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
+		</div>
 
 		<!-- <div id="scroll_to_top" x-data="{ is_visible: false }"
 			x-init="window.addEventListener('scroll', () => { is_visible = window.scrollY > 1e3; })"
@@ -2010,6 +2011,8 @@ function alpineRSS() {
 
 			google?.accounts.id.revoke(this.profile.email);
 
+			toast('Backed to anonymous');
+
 			this.profile = null;
 			this.storageDel(this.K.profile);
 
@@ -2229,6 +2232,8 @@ function handleGoogle1TapSignin(response) {
 
 			if (!username) return;
 
+			toast('Syncing with ' + username);
+
 			window.dispatchEvent(new CustomEvent('params-x-changed', {
 				detail: {
 					x: username,
@@ -2281,6 +2286,21 @@ function setIdle(idleTimeout, onIdle, onActive) {
 		reset: resetIdleTimer,
 		isIdle: () => idle
 	};
+}
+
+function toast(message, timeout=3e3) {
+	const toastBox = document.getElementById('toast');
+	const toastMsg = document.getElementById('toast-message');
+
+	toastMsg.textContent = message;
+
+	toastBox.classList.remove('opacity-0');
+	toastBox.classList.add('opacity-95');
+
+	setTimeout(() => {
+		toastBox.classList.remove('opacity-95');
+		toastBox.classList.add('opacity-0');
+	}, timeout);
 }
 </script>
  
