@@ -261,7 +261,7 @@ async function handleRequest(req: Request) {
 	let params = Object.fromEntries(searchParams);
 	let {u: urls='', l: limit, x: hash, v: ver} = params;
 
-	console.log(pathname, params);
+	// console.log(pathname, params);
 	const response = (data, options) => {
 		// console.log(pathname, 'responsed');
 		return new Response(data, options);
@@ -422,26 +422,30 @@ async function handleRequest(req: Request) {
 		if (!jwt) return response(JSON.stringify({error: 'E403_jwt'}), {status: 403});
 
 		try {
-			let jwk = (await fetch('https://www.googleapis.com/oauth2/v3/certs').then(r => r.json()).catch(null))?.keys?.[0];
-
-			const key = await crypto.subtle.importKey(
-				"jwk",
-				jwk,
-				{name: "RSASSA-PKCS1-v1_5", hash: "SHA-256"},
-				true,
-				["verify"],
-			);
+			let verified = false;
+			let profile = decodeJWT(jwt);
+			let jwks = (await fetch('https://www.googleapis.com/oauth2/v3/certs').then(r => r.json()).catch(null))?.keys;
 
 			// split the token into it's parts for verifcation
 			const [headerb64, payloadb64, signatureb64] = jwt.split(".")
 			const encoder = new TextEncoder()
 			const data = encoder.encode(headerb64 + '.' + payloadb64)
-			const signature = decode(signatureb64)
+			const signature = decode(signatureb64);
 
-			// verify the signature
-			let verified = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+			for (let jwk of jwks) {
+				const key = await crypto.subtle.importKey(
+					"jwk",
+					jwk,
+					{name: "RSASSA-PKCS1-v1_5", hash: "SHA-256"},
+					true,
+					["verify"],
+				);
 
-			let profile = verified ? decodeJWT(jwt) : {};
+				let flag = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+				
+				verified = verified || flag;
+			}
+			
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
 				&& (profile.aud == '547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com')
