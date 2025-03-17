@@ -447,7 +447,7 @@ async function handleRequest(req: Request) {
 				&& (profile.aud == '547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com')
 				&& (new Date(profile.exp) > Date.now());
 
-			return response(JSON.stringify({...verified, ...profile}));
+			return response(JSON.stringify({verified, ...profile}));
 		} catch (error) {
 			console.log(error)
 			return response(JSON.stringify({error}), {status: 403});
