@@ -442,14 +442,18 @@ async function handleRequest(req: Request) {
 				);
 
 				let flag = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+				// console.dir({jwk, flag});
 				
 				verified = verified || flag;
 			}
+			// console.dir({verified, profile})
 			
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
 				&& (profile.aud == '547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com')
-				&& (new Date(profile.exp) > Date.now());
+				&& (new Date((profile.exp||1)*1e3) > Date.now());
+
+			// console.dir({verified})
 
 			return response(JSON.stringify({verified, ...profile}));
 		} catch (error) {
