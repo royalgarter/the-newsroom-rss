@@ -439,6 +439,8 @@ async function handleRequest(req: Request) {
 			const signature = decode(signatureb64)
 
 			const profile = verified ? decodeJWT(jwt) : {};
+
+			console.dir({profile, verified, signature});
 			
 			// verify the signature
 			const verified = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);

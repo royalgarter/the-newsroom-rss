@@ -2223,7 +2223,7 @@ function handleGoogle1TapSignin(response) {
 		.then(profile => {
 			if (!profile) return console.log('EPROFILENULL');
 
-			if (!profile.verified) return console.log({verified});
+			if (!profile.verified) return console.dir(profile);
 
 			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
 
