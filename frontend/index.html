@@ -117,7 +117,7 @@
 						<span class="relative inline-flex size-2 rounded-full bg-orange-500"></span>
 					</span>
 					<a target="_blank" class="rss-feed-anchor scroll-smooth"
-						:title="new URL(feed.rss_url).host.split('.').slice(-3).sort((a,b)=>b.length-a.length)[0]"
+						:title="new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]"
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">

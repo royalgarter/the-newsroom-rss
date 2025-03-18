@@ -194,7 +194,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let x = {
 							link,
 							title: item?.title?.value,
-							author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).sort((a,b)=>b.length-a.length)[0],
+							author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b)=>b.length-a.length)[0],
 							description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
 							published: item?.published,
 							updated: item?.updated,
