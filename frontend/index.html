@@ -1407,6 +1407,7 @@ function alpineRSS() {
 			try {
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
+				console.time('load tasks')
 				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
@@ -1414,8 +1415,10 @@ function alpineRSS() {
 				})
 				.then(resp => resp.json())
 				.catch(null);
+				console.timeEnd('load tasks')
 				if (resp_tasks) urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
 
+				console.time('load content')
 				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
 					if (force_update) return resolve({url});
 
@@ -1435,6 +1438,7 @@ function alpineRSS() {
 						resolve({url})
 					}
 				}))) : [];
+				console.timeEnd('load content')
 
 				data = data.map(x => x.value);
 
@@ -1445,7 +1449,7 @@ function alpineRSS() {
 				}
 
 				// console.log('datas:', data.length);
-
+				console.time('load feeds')
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
@@ -1473,7 +1477,7 @@ function alpineRSS() {
 						.catch(null)
 					)
 				);
-
+				console.timeEnd('load feeds')
 				// console.log('feeds:', parallel);
 
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
