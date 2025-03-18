@@ -121,12 +121,14 @@
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
-							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4"
-								:alt="feed.short || feed.title"
+							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
+								:alt="feed.rss_url || feed.title"
 								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
 								onerror="this.src = '/favicons/ios/128.png';"
+								@click="window.open(feed.rss_url, '_blank')"
 								/>
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
+								:title="feed.rss_url"
 								x-text="'[' + (index + 1) + '] ' + feed.short || feed.title"></h2>
 						</span>
 					</a>
