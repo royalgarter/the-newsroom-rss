@@ -161,7 +161,7 @@
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-4 py-2 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
-													x-html="item.author?.toString().substr(0, 12).trim()">
+													x-html="item.author?.toString().substr(0, 20).trim()">
 												</div>
 											</a>
 
@@ -1471,7 +1471,17 @@ function alpineRSS() {
 						})
 						.then(resp => resp.json())
 						.then(json => {
-							// console.log('fetched', idx, item, json);
+							// console.log('json', json.feeds[0]);
+
+							let newfeed = json?.feeds?.[0];
+
+							let found = newfeed && this.feeds.find(f => f.rss_url == newfeed?.rss_url);
+
+							if (found) {
+								found.items = newfeed.items;
+								found.postProcessItems?.();
+							}
+
 							return json;
 						})
 						.catch(null)
@@ -1677,14 +1687,15 @@ function alpineRSS() {
 									fa.scrollIntoView(true)
 								}, 0.1e3)
 
-								let intervalImg = setInterval(() => {
+								function removeBrokenImages() {
 									let doms = [...document.querySelectorAll('p.rss-article-content img')]
 										.filter(x => x.complete && (x.naturalHeight == 0));
 
-									if (doms.length == 0) return clearInterval(intervalImg);
+									doms.forEach(x => x.remove());
 
-									doms.forEach(x => x.remove())
-								}, 0.3e3);
+									if (doms.length > 0) setTimeout(removeBrokenImages, 300);
+								}
+								setTimeout(removeBrokenImages, 300);
 
 								item.updatePersona?.();
 							} else {

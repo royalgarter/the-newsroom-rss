@@ -1,6 +1,6 @@
 import {serve} from "https://deno.land/std/http/server.ts";
-import {extname} from "https://deno.land/std/path/mod.ts";
 import {exists} from "https://deno.land/std/fs/mod.ts";
+import {extname} from "https://deno.land/std/path/mod.ts";
 import {decode} from "https://deno.land/std@0.95.0/encoding/base64url.ts"
 
 import {parseFeed} from "https://deno.land/x/rss/mod.ts";
@@ -24,7 +24,7 @@ const CACHE = {
 	get: (k) => CACHE.MAP.get(k),
 	del: (k) => CACHE.MAP.delete(k),
 }
-setInterval(() => console.log('CACHE.MAP.size:', CACHE.MAP.size), 60*60e3);
+setInterval(() => console.log('CACHE.MAP.size:', CACHE.MAP.size), 10*60e3);
 
 async function test() {  
 	// console.log(Deno.env.get("DENO_KV_ACCESS_TOKEN"));
