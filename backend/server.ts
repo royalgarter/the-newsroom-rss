@@ -1,6 +1,6 @@
 import {serve} from "https://deno.land/std/http/server.ts";
-import {extname} from "https://deno.land/std/path/mod.ts";
 import {exists} from "https://deno.land/std/fs/mod.ts";
+import {extname} from "https://deno.land/std/path/mod.ts";
 import {decode} from "https://deno.land/std@0.95.0/encoding/base64url.ts"
 
 import {parseFeed} from "https://deno.land/x/rss/mod.ts";
@@ -24,7 +24,7 @@ const CACHE = {
 	get: (k) => CACHE.MAP.get(k),
 	del: (k) => CACHE.MAP.delete(k),
 }
-setInterval(() => console.log('CACHE.MAP.size:', CACHE.MAP.size), 60*60e3);
+setInterval(() => console.log('CACHE.MAP.size:', CACHE.MAP.size), 10*60e3);
 
 async function test() {  
 	// console.log(Deno.env.get("DENO_KV_ACCESS_TOKEN"));
@@ -194,7 +194,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let x = {
 							link,
 							title: item?.title?.value,
-							author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).sort((a,b)=>b.length-a.length)[0],
+							author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b)=>b.length-a.length)[0],
 							description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
 							published: item?.published,
 							updated: item?.updated,

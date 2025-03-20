@@ -117,16 +117,18 @@
 						<span class="relative inline-flex size-2 rounded-full bg-orange-500"></span>
 					</span>
 					<a target="_blank" class="rss-feed-anchor scroll-smooth"
-						:title="new URL(feed.rss_url).host.split('.').slice(-3).sort((a,b)=>b.length-a.length)[0]"
+						:title="new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]"
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
-							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4"
-								:alt="feed.short || feed.title"
+							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
+								:alt="feed.rss_url || feed.title"
 								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
 								onerror="this.src = '/favicons/ios/128.png';"
+								@click="window.open(feed.rss_url, '_blank')"
 								/>
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
+								:title="feed.rss_url"
 								x-text="'[' + (index + 1) + '] ' + feed.short || feed.title"></h2>
 						</span>
 					</a>
@@ -161,7 +163,7 @@
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-4 py-2 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
-													x-html="item.author?.toString().substr(0, 12).trim()">
+													x-html="item.author?.toString().substr(0, 20).trim()">
 												</div>
 											</a>
 
@@ -1407,6 +1409,7 @@ function alpineRSS() {
 			try {
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
+				console.time('load tasks')
 				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
@@ -1414,8 +1417,10 @@ function alpineRSS() {
 				})
 				.then(resp => resp.json())
 				.catch(null);
+				console.timeEnd('load tasks')
 				if (resp_tasks) urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
 
+				console.time('load content')
 				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
 					if (force_update) return resolve({url});
 
@@ -1435,6 +1440,7 @@ function alpineRSS() {
 						resolve({url})
 					}
 				}))) : [];
+				console.timeEnd('load content')
 
 				data = data.map(x => x.value);
 
@@ -1445,7 +1451,7 @@ function alpineRSS() {
 				}
 
 				// console.log('datas:', data.length);
-
+				console.time('load feeds')
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
@@ -1467,13 +1473,23 @@ function alpineRSS() {
 						})
 						.then(resp => resp.json())
 						.then(json => {
-							// console.log('fetched', idx, item, json);
+							// console.log('json', json.feeds[0]);
+
+							let newfeed = json?.feeds?.[0];
+
+							let found = newfeed && this.feeds.find(f => f.rss_url == newfeed?.rss_url);
+
+							if (found) {
+								found.items = newfeed.items;
+								found.postProcessItems?.();
+							}
+
 							return json;
 						})
 						.catch(null)
 					)
 				);
-
+				console.timeEnd('load feeds')
 				// console.log('feeds:', parallel);
 
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
@@ -1673,14 +1689,15 @@ function alpineRSS() {
 									fa.scrollIntoView(true)
 								}, 0.1e3)
 
-								let intervalImg = setInterval(() => {
+								function removeBrokenImages() {
 									let doms = [...document.querySelectorAll('p.rss-article-content img')]
 										.filter(x => x.complete && (x.naturalHeight == 0));
 
-									if (doms.length == 0) return clearInterval(intervalImg);
+									doms.forEach(x => x.remove());
 
-									doms.forEach(x => x.remove())
-								}, 0.3e3);
+									if (doms.length > 0) setTimeout(removeBrokenImages, 300);
+								}
+								setTimeout(removeBrokenImages, 300);
 
 								item.updatePersona?.();
 							} else {
