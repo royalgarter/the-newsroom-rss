@@ -116,6 +116,7 @@
 						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
 						<span class="relative inline-flex size-2 rounded-full bg-orange-500"></span>
 					</span>
+
 					<a target="_blank" class="rss-feed-anchor scroll-smooth"
 						:title="new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]"
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
@@ -129,10 +130,29 @@
 								/>
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
 								:title="feed.rss_url"
-								x-text="'[' + (index + 1) + '] ' + feed.short || feed.title"></h2>
+								x-text="'[' + (index + 1) + '] ' + feed.short || feed.title">
+							</h2>
 						</span>
 					</a>
-					<div class="max-w-screen-2xl mx-auto p-3 sm:p-8 md:p-10 pb-12 sm:pb-12 md:pb-12">
+
+					<div class="flex space-x-2 items-center w-full pt-3 px-13 sm:px-12 md:px-18 text-sm text-green-800">
+						<template x-for="(tag, tagIndex) in feed.tags" :key="tagIndex">
+							<div class="inline-flex justify-between bg-green-300 px-1 rounded-md">
+								<div class="cursor-pointer size-4 mb-1.5 pl-0.5 font-bold" @click="feed.toggleTag?.(tag)" >x</div>
+								<div class="select-none" x-html="tag"></div>
+							</div>
+						</template>
+						<div class="inline-flex justify-between bg-green-300 px-1 rounded-md">
+							<div class="cursor-pointer size-4 mb-1.5 text-center font-bold" @click="$el.nextElementSibling.classList.toggle('hidden')" >+</div>
+							<input
+								class="hidden w-full bg-green-100 ml-1 px-2 italic text-green-600 placeholder-green-600 focus:outline-none rounded-md"
+								@keyup.enter="feed.toggleTag?.($el.value);$el.value='';"
+								placeholder="new tag"
+							/>
+						</div>
+					</div>
+
+					<div class="max-w-screen-2xl mx-auto px-3 sm:px-8 md:px-10  pt-3 sm:pt-4 md:pt-6  pb-12 sm:pb-12 md:pb-12">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
@@ -1638,6 +1658,32 @@ function alpineRSS() {
 				let len_full = feed.items.length;
 
 				feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
+
+				feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
+					new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]
+				];
+
+				feed.toggleTag = (tag) => {
+					if (typeof tag != 'string') return;
+
+					tag = tag.toLowerCase().replace(/[^\sA-Za-z0-9]/g, '').replace(/\s+/g, '_');
+
+					if (feed.tags.includes(tag))
+						feed.tags = feed.tags.filter(x => x != tag);
+					else
+						feed.tags.push(tag);
+
+					for (let t of this.tasks) {
+						if (t.url != feed.rss_url) continue;
+
+						t.tags = feed.tags;
+					}
+
+					this.storageSet(this.K.tasks, this.tasks);
+
+					this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
+						.then().catch();
+				}
 
 				feed.postProcessItems = (is_load_more) => {
 					// console.log('viewed_0.1', feed.items.length, limit)
