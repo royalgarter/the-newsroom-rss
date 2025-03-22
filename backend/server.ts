@@ -306,12 +306,14 @@ async function handleRequest(req: Request) {
 
 		let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
+		// console.log({update, saved})
+
 		if (update && saved) {
 			let v = (await KV.get([pathname, hash, 'version']))?.value || '0';
 
 			v = (~~v) + 1;
 
-			let save_obj = saved.map((x, order) => ({url: x.url, order}));
+			let save_obj = saved.map((x, order) => ({order, ...x}));
 
 			KV.set([pathname, hash], save_obj);
 			KV.set([pathname, hash, v], save_obj);
@@ -322,7 +324,7 @@ async function handleRequest(req: Request) {
 
 		if (params.is_tasks) {
 			// console.log('is_tasks')
-			feeds = saved.map((x, order) => ({url: x.url, order}));
+			feeds = saved.map((x, order) => ({order, ...x}));
 		} else {
 			feeds = await fetchRSSLinks({urls: keys, limit});
 		}
