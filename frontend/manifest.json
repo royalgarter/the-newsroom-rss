@@ -11,7 +11,7 @@
   "start_url": "https://rss.shaunsocial.com/",
   "url" : "https://rss.shaunsocial.com/",
   "description" : "We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.",
-  "orientation" : "any",
+  "orientation" : "natural",
   "related_applications" : [],
   "prefer_related_applications" : false,
   "iarc_rating_id": "e58c174a-81d2-5c3c-32cc-34b8de4a52e9",
