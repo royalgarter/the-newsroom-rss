@@ -1150,7 +1150,7 @@ function alpineRSS() {
 				return 'News Night' + (this.params?.x ? ` with Mc${capitalize(this.params.x)}` : '');
 			}
 
-			return 'The Newsroom' + (this.params?.x ? ` No.${this.params.x}` : ' RSS');
+			return 'The Newsroom' + (this.params?.x ? ` #${this.params.x}` : ' RSS');
 		},
 
 		async testLLM() {
