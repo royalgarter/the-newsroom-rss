@@ -122,7 +122,7 @@
 						:title="new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]"
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
-						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
+						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-3 sm:px-8 md:px-10">
 							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
 								:alt="feed.rss_url || feed.title"
 								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
@@ -131,7 +131,7 @@
 								/>
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
 								:title="feed.rss_url"
-								x-text="'[' + (index + 1) + '] ' + feed.short || feed.title">
+								x-text="feed.short || feed.title">
 							</h2>
 
 
@@ -169,13 +169,13 @@
 												</div>
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
-												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-4 py-2 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
+												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-2 py-1 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
 													x-html="item.author?.toString().substr(0, 20).trim()">
 												</div>
 											</a>
 
 											<a class="rss-author" :href="item.link" target="_blank">
-												<div class="text-xs p-2 h-12 w-12 absolute top-0 right-0 bg-indigo-600 dark:bg-indigo-400 text-white dark:text-gray-900 rounded-full flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out">
+												<div class="text-xs p-1 h-10 w-10 absolute top-0 right-0 bg-indigo-600 dark:bg-indigo-400 text-white dark:text-gray-900 rounded-full flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out">
 													<small class="break-words text-center"
 														x-html="
 															(timeSince(new Date(item.published)) + ' ago')
@@ -214,7 +214,7 @@
 											></a>
 
 											<svg id="rss-open-link" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-												class="size-3 cursor-pointer inline ml-1 mb-1 text-blue-400 dark:text-blue-300 opacity-75 hover:opacity-100"
+												class="size-4 cursor-pointer inline mb-1 text-blue-400 dark:text-blue-300 opacity-75 hover:opacity-100"
 												:class="( item.image_thumb &&
 															(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
 														) ? 'visible' : 'invisible'"
@@ -225,7 +225,7 @@
 										</div>
 
 										<template x-if="!params?.s?.includes?.('title')">
-											<p class="rss-desc text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
+											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
 											>
 											</p>
@@ -295,12 +295,12 @@
 								<div class="rss-feed-tag hidden space-x-2 pl-2 items-center text-sm text-slate-800">
 									<template x-for="(tag, tagIndex) in feed.tags" :key="tagIndex">
 										<div class="inline-flex justify-between bg-slate-200 px-1 rounded-sm">
-											<div class="cursor-pointer size-6 pl-0.5 font-bold" @click="feed.toggleTag?.(tag)" >x</div>
+											<div class="cursor-pointer size-5.5 pl-0.5 font-bold" @click="feed.toggleTag?.(tag)" >x</div>
 											<div class="select-none pr-1" x-html="tag"></div>
 										</div>
 									</template>
 									<div class="inline-flex justify-between bg-slate-300 pl-1 rounded-sm">
-										<div class="cursor-pointer size-6 pr-1 text-center font-bold" 
+										<div class="cursor-pointer size-5.5 pr-1 text-center font-bold"
 											@click="$el.nextElementSibling.classList.toggle('hidden')" >+</div>
 										<input placeholder="new tag"
 											class="hidden w-20 bg-slate-100 px-3 italic text-slate-600 placeholder-slate-600 focus:outline-none rounded-sm"
@@ -411,7 +411,7 @@
 												</div>
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
-												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-4 py-2 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
+												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-2 py-1 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
 													x-html="item.author?.toString().substr(0, 12).trim()">
 												</div>
 											</a>
@@ -442,7 +442,7 @@
 										>
 										</a>
 										<template x-if="!params?.s?.includes?.('title')">
-											<p class="rss-desc text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
+											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
 											>
 											</p>
@@ -947,7 +947,7 @@
 			refresh: function() {
 				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
 					href: '#' + a.name,
-					text: '# ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
+					text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
 				}));
 
 				this.anchors = [
@@ -1150,7 +1150,7 @@ function alpineRSS() {
 				return 'News Night' + (this.params?.x ? ` with Mc${capitalize(this.params.x)}` : '');
 			}
 
-			return 'The Newsroom RSS' + (this.params?.x ? ` | ${this.params.x}` : '');
+			return 'The Newsroom' + (this.params?.x ? ` #${this.params.x}` : ' RSS');
 		},
 
 		async testLLM() {

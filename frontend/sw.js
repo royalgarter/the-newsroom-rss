@@ -25,7 +25,7 @@ if (workbox.navigationPreload.isSupported()) {
 
 workbox.routing.registerRoute(
   new RegExp('/*'),
-  new workbox.strategies.StaleWhileRevalidate({
+  new workbox.strategies.NetworkFirst({
   // new workbox.strategies.CacheFirst({
     cacheName: CACHE,
     plugins: [
