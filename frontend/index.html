@@ -322,7 +322,7 @@
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
 								:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-								class="hidden sm:block pt-4 grid grid-cols-1 gap-6 transition-all transition-discrete"
+								class="hidden sm:block pt-18 grid grid-cols-1 gap-6 transition-all transition-discrete"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
 								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
