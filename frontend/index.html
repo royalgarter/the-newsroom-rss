@@ -358,7 +358,7 @@
 			<div class="divide-y divide-slate-200 dark:divide-gray-700">
 
 				<!-- readlater -->
-				<div x-data="{ expanded: (readlater?.items?.length || is_hide_feeds) }" class="py-2">
+				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds) }" class="py-2">
 					<a id="anchor_bookmarks" href="#bookmarks" name="bookmarks" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
@@ -391,7 +391,7 @@
 						class="grid text-sm text-slate-600 dark:text-slate-300 overflow-hidden w-full transition-all duration-300 ease-in-out"
 						:class="expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] hidden'"
 						>
-						<div x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+						<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
 							<!-- readlater item -->
 							<template x-for="(item, itemIndex) in readlater.items" :key="itemIndex">
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
@@ -1401,8 +1401,10 @@ function alpineRSS() {
 		},
 		
 		async loadReadLaterItems() {
+
+			console.log('loadReadLaterItems')
 			// Load from local storage first
-			let readLaterItems = this.storageGet(this.K.readlater) || [];
+			let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
 			
 			// If user is identified, try to load from Deno KV
 			if (this.params.x) {
@@ -1433,6 +1435,8 @@ function alpineRSS() {
 					item.read_later = readLaterItems.some(savedItem => savedItem.link === item.link);
 				});
 			});
+
+			console.log('loadReadLaterItems done')
 		},
 
 		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
@@ -1575,7 +1579,7 @@ function alpineRSS() {
 
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
-				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
+				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true}) || {};
 
 				if (this.params.x) {
 					this.storageSet(this.K.feeds + this.params.x, this.feeds);
@@ -2194,13 +2198,23 @@ function alpineRSS() {
 					})
 				})
 				.then(resp => resp.json())
-				.then(json => console.dir({share_target: json}))
-				.then(this.loadReadLaterItems)
+				.then(json => console.dir({share_target_json: json}))
 				.then(_ => {
-					toast('Bookmarked: ' + item.title);
-					location.hash = "#bookmarks";
+					this.loadReadLaterItems().then(_ => {
+						toast('Bookmarked: ' + item.title);
+
+						let dom = document.querySelector('#expander_readlater');
+
+						if (dom) {
+							Alpine.$data(dom)?.expanded = false;
+
+							document.querySelector('#expander_readlater button')?.click();
+
+							[...document.querySelectorAll('.rss-meta')].pop().scrollIntoView('smooth');
+						}
+					}).catch(err => console.dir({share_target_catch: err}));
 				})
-				.catch(err => console.dir({share_target: err}))
+				.catch(err => console.dir({share_target_catch: err}))
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
