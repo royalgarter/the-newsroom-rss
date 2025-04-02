@@ -52,14 +52,14 @@
 		<script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
 		<!-- <link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" /> -->
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.14.9/dist/cdn.min.js" />
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" />
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" />
 		<!-- <script defer src="//unpkg.com/alpinejs-component@latest/dist/component.min.js"></script> -->
-		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.14.9/dist/cdn.min.js"></script>
-		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.min.js" />
-		<script async defer src="//cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.min.js"></script>
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@mozilla/readability@0.x.x/Readability.min.js" />
+		<script async defer src="//cdn.jsdelivr.net/npm/@mozilla/readability@0.x.x/Readability.min.js"></script>
 
 		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
 		<script async defer src="//accounts.google.com/gsi/client"></script>
@@ -2205,8 +2205,8 @@ function alpineRSS() {
 
 						let dom = document.querySelector('#expander_readlater');
 
-						if (dom) {
-							Alpine.$data(dom)?.expanded = false;
+						if (dom && Alpine.$data(dom)) {
+							Alpine.$data(dom).expanded = false;
 
 							document.querySelector('#expander_readlater button')?.click();
 
