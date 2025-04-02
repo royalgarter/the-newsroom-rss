@@ -48,18 +48,18 @@
 
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
-		<link rel="preload" as="script" href="//unpkg.com/@tailwindcss/browser@4" />
-		<script src="//unpkg.com/@tailwindcss/browser@4"></script>
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4" />
+		<script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
 		<!-- <link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" /> -->
-		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js" />
-		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" />
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.14.9/dist/cdn.min.js" />
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" />
 		<!-- <script defer src="//unpkg.com/alpinejs-component@latest/dist/component.min.js"></script> -->
-		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs-intersect/3.14.8/cdn.min.js"></script>
-		<script defer src="//cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js"></script>
+		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.14.9/dist/cdn.min.js"></script>
+		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 
-		<link rel="preload" as="script" href="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js" />
-		<script async defer src="//cdnjs.cloudflare.com/ajax/libs/readability/0.5.0/Readability.min.js"></script>
+		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.min.js" />
+		<script async defer src="//cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.min.js"></script>
 
 		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
 		<script async defer src="//accounts.google.com/gsi/client"></script>
@@ -109,7 +109,8 @@
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
 					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-					x-cloak x-show="feed?.items?.length > 0"
+					x-cloak
+					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
 					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
 				>
 					<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
@@ -322,7 +323,7 @@
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
 								:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-								class="hidden sm:block pt-4 grid grid-cols-1 gap-6 transition-all transition-discrete"
+								class="hidden sm:block pt-18 grid grid-cols-1 gap-6 transition-all transition-discrete"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
 								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
@@ -357,14 +358,14 @@
 			<div class="divide-y divide-slate-200 dark:divide-gray-700">
 
 				<!-- readlater -->
-				<div x-data="{ expanded: (readlater?.items?.length || is_hide_feeds) }" class="py-2">
+				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds) }" class="py-2">
 					<a id="anchor_bookmarks" href="#bookmarks" name="bookmarks" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-03"
 							type="button"
 							class="cursor-pointer text-slate-600 dark:text-slate-300 flex items-center justify-between w-full text-left font-semibold py-2"
-							@click="expanded = !expanded"
+							@click="expanded = !expanded; Alpine.$data(document.querySelector('body')).is_hide_feeds = expanded;"
 							:aria-expanded="expanded"
 							aria-controls="collapse-03"
 						>
@@ -390,7 +391,7 @@
 						class="grid text-sm text-slate-600 dark:text-slate-300 overflow-hidden w-full transition-all duration-300 ease-in-out"
 						:class="expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] hidden'"
 						>
-						<div x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+						<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
 							<!-- readlater item -->
 							<template x-for="(item, itemIndex) in readlater.items" :key="itemIndex">
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
@@ -1400,8 +1401,10 @@ function alpineRSS() {
 		},
 		
 		async loadReadLaterItems() {
+
+			console.log('loadReadLaterItems')
 			// Load from local storage first
-			let readLaterItems = this.storageGet(this.K.readlater) || [];
+			let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
 			
 			// If user is identified, try to load from Deno KV
 			if (this.params.x) {
@@ -1432,6 +1435,8 @@ function alpineRSS() {
 					item.read_later = readLaterItems.some(savedItem => savedItem.link === item.link);
 				});
 			});
+
+			console.log('loadReadLaterItems done')
 		},
 
 		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
@@ -1574,7 +1579,7 @@ function alpineRSS() {
 
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
-				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true});
+				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true}) || {};
 
 				if (this.params.x) {
 					this.storageSet(this.K.feeds + this.params.x, this.feeds);
@@ -1829,13 +1834,7 @@ function alpineRSS() {
 
 							let content = item.article?.content;
 							if (content?.length) {
-								item.article.content = content
-									.trim()
-									.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
-									.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')
-									.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
-									.replace(/(\<br\>\s*\n*)+/gi, '<br>')
-									.replace(/\s+/gi, ' ');
+								item.article.content = cleanContent(content);
 							}
 						};
 
@@ -2150,6 +2149,8 @@ function alpineRSS() {
 				
 				console.log('share_target', this.params);
 
+				toast('Shared: ' + JSON.stringify(this.params));
+
 				let share_url = this.params.url;
 				if (!share_url && this.params.text.includes('http')) share_url = decodeURIComponent(this.params.text);
 				if (!share_url && this.params.title.includes('http')) share_url = decodeURIComponent(this.params.title);
@@ -2158,20 +2159,32 @@ function alpineRSS() {
 				const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 				const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 				
-				let html = '';
+				let html = '', item = {};
 				try {
 					html = await fetch(share_url, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
 								.then(resp => resp.text()).catch(null) || '';
+
+					let doc = new DOMParser().parseFromString(html, "text/html");
+					item.article = new Readability(doc).parse();
+
+					let content = item.article?.content;
+					if (content?.length) {
+						item.article.content = cleanContent(content);
+					}
 				} catch {}
-				let item = {
+
+				item = {
 					link: share_url,
-					title: this.params.title || html.match(REGEX_TITLE)?.[1] || '',
+					title: this.params.title || html.match(REGEX_TITLE)?.[1] || share_url,
 					description: this.params.text || html.match(REGEX_DESC)?.[1] || '',
 					feed_title: this.params.title || html.match(REGEX_TITLE)?.[1] || '',
 					image_thumb: html.match(REGEX_IMAGE)?.[1],
 					saved_at: new Date().toISOString(),
 					read_later: true,
+					article: item.article,
 				};
+
+				toast('Saving: ' + item.title);
 
 				// this.debug = JSON.stringify(item);
 				
@@ -2185,9 +2198,23 @@ function alpineRSS() {
 					})
 				})
 				.then(resp => resp.json())
-				.then(json => console.dir({share_target: json}))
-				.then(this.loadReadLaterItems)
-				.catch(err => console.dir({share_target: err}))
+				.then(json => console.dir({share_target_json: json}))
+				.then(_ => {
+					this.loadReadLaterItems().then(_ => {
+						toast('Bookmarked: ' + item.title);
+
+						let dom = document.querySelector('#expander_readlater');
+
+						if (dom) {
+							Alpine.$data(dom)?.expanded = false;
+
+							document.querySelector('#expander_readlater button')?.click();
+
+							[...document.querySelectorAll('.rss-meta')].pop().scrollIntoView('smooth');
+						}
+					}).catch(err => console.dir({share_target_catch: err}));
+				})
+				.catch(err => console.dir({share_target_catch: err}))
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
@@ -2360,6 +2387,15 @@ function setIdle(idleTimeout, onIdle, onActive) {
 		reset: resetIdleTimer,
 		isIdle: () => idle
 	};
+}
+
+function cleanContent(content='') {
+	return content.trim()
+		.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
+		.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')
+		.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
+		.replace(/(\<br\>\s*\n*)+/gi, '<br>')
+		.replace(/\s+/gi, ' ');
 }
 
 function toast(message, timeout=3e3) {
