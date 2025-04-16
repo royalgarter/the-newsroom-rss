@@ -154,7 +154,7 @@
 									<!-- thumbnail -->
 									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
-											<a class="rss-thumb" :href="item.link" target="_blank">
+											<a class="rss-thumb" :href="'#' + new URL(item.link).pathname.replace(/[^a-zA-Z0-9_-]/g, '')" :name="new URL(item.link).pathname.replace(/[^a-zA-Z0-9_-]/g, '')">
 												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
@@ -2414,9 +2414,8 @@ function toast(message, timeout=3e3) {
 }
 </script>
  
-<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3" /> -->
 <script type="module">
-// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
+// import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.x.x';
 
 try {
 	/*const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
@@ -2440,5 +2439,20 @@ try {
 	  tgt_lang: 'vi',
 	});
 	console.log({translated});*/
+
+	/*const generator = await pipeline(
+		"text-generation",
+		"onnx-community/gemma-3-1b-it-ONNX-GQA",
+		{ dtype: "q4f16" },
+	);
+
+	const messages = [
+		{ role: "system", content: "You are a helpful assistant." },
+		{ role: "user", content: "Write me a poem about Machine Learning." },
+	];
+
+	const output = await generator(messages, { max_new_tokens: 512, do_sample: false });
+	console.log(output[0].generated_text.at(-1).content);*/
+
 } catch (ex) { console.log(ex) }
 </script>
