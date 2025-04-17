@@ -1451,8 +1451,10 @@ function alpineRSS() {
 			try {
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
+				let sig = this?.profile?.signature || '';
+
 				console.time('load tasks')
-				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks`, {
+				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
 					signal: AbortSignal.timeout(20e3),
@@ -1501,7 +1503,7 @@ function alpineRSS() {
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
-						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}`, {
+						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
@@ -1511,7 +1513,7 @@ function alpineRSS() {
 						.catch(null)
 					]
 					: data.map((item, idx) =>
-						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}`, {
+						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
@@ -2136,6 +2138,26 @@ function alpineRSS() {
 			this.params.x = this.params.x || this.storageGet(this.K.hash);
 			this.params.s = this.params.s || this.storageGet(this.K.style);
 
+			this.profile = this.storageGet(this.K.profile) || {};
+
+			if (this.params.x) {
+				console.log('this.params.x existed');
+
+				let jwt = this.profile.jwt || '';
+				let checked_profile = await fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt)).then(r => r.json());
+
+				console.dir(checked_profile);
+
+				if (!checked_profile?.verified) {
+					let hash_new = await this.digest(Date.now());
+					this.params.x = hash_new.slice(0, 6);
+
+					const url = new URL(location);
+					url.searchParams.set("x", this.params.x);
+					history.pushState({}, "", url);
+				}
+			}
+
 			let limit = this.params.l || this.K.LIMIT;
 			this.params.l = ~~limit;
 
@@ -2337,9 +2359,11 @@ function alpineRSS() {
 navigator?.serviceWorker?.register?.('./sw.js');
 
 function handleGoogle1TapSignin(response) {
-	if (!response?.credential) return;
+	let jwt = response?.credential;
 
-	fetch('/api/jwt/verify?jwt=' + encodeURIComponent(response?.credential))
+	if (!jwt) return;
+
+	fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt))
 		.then(r => r.json())
 		.then(profile => {
 			if (!profile) return console.log('EPROFILENULL');

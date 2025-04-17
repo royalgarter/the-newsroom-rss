@@ -259,7 +259,7 @@ async function handleRequest(req: Request) {
 	const localpath = `./frontend${pathname}`;
 
 	let params = Object.fromEntries(searchParams);
-	let {u: urls='', l: limit, x: hash, v: ver} = params;
+	let {u: urls='', l: limit, x: hash, v: ver, sig} = params;
 
 	// console.log(pathname, params);
 	const response = (data, options) => {
@@ -290,9 +290,14 @@ async function handleRequest(req: Request) {
 			keys = batch || [];
 		}
 
+		if (sig) {
+			let profile = await KV.set(['signature', sig])?.value;
+			console.dir({feeds_profile: profile})
+		}
+
 		if (!keys?.length && hash) {
 			let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
-			// console.log('fallback keys = KV', kv_keys, kv_keys?.length);
+			console.log('fallback keys = KV', kv_keys, kv_keys?.length);
 			keys = kv_keys || [];
 		}
 
@@ -443,6 +448,8 @@ async function handleRequest(req: Request) {
 			const data = encoder.encode(headerb64 + '.' + payloadb64)
 			const signature = decode(signatureb64);
 
+			KV.set(['signature', signature], profile);
+
 			for (let jwk of jwks) {
 				const key = await crypto.subtle.importKey(
 					"jwk",
@@ -466,7 +473,7 @@ async function handleRequest(req: Request) {
 
 			// console.dir({verified})
 
-			return response(JSON.stringify({verified, ...profile}));
+			return response(JSON.stringify({verified, jwt, signature, ...profile}));
 		} catch (error) {
 			console.log(error)
 			return response(JSON.stringify({error}), {status: 403});
