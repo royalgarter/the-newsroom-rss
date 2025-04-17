@@ -291,7 +291,7 @@ async function handleRequest(req: Request) {
 		}
 
 		if (sig) {
-			let profile = await KV.set(['signature', sig])?.value;
+			let profile = await KV.get(['signature', sig])?.value;
 			console.dir({feeds_profile: profile})
 		}
 
@@ -464,10 +464,7 @@ async function handleRequest(req: Request) {
 			}
 			// console.dir({verified, profile})
 
-			signature = Array.prototype.map.call(signature, x => x.toString(16).padStart(2, '0')).join('');
-			console.dir({signature})
-
-			KV.set(['signature', signature], profile);
+			KV.set(['signature', profile.jti], profile);
 			
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
@@ -476,7 +473,7 @@ async function handleRequest(req: Request) {
 
 			// console.dir({verified})
 
-			return response(JSON.stringify({verified, jwt, signature, ...profile}));
+			return response(JSON.stringify({verified, jwt, signature: profile.jti, ...profile}));
 		} catch (error) {
 			console.log(error)
 			return response(JSON.stringify({error}), {status: 403});
