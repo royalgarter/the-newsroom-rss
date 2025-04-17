@@ -464,7 +464,7 @@ async function handleRequest(req: Request) {
 			}
 			// console.dir({verified, profile})
 
-			signature = Buffer.from(signature).toString();
+			signature = new TextDecoder().decode(signature);
 			console.dir({signature})
 
 			KV.set(['signature', signature], profile);
