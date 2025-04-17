@@ -294,7 +294,7 @@ async function handleRequest(req: Request) {
 			if (sig) {
 				let profile = (await KV.get(['signature', sig]))?.value;
 
-				if (profile?.email?.includes(hash) || (profile.jti == sig))  {
+				if (profile?.username == hash)  {
 					let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
 					// console.log('fallback keys = KV', kv_keys, kv_keys?.length);
 					keys = kv_keys || [];

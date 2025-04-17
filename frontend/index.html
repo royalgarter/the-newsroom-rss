@@ -1488,7 +1488,9 @@ function alpineRSS() {
 						resolve({url})
 					}
 				}))) : [];
-				console.timeEnd('load content')
+				console.timeEnd('load content');
+
+				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 
 				data = data.map(x => x.value);
 
