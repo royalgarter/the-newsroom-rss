@@ -446,7 +446,7 @@ async function handleRequest(req: Request) {
 			const [headerb64, payloadb64, signatureb64] = jwt.split(".")
 			const encoder = new TextEncoder()
 			const data = encoder.encode(headerb64 + '.' + payloadb64)
-			const signature = decode(signatureb64);
+			let signature = decode(signatureb64);
 
 			for (let jwk of jwks) {
 				const key = await crypto.subtle.importKey(
