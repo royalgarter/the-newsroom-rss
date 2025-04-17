@@ -290,15 +290,16 @@ async function handleRequest(req: Request) {
 			keys = batch || [];
 		}
 
-		if (sig) {
-			let profile = (await KV.get(['signature', sig]))?.value;
-			console.dir({feeds_profile: profile, sig})
-		}
-
 		if (!keys?.length && hash) {
-			let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
-			// console.log('fallback keys = KV', kv_keys, kv_keys?.length);
-			keys = kv_keys || [];
+			if (sig) {
+				let profile = (await KV.get(['signature', sig]))?.value;
+
+				if (profile?.email?.includes(hash) || (profile.jti == sig))  {
+					let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
+					// console.log('fallback keys = KV', kv_keys, kv_keys?.length);
+					keys = kv_keys || [];
+				}
+			}
 		}
 
 		keys = keys.filter(x => x.url);
