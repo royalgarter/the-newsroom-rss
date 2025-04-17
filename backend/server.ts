@@ -7,7 +7,6 @@ import {parseFeed} from "https://deno.land/x/rss/mod.ts";
 import {titleCase, upperCase} from "https://deno.land/x/case/mod.ts";
 
 const crypto = await import('node:crypto');
-const Buffer = await import('node:buffer');
 
 const head_json = {
 	"Content-Type": "application/json; charset=utf-8"
@@ -465,7 +464,7 @@ async function handleRequest(req: Request) {
 			}
 			// console.dir({verified, profile})
 
-			signature = Buffer.from(signature).toString('hex');
+			signature = Array.prototype.map.call(signature, x => x.toString(16).padStart(2, '0')).join('');
 			console.dir({signature})
 
 			KV.set(['signature', signature], profile);
