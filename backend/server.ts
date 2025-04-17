@@ -291,7 +291,7 @@ async function handleRequest(req: Request) {
 		}
 
 		if (sig) {
-			let profile = await KV.get(['signature', sig])?.value;
+			let profile = (await KV.get(['signature', sig]))?.value;
 			console.dir({feeds_profile: profile, sig})
 		}
 
