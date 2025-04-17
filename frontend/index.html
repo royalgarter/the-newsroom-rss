@@ -2134,11 +2134,10 @@ function alpineRSS() {
 				this.title = this.theTitle();
 			});
 
-			this.params = Object.fromEntries(new URLSearchParams(location.search));
-			this.params.x = this.params.x || this.storageGet(this.K.hash);
-			this.params.s = this.params.s || this.storageGet(this.K.style);
-
 			this.profile = this.storageGet(this.K.profile) || {};
+			this.params = Object.fromEntries(new URLSearchParams(location.search));
+			this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
+			this.params.s = this.params.s || this.storageGet(this.K.style);
 
 			if (this.params.x) {
 				console.log('this.params.x existed');
@@ -2370,7 +2369,7 @@ function handleGoogle1TapSignin(response) {
 
 			if (!profile.verified) return console.dir(profile);
 
-			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
+			let username = profile.username || profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
 
 			if (!username) return console.log('EUSERNAMENULL');
 

@@ -466,6 +466,8 @@ async function handleRequest(req: Request) {
 			// console.dir({verified, profile})
 
 			KV.set(['signature', profile.jti], profile);
+
+			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
 			
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
@@ -474,7 +476,7 @@ async function handleRequest(req: Request) {
 
 			// console.dir({verified})
 
-			return response(JSON.stringify({verified, jwt, signature: profile.jti, ...profile}));
+			return response(JSON.stringify({username, verified, jwt, signature: profile.jti, ...profile}));
 		} catch (error) {
 			console.log(error)
 			return response(JSON.stringify({error}), {status: 403});
