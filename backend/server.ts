@@ -292,12 +292,12 @@ async function handleRequest(req: Request) {
 
 		if (sig) {
 			let profile = await KV.get(['signature', sig])?.value;
-			console.dir({feeds_profile: profile})
+			console.dir({feeds_profile: profile, sig})
 		}
 
 		if (!keys?.length && hash) {
 			let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
-			console.log('fallback keys = KV', kv_keys, kv_keys?.length);
+			// console.log('fallback keys = KV', kv_keys, kv_keys?.length);
 			keys = kv_keys || [];
 		}
 
