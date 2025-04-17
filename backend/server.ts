@@ -448,8 +448,6 @@ async function handleRequest(req: Request) {
 			const data = encoder.encode(headerb64 + '.' + payloadb64)
 			const signature = decode(signatureb64);
 
-			KV.set(['signature', signature], profile);
-
 			for (let jwk of jwks) {
 				const key = await crypto.subtle.importKey(
 					"jwk",
@@ -465,6 +463,11 @@ async function handleRequest(req: Request) {
 				verified = verified || flag;
 			}
 			// console.dir({verified, profile})
+
+			signature = Buffer.from(signature).toString();
+			console.dir({signature})
+
+			KV.set(['signature', signature], profile);
 			
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
