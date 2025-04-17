@@ -20,7 +20,7 @@ const cors = {
 const KV = await Deno.openKv(Deno.env.get("DENO_KV_URL"));
 const CACHE = {
 	MAP: new Map(),
-	set: (k, v, e=60*60*24*7) => setTimeout(CACHE.MAP.delete, e*1e3, k) && CACHE.MAP.set(k, v),
+	set: (k, v, e=60*60*24*7) => setTimeout(() => CACHE.MAP.delete(k), e*1e3) && CACHE.MAP.set(k, v),
 	get: (k) => CACHE.MAP.get(k),
 	del: (k) => CACHE.MAP.delete(k),
 }
@@ -57,7 +57,7 @@ async function parseRSS(url: string, content: string) {
 				new Promise((resolve, reject) => {
 					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(10e3)})
 						.then(resp => resp.text())
-						.then(text => CACHE.set(key_rss, text) && resolve(text))
+						.then(text => CACHE.set(key_rss, text, 60*15) && resolve(text))
 						.catch(ex => reject(null));
 				}),
 			]);
@@ -81,6 +81,7 @@ async function parseRSS(url: string, content: string) {
 }
 
 async function fetchRSSLinks({urls, limit=12}) {
+	console.log('fetchRSSLinks')
 	if (!urls) return [];
 
 	let feeds = [];
@@ -149,7 +150,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let url = new URL(link).searchParams.get('url');
 
 						if (link.includes('news.google.com/rss/articles/')) {
-							let ggnews = await fetch(`https://feed24hsyste-ulu.stack-us3.st4as.com/api/feeds/decode-ggnews`
+							let ggnews = await fetch(`https://feed.newsrss.org/api/feeds/decode-ggnews`
 								+ `?url=${encodeURIComponent(link)}`
 								+ `&source=${encodeURIComponent(item?.source?.url)}`
 								+ `&title=${encodeURIComponent(item?.title?.value)}`, {
@@ -326,7 +327,16 @@ async function handleRequest(req: Request) {
 			// console.log('is_tasks')
 			feeds = saved.map((x, order) => ({order, ...x}));
 		} else {
-			feeds = await fetchRSSLinks({urls: keys, limit});
+			// feeds = await fetchRSSLinks({urls: keys, limit});
+
+			let key_feeds = 'FEEDS:' + JSON.stringify({keys, limit});
+			feeds = CACHE.get(key_feeds);
+
+			if (!feeds?.length) {
+				feeds = await fetchRSSLinks({urls: keys, limit});
+
+				if (feeds.length) CACHE.set(key_feeds, feeds, 60*5);
+			}
 		}
 
 		return response(JSON.stringify({feeds, hash}), {
