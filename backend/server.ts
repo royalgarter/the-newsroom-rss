@@ -81,7 +81,6 @@ async function parseRSS(url: string, content: string) {
 }
 
 async function fetchRSSLinks({urls, limit=12}) {
-	console.log('fetchRSSLinks')
 	if (!urls) return [];
 
 	let feeds = [];
