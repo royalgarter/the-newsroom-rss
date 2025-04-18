@@ -2142,12 +2142,12 @@ function alpineRSS() {
 			this.params.s = this.params.s || this.storageGet(this.K.style);
 
 			if (this.params.x) {
-				console.log('this.params.x existed');
+				// console.log('this.params.x existed');
 
 				let jwt = this.profile.jwt || '';
 				let checked_profile = await fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt)).then(r => r.json());
 
-				console.dir(checked_profile);
+				// console.dir(checked_profile);
 
 				if (!checked_profile?.verified) {
 					let hash_new = await this.digest(Date.now());
@@ -2301,7 +2301,7 @@ function alpineRSS() {
 			// console.log('inited old localStorage')
 
 			window.addEventListener('params-x-changed', function(event) {
-				console.log('params-x-changed', event?.detail);
+				// console.log('params-x-changed', event?.detail);
 
 				let detail = event.detail;
 
