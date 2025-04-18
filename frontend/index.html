@@ -405,7 +405,7 @@
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
 													:alt="item.title"
-													:domain="new URL(feed.link).hostname"
+													:domain="new URL(item.link).hostname"
 													:src="item.image_thumb"
 													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
 												/>
