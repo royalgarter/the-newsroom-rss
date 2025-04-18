@@ -20,7 +20,7 @@ const cors = {
 const KV = await Deno.openKv(Deno.env.get("DENO_KV_URL"));
 const CACHE = {
 	MAP: new Map(),
-	set: (k, v, e=60*60*24*7) => setTimeout(CACHE.MAP.delete, e*1e3, k) && CACHE.MAP.set(k, v),
+	set: (k, v, e=60*60*24*7) => setTimeout(() => CACHE.MAP.delete(k), e*1e3) && CACHE.MAP.set(k, v),
 	get: (k) => CACHE.MAP.get(k),
 	del: (k) => CACHE.MAP.delete(k),
 }
@@ -57,7 +57,7 @@ async function parseRSS(url: string, content: string) {
 				new Promise((resolve, reject) => {
 					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(10e3)})
 						.then(resp => resp.text())
-						.then(text => CACHE.set(key_rss, text) && resolve(text))
+						.then(text => CACHE.set(key_rss, text, 60*15) && resolve(text))
 						.catch(ex => reject(null));
 				}),
 			]);
@@ -149,7 +149,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let url = new URL(link).searchParams.get('url');
 
 						if (link.includes('news.google.com/rss/articles/')) {
-							let ggnews = await fetch(`https://feed24hsyste-ulu.stack-us3.st4as.com/api/feeds/decode-ggnews`
+							let ggnews = await fetch(`https://feed.newsrss.org/api/feeds/decode-ggnews`
 								+ `?url=${encodeURIComponent(link)}`
 								+ `&source=${encodeURIComponent(item?.source?.url)}`
 								+ `&title=${encodeURIComponent(item?.title?.value)}`, {
@@ -253,13 +253,30 @@ function decodeJWT(token) {
 	} catch { return {}}
 }
 
+
+async function authorize(hash, sig) {
+	let found_profile = (await KV.get(['profile', hash]))?.value;
+
+	if (!found_profile) {
+		return {public: true, valid: false};
+	} else if (sig) {
+		let sig_profile = (await KV.get(['signature', sig]))?.value;
+
+		if (sig_profile?.username == hash)  {
+			return {...sig_profile, public: false, valid: true};
+		}
+	}
+
+	return {valid: false};
+}
+
 async function handleRequest(req: Request) {
 	const {pathname, searchParams} = new URL(req.url);
 
 	const localpath = `./frontend${pathname}`;
 
 	let params = Object.fromEntries(searchParams);
-	let {u: urls='', l: limit, x: hash, v: ver} = params;
+	let {u: urls='', l: limit, x: hash, v: ver, sig} = params;
 
 	// console.log(pathname, params);
 	const response = (data, options) => {
@@ -290,10 +307,17 @@ async function handleRequest(req: Request) {
 			keys = batch || [];
 		}
 
-		if (!keys?.length && hash) {
-			let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
-			// console.log('fallback keys = KV', kv_keys, kv_keys?.length);
-			keys = kv_keys || [];
+		// console.log('sig_1')
+		if (hash && !keys?.length) {
+
+			// console.log('fallback keys = KV', tasks, tasks?.length);
+
+			let authorized = await authorize(hash, sig);
+
+			if (authorized.public || authorized.valid) {
+				let tasks = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value || [];
+				keys = tasks;
+			}
 		}
 
 		keys = keys.filter(x => x.url);
@@ -326,7 +350,16 @@ async function handleRequest(req: Request) {
 			// console.log('is_tasks')
 			feeds = saved.map((x, order) => ({order, ...x}));
 		} else {
-			feeds = await fetchRSSLinks({urls: keys, limit});
+			// feeds = await fetchRSSLinks({urls: keys, limit});
+
+			let key_feeds = 'FEEDS:' + JSON.stringify({keys, limit});
+			feeds = CACHE.get(key_feeds);
+
+			if (!feeds?.length) {
+				feeds = await fetchRSSLinks({urls: keys, limit});
+
+				if (feeds.length) CACHE.set(key_feeds, feeds, 60*5);
+			}
 		}
 
 		return response(JSON.stringify({feeds, hash}), {
@@ -335,6 +368,20 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/api/readlater") {
+		let data = {};
+		try { data = (req.method != 'GET') ? await req.json?.() : {}; } catch {};
+
+		sig = sig || data.sig || '';
+		hash = hash || data.x || 'default';
+
+		let authorized = await authorize(hash, sig);
+
+		if (!authorized?.valid) {
+			return response(JSON.stringify([]), {
+				status: 401,
+				headers: { ...cors, ...head_json },
+			});
+		}
 
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user
@@ -345,10 +392,6 @@ async function handleRequest(req: Request) {
 		} else if (req.method === 'POST') {
 			// Add or update read later items
 			try {
-				const data = await req.json();
-
-				hash = hash || data.x || 'default';
-
 				const {item} = data || {};
 
 				console.dir({share_target: hash, item});
@@ -386,10 +429,6 @@ async function handleRequest(req: Request) {
 			}
 		} else if (req.method === 'DELETE') {
 			try {
-				const data = await req.json();
-
-				hash = hash || data.x || 'default';
-
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 
 				// Remove item with matching URL if it exists
@@ -432,7 +471,7 @@ async function handleRequest(req: Request) {
 			const [headerb64, payloadb64, signatureb64] = jwt.split(".")
 			const encoder = new TextEncoder()
 			const data = encoder.encode(headerb64 + '.' + payloadb64)
-			const signature = decode(signatureb64);
+			let signature = decode(signatureb64);
 
 			for (let jwk of jwks) {
 				const key = await crypto.subtle.importKey(
@@ -449,7 +488,7 @@ async function handleRequest(req: Request) {
 				verified = verified || flag;
 			}
 			// console.dir({verified, profile})
-			
+
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
 				&& (profile.aud == '547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com')
@@ -457,7 +496,14 @@ async function handleRequest(req: Request) {
 
 			// console.dir({verified})
 
-			return response(JSON.stringify({verified, ...profile}));
+			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
+
+			profile = {username, verified, jwt, signature: profile.jti, ...profile};
+
+			KV.set(['signature', profile.jti], profile);
+			KV.set(['profile', username], profile);
+
+			return response(JSON.stringify(profile));
 		} catch (error) {
 			console.log(error)
 			return response(JSON.stringify({error}), {status: 403});

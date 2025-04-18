@@ -956,6 +956,8 @@
 					...this.anchors,
 					{href: '#bookmarks', text: '# [Bookmarks]'},
 				];
+
+				console.log('anchor_jump refreshed');
 			} }" 
 			x-init="refresh()"
 			class="fixed left-2 bottom-2 text-sm z-100"
@@ -1371,6 +1373,7 @@ function alpineRSS() {
 							body: JSON.stringify({
 								action: 'save',
 								x: this.params.x,
+								sig: this?.profile?.signature || '',
 								item: obj,
 							})
 						}).catch(err => console.error('Failed to save to KV:', err));
@@ -1389,6 +1392,7 @@ function alpineRSS() {
 							headers: {"content-type": "application/json"},
 							body: JSON.stringify({
 								x: this.params.x,
+								sig: this?.profile?.signature || '',
 								link: item.link
 							})
 						}).catch(err => console.error('Failed to remove from KV:', err));
@@ -1409,7 +1413,7 @@ function alpineRSS() {
 			// If user is identified, try to load from Deno KV
 			if (this.params.x) {
 				try {
-					const response = await fetch(`/api/readlater?x=${this.params.x}`);
+					const response = await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}`);
 					if (response.ok) {
 						const kvItems = await response.json();
 						
@@ -1451,8 +1455,10 @@ function alpineRSS() {
 			try {
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
+				let sig = this?.profile?.signature || '';
+
 				console.time('load tasks')
-				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks`, {
+				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
 					signal: AbortSignal.timeout(20e3),
@@ -1486,9 +1492,11 @@ function alpineRSS() {
 						resolve({url})
 					}
 				}))) : [];
-				console.timeEnd('load content')
+				console.timeEnd('load content');
 
 				data = data.map(x => x.value);
+
+				// console.dir({data})
 
 				if (!this.params?.x && data.length) {
 					let hash_local = await this.digest(JSON.stringify(data) + Date.now());
@@ -1501,7 +1509,7 @@ function alpineRSS() {
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
-						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}`, {
+						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
@@ -1511,7 +1519,7 @@ function alpineRSS() {
 						.catch(null)
 					]
 					: data.map((item, idx) =>
-						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}`, {
+						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
@@ -1542,6 +1550,8 @@ function alpineRSS() {
 								.flat().filter(x => x);
 
 				console.log('respFeeds:', respFeeds.length);
+
+				// console.dir({respFeeds})
 
 				if (this.feeds?.length && !respFeeds?.length) {
 					this.loading = false;
@@ -2132,9 +2142,34 @@ function alpineRSS() {
 				this.title = this.theTitle();
 			});
 
+			this.$watch('feeds', (value, oldValue) => {
+				// console.log('$watch.feeds', oldValue?.length, value?.length)
+
+				if (oldValue.length != value.length)
+					Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
+			})
+
+			this.profile = this.storageGet(this.K.profile) || {};
 			this.params = Object.fromEntries(new URLSearchParams(location.search));
-			this.params.x = this.params.x || this.storageGet(this.K.hash);
+			this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 			this.params.s = this.params.s || this.storageGet(this.K.style);
+
+			// if (this.params.x) {
+			// 	// console.log('this.params.x existed');
+
+			// 	let jwt = this.profile.jwt || '';
+			// 	let checked_profile = await fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt)).then(r => r.json());
+			// 	console.dir(checked_profile);
+
+			// 	if (!checked_profile?.verified) {
+			// 		let hash_new = await this.digest(Date.now());
+			// 		this.params.x = hash_new.slice(0, 6);
+
+			// 		const url = new URL(location);
+			// 		url.searchParams.set("x", this.params.x);
+			// 		history.pushState({}, "", url);
+			// 	}
+			// }
 
 			let limit = this.params.l || this.K.LIMIT;
 			this.params.l = ~~limit;
@@ -2194,6 +2229,7 @@ function alpineRSS() {
 					body: JSON.stringify({
 						action: 'save',
 						x: this.params.x,
+						sig: this?.profile?.signature || '',
 						item,
 					})
 				})
@@ -2276,7 +2312,7 @@ function alpineRSS() {
 			// console.log('inited old localStorage')
 
 			window.addEventListener('params-x-changed', function(event) {
-				console.log('params-x-changed', event?.detail);
+				// console.log('params-x-changed', event?.detail);
 
 				let detail = event.detail;
 
@@ -2337,16 +2373,18 @@ function alpineRSS() {
 navigator?.serviceWorker?.register?.('./sw.js');
 
 function handleGoogle1TapSignin(response) {
-	if (!response?.credential) return;
+	let jwt = response?.credential;
 
-	fetch('/api/jwt/verify?jwt=' + encodeURIComponent(response?.credential))
+	if (!jwt) return;
+
+	fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt))
 		.then(r => r.json())
 		.then(profile => {
 			if (!profile) return console.log('EPROFILENULL');
 
 			if (!profile.verified) return console.dir(profile);
 
-			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
+			let username = profile.username || profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
 
 			if (!username) return console.log('EUSERNAMENULL');
 
