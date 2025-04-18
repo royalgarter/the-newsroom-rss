@@ -253,6 +253,23 @@ function decodeJWT(token) {
 	} catch { return {}}
 }
 
+
+async function authorize(hash, sig) {
+	let found_profile = (await KV.get(['profile', hash]))?.value;
+
+	if (!found_profile) {
+		return {public: true, valid: false};
+	} else if (sig) {
+		let sig_profile = (await KV.get(['signature', sig]))?.value;
+
+		if (sig_profile?.username == hash)  {
+			return {...sig_profile, public: false, valid: true};
+		}
+	}
+
+	return {valid: false};
+}
+
 async function handleRequest(req: Request) {
 	const {pathname, searchParams} = new URL(req.url);
 
@@ -290,22 +307,16 @@ async function handleRequest(req: Request) {
 			keys = batch || [];
 		}
 
+		// console.log('sig_1')
 		if (hash && !keys?.length) {
-			let tasks = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value || [];
+
 			// console.log('fallback keys = KV', tasks, tasks?.length);
 
-			if (sig) {
-				let profile = (await KV.get(['signature', sig]))?.value;
+			let authorized = await authorize(hash, sig);
 
-				if (profile?.username == hash)  {
-					keys = tasks;
-				}
-			} else {
-				let public_profile = (await KV.get(['profile', hash]))?.value;
-
-				if (!public_profile?.username) {
-					keys = tasks;
-				}
+			if (authorized.public || authorized.valid) {
+				let tasks = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value || [];
+				keys = tasks;
 			}
 		}
 
@@ -357,6 +368,19 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/api/readlater") {
+		const data = (await req.json?.()) || {};
+
+		sig = sig || data.sig || '';
+		hash = hash || data.x || 'default';
+
+		let authorized = await authorize(hash, sig);
+
+		if (!authorized?.valid) {
+			return response(JSON.stringify([]), {
+				status: 401,
+				headers: { ...cors, ...head_json },
+			});
+		}
 
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user
@@ -367,10 +391,6 @@ async function handleRequest(req: Request) {
 		} else if (req.method === 'POST') {
 			// Add or update read later items
 			try {
-				const data = await req.json();
-
-				hash = hash || data.x || 'default';
-
 				const {item} = data || {};
 
 				console.dir({share_target: hash, item});
@@ -408,10 +428,6 @@ async function handleRequest(req: Request) {
 			}
 		} else if (req.method === 'DELETE') {
 			try {
-				const data = await req.json();
-
-				hash = hash || data.x || 'default';
-
 				const existingItems = (await KV.get([pathname, hash]))?.value || [];
 
 				// Remove item with matching URL if it exists
