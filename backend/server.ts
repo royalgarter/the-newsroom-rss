@@ -290,14 +290,21 @@ async function handleRequest(req: Request) {
 			keys = batch || [];
 		}
 
-		if (!keys?.length && hash) {
+		if (hash && !keys?.length) {
+			let tasks = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value || [];
+			// console.log('fallback keys = KV', tasks, tasks?.length);
+
 			if (sig) {
 				let profile = (await KV.get(['signature', sig]))?.value;
 
 				if (profile?.username == hash)  {
-					let kv_keys = (ver && (await KV.get([pathname, hash, ver]))?.value) || (await KV.get([pathname, hash]))?.value;
-					// console.log('fallback keys = KV', kv_keys, kv_keys?.length);
-					keys = kv_keys || [];
+					keys = tasks;
+				}
+			} else {
+				let public_profile = (await KV.get(['profile', hash]))?.value;
+
+				if (!public_profile?.username) {
+					keys = tasks;
 				}
 			}
 		}
@@ -465,10 +472,6 @@ async function handleRequest(req: Request) {
 			}
 			// console.dir({verified, profile})
 
-			KV.set(['signature', profile.jti], profile);
-
-			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
-			
 			verified = verified 
 				&& (profile.iss?.includes('accounts.google.com'))
 				&& (profile.aud == '547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com')
@@ -476,7 +479,14 @@ async function handleRequest(req: Request) {
 
 			// console.dir({verified})
 
-			return response(JSON.stringify({username, verified, jwt, signature: profile.jti, ...profile}));
+			let username = profile?.email.replace('gmail.com', '').replace(/[\@\.]/g, '');
+
+			profile = {username, verified, jwt, signature: profile.jti, ...profile};
+
+			KV.set(['signature', profile.jti], profile);
+			KV.set(['profile', username], profile);
+
+			return response(JSON.stringify(profile));
 		} catch (error) {
 			console.log(error)
 			return response(JSON.stringify({error}), {status: 403});
