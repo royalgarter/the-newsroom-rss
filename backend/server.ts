@@ -368,7 +368,8 @@ async function handleRequest(req: Request) {
 	}
 
 	if (pathname === "/api/readlater") {
-		const data = (await req.json?.()) || {};
+		let data = {};
+		try { data = (req.method != 'GET') ? await req.json?.() : {}; } catch {};
 
 		sig = sig || data.sig || '';
 		hash = hash || data.x || 'default';
