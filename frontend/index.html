@@ -1490,8 +1490,6 @@ function alpineRSS() {
 				}))) : [];
 				console.timeEnd('load content');
 
-				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
-
 				data = data.map(x => x.value);
 
 				if (!this.params?.x && data.length) {
@@ -1570,6 +1568,8 @@ function alpineRSS() {
 
 				this.feeds = respFeeds;
 				this.loading = false;
+
+				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 
 				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
 				if (hash_server) {
