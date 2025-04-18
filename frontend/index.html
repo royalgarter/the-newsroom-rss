@@ -497,7 +497,7 @@
 				</div>
 
 				<!-- settings -->
-				<div x-data="{ expanded: !tasks?.length }" class="py-2">
+				<div id="expander_settings" x-data="{ expanded: !tasks?.length }" class="py-2">
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-01"
@@ -730,7 +730,7 @@
 				</div>
 
 				<!-- declarations -->
-				<div x-data="{ expanded: false }" class="py-2">
+				<div id="expander_declarations" x-data="{ expanded: false }" class="py-2">
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-02"
@@ -1341,6 +1341,8 @@ function alpineRSS() {
 			try {
 				let readLaterItems = this.storageGet(this.K.readlater) || [];
 
+				// console.log(readLaterItems, item.read_later)
+
 				if (!is_remove && item.read_later) {
 					// Save to local storage first for immediate feedback
 
@@ -1359,11 +1361,17 @@ function alpineRSS() {
 						}
 					}
 
-					if (!readLaterItems?.some(i => i.link === item.link)) {
+					let idx = readLaterItems.findIndex(i => i.link === item.link);
+					if (idx < 0) {
 						readLaterItems.push(obj);
-						this.readlater = {items: readLaterItems};
-						this.storageSet(this.K.readlater, readLaterItems);
+					} else {
+						readLaterItems[idx] = {...readLaterItems[idx], ...obj};
 					}
+
+					this.readlater = {items: readLaterItems};
+					this.storageSet(this.K.readlater, readLaterItems);
+
+					// console.dir({obj})
 					
 					// Save to Deno KV
 					if (this.params.x) {
@@ -2154,23 +2162,6 @@ function alpineRSS() {
 			this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 			this.params.s = this.params.s || this.storageGet(this.K.style);
 
-			// if (this.params.x) {
-			// 	// console.log('this.params.x existed');
-
-			// 	let jwt = this.profile.jwt || '';
-			// 	let checked_profile = await fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt)).then(r => r.json());
-			// 	console.dir(checked_profile);
-
-			// 	if (!checked_profile?.verified) {
-			// 		let hash_new = await this.digest(Date.now());
-			// 		this.params.x = hash_new.slice(0, 6);
-
-			// 		const url = new URL(location);
-			// 		url.searchParams.set("x", this.params.x);
-			// 		history.pushState({}, "", url);
-			// 	}
-			// }
-
 			let limit = this.params.l || this.K.LIMIT;
 			this.params.l = ~~limit;
 
@@ -2179,8 +2170,11 @@ function alpineRSS() {
 
 			if (this.params.f == 'bookmarks') this.is_hide_feeds = true;
 
+			// Web Share API: GET
 			if (this.params.url || this.params.text || this.params.title) {
 				// this.debug = JSON.stringify(this.params);
+
+				this.is_hide_feeds = true;
 				
 				console.log('share_target', this.params);
 
@@ -2196,17 +2190,24 @@ function alpineRSS() {
 				
 				let html = '', item = {};
 				try {
-					html = await fetch(share_url, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
-								.then(resp => resp.text()).catch(null) || '';
+					let fetch_opts = { redirect: 'follow', signal: AbortSignal.timeout(3e3) };
+
+					toast('Fetching: ' + share_url);
+
+					try { html = await fetch(share_url, fetch_opts).then(r => r.text()).catch(null); } catch (ex) {}
+					try { html = html || await fetch(`/html?u=${encodeURIComponent(share_url)}`, fetch_opts).then(r => r.text()).catch(null); } catch (ex) {}
+					html = html || '';
 
 					let doc = new DOMParser().parseFromString(html, "text/html");
 					item.article = new Readability(doc).parse();
+
+					console.dir(item.article)
 
 					let content = item.article?.content;
 					if (content?.length) {
 						item.article.content = cleanContent(content);
 					}
-				} catch {}
+				} catch (ex) {console.log('html.ex', ex)}
 
 				item = {
 					link: share_url,
@@ -2215,7 +2216,7 @@ function alpineRSS() {
 					feed_title: this.params.title || html.match(REGEX_TITLE)?.[1] || '',
 					image_thumb: html.match(REGEX_IMAGE)?.[1],
 					saved_at: new Date().toISOString(),
-					read_later: true,
+					read_later: false,
 					article: item.article,
 				};
 
@@ -2223,34 +2224,13 @@ function alpineRSS() {
 
 				// this.debug = JSON.stringify(item);
 				
-				fetch('/api/readlater', {
-					method: 'POST',
-					headers: {"content-type": "application/json"},
-					body: JSON.stringify({
-						action: 'save',
-						x: this.params.x,
-						sig: this?.profile?.signature || '',
-						item,
-					})
-				})
-				.then(resp => resp.json())
-				.then(json => console.dir({share_target_json: json}))
-				.then(_ => {
-					this.loadReadLaterItems().then(_ => {
-						toast('Bookmarked: ' + item.title);
+				await this.saveReadLater(item);
+				await this.loadReadLaterItems();
+				toast('Bookmarked: ' + item.title);
 
-						let dom = document.querySelector('#expander_readlater');
-
-						if (dom && Alpine.$data(dom)) {
-							Alpine.$data(dom).expanded = false;
-
-							document.querySelector('#expander_readlater button')?.click();
-
-							[...document.querySelectorAll('.rss-meta')].pop().scrollIntoView('smooth');
-						}
-					}).catch(err => console.dir({share_target_catch: err}));
-				})
-				.catch(err => console.dir({share_target_catch: err}))
+				Alpine.$data(document.querySelector('#expander_settings')).expanded = false;
+				Alpine.$data(document.querySelector('#expander_declarations')).expanded = false;
+				Alpine.$data(document.querySelector('#expander_readlater')).expanded = true;
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
@@ -2437,6 +2417,8 @@ function cleanContent(content='') {
 }
 
 function toast(message, timeout=3e3) {
+	console.log('> TOAST:', message);
+
 	const toastBox = document.getElementById('toast');
 	const toastMsg = document.getElementById('toast-message');
 
