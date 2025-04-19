@@ -969,7 +969,14 @@
 		>
 			<div x-show="is_open" @click.away="is_open = false" class="bg-stone-200 shadow-md rounded mb-2 overflow-y-auto max-h-128">
 				<template x-for="(anchor, index) in anchors" :key="index">
-					<a :href="anchor.href" class="block p-2 text-gray-800 hover:bg-stone-300" x-text="anchor.text" @click="is_open = false"></a>
+					<a :href="anchor.href" class="block p-2 text-gray-800 hover:bg-stone-300" x-text="anchor.text" 
+						@click="
+							is_open = false;
+							setTimeout(() => {
+								Alpine.$data(document.querySelector('#expander_readlater')).expanded = Alpine.$data(document.querySelector('body')).is_hide_feeds = (location.hash == '#bookmarks');
+							}, 100);
+						">
+					</a>
 				</template>
 			</div>
 			<button @click="is_open = !is_open" class="bg-stone-500 hover:bg-stone-700 text-white font-bold p-2 px-4 flex items-center justify-center h-10 w-10 rounded-full cursor-pointer opacity-80 hover:opacity-100">
@@ -1105,6 +1112,18 @@ function alpineRSS() {
 				'https://www.business-standard.com/rss/latest.rss',
 				'https://feeds.npr.org/1128/rss.xml',
 				'https://www.espn.com/espn/rss/news',
+			],
+
+			CATEGORIES: [
+				{"name": "Top Stories", "desc": "This is the main, curated feed highlighting the most important news of the moment."},
+				{"name": "World", "desc": "International news from across the globe."},
+				{"name": "Local", "desc": "News specific to your current location or a location you specify."},
+				{"name": "Business", "desc": "Financial news, market updates, and business trends."},
+				{"name": "Technology", "desc": "Coverage of the tech industry, gadgets, and innovation."},
+				{"name": "Entertainment", "desc": "News about movies, music, celebrities, and pop culture."},
+				{"name": "Sports", "desc": "Coverage of various sports, including scores, highlights, and analysis."},
+				{"name": "Science", "desc": "News and discoveries in the world of science."},
+				{"name": "Health", "desc": "Articles about health, medicine, and wellness."},
 			],
 
 			viewed: VERSION + '_viewed_',
