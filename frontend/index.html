@@ -1019,8 +1019,11 @@
 
 	p.rss-article-content > * {
 		text-wrap: wrap;
+		text-overflow: ellipsis;
 		overflow-wrap: anywhere;
 		max-width: 100%;
+		padding: 0.5rem 0rem;
+		word-break: break-all;
 	}
 
 	p.rss-article-content p {
@@ -1030,6 +1033,7 @@
 	p.rss-article-content img {
 		padding: 1rem;
 		place-self: center;
+		margin: 0 auto;
 	}
 </style>
 <script>
