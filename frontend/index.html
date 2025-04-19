@@ -214,12 +214,12 @@
 												rel="external"
 											></a>
 
-											<svg id="rss-open-link" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-												class="size-4 cursor-pointer inline mb-1 text-blue-400 dark:text-blue-300 opacity-75 hover:opacity-100"
+											<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+												class="rss-open-link size-3 cursor-pointer inline mb-1 text-blue-400 dark:text-blue-300 opacity-75 hover:opacity-100"
 												:class="( item.image_thumb &&
 															(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
 														) ? 'visible' : 'invisible'"
-												@click="window.open(item.link, '_blank ')"
+												@click="window.open(item.link, '_blank')"
 											>
 												<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
 											</svg>
@@ -393,26 +393,23 @@
 						>
 						<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
 							<!-- readlater item -->
-							<template x-for="(item, itemIndex) in readlater.items.reverse()" :key="itemIndex">
+							<template x-for="(item, itemIndex) in (readlater?.items?.reverse?.() || [])" :key="itemIndex">
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 								>
 									<!-- readlater thumbnail -->
 									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
-											<a class="rss-thumb" :href="item.link" target="_blank">
-												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
-												<img width="320" height="320"
-													class="rss-thumb w-full min-h-36 max-h-[320px]"
-													:alt="item.title"
-													:domain="new URL(item.link).hostname"
-													:src="item.image_thumb"
-													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
-												/>
-												<div
-													class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
-												</div>
-											</a>
+											<img width="320" height="320"
+												class="rss-thumb w-full min-h-36 max-h-[320px]"
+												:alt="item.title"
+												:domain="new URL(item.link).hostname"
+												:src="item.image_thumb"
+												onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
+											/>
+											<div
+												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+											</div>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-2 py-1 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
 													x-html="item.author?.toString().substr(0, 12).trim()">
@@ -444,6 +441,12 @@
 											rel="external"
 										>
 										</a>
+										<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+											class="rss-open-link size-3 cursor-pointer inline mb-1 text-blue-400 dark:text-blue-300 opacity-75 hover:opacity-100"
+											@click="console.log(item.link);window.open(item.link, '_blank')"
+										>
+											<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+										</svg>
 										<template x-if="!params?.s?.includes?.('title')">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
@@ -1017,12 +1020,11 @@
 		place-self: center;
 	}
 
-	p.rss-article-content > * {
+	p.rss-article-content * {
 		text-wrap: wrap;
 		text-overflow: ellipsis;
 		overflow-wrap: anywhere;
 		max-width: 100%;
-		padding: 0.5rem 0rem;
 		word-break: break-all;
 	}
 
