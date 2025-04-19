@@ -1441,7 +1441,7 @@ function alpineRSS() {
 				}
 			}
 
-			this.readlater = {items: readLaterItems};
+			this.readlater = {items: readLaterItems.reverse()};
 			
 			// Mark items in feeds as read_later if they're in the readLaterItems list
 			this.feeds.forEach(feed => {
