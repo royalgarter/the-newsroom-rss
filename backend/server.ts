@@ -283,10 +283,10 @@ async function saveBookmarks(kvkeys, updatedItems) {
 }
 
 async function getBookmarks(kvkeys) {
-	let items = await KV.get(kvkeys);
+	let items = (await KV.get(kvkeys)) || {value: []};
 
-	for (let item of items) {
-		item.article = await KV.get([...kvkeys, item.link]);
+	for (let i in items.value) {
+		items.value[i].article = await KV.get([...kvkeys, item.link]);
 	}
 
 	return items;
