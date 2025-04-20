@@ -2269,6 +2269,12 @@ function alpineRSS() {
 				await this.loadReadLaterItems();
 				toast('Bookmarked: ' + item.title);
 
+				const url = new URL(location);
+				url.searchParams.delete("url");
+				url.searchParams.delete("text");
+				url.searchParams.delete("title");
+				history.pushState({}, "", url);
+
 				Alpine.$data(document.querySelector('#expander_settings')).expanded = false;
 				Alpine.$data(document.querySelector('#expander_declarations')).expanded = false;
 				Alpine.$data(document.querySelector('#expander_readlater')).expanded = true;
