@@ -111,7 +111,10 @@
 					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 					x-cloak
 					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
-					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
+					x-intersect:once="
+						feed.items.forEach(x => x.prefetchContent?.());
+						feeds[index+1]?.items?.forEach(x => x.prefetchContent?.());
+					"
 				>
 					<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
 						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
