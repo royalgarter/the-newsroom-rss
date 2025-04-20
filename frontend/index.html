@@ -393,7 +393,7 @@
 						>
 						<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
 							<!-- readlater item -->
-							<template x-for="(item, itemIndex) in (readlater?.items?.reverse?.() || [])" :key="itemIndex">
+							<template x-for="(item, itemIndex) in readlater.items" :key="itemIndex">
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 								>
@@ -1395,6 +1395,7 @@ function alpineRSS() {
 						readLaterItems[idx] = {...readLaterItems[idx], ...obj};
 					}
 
+					readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 					this.readlater = {items: readLaterItems};
 					this.storageSet(this.K.readlater, readLaterItems);
 
@@ -1417,6 +1418,7 @@ function alpineRSS() {
 					// Remove from local storage
 					readLaterItems = readLaterItems.filter(i => i.link !== item.link);
 
+					readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 					this.readlater = {items: readLaterItems};
 					this.storageSet(this.K.readlater, readLaterItems);
 					
@@ -1466,6 +1468,7 @@ function alpineRSS() {
 				}
 			}
 
+			readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 			this.readlater = {items: readLaterItems};
 			
 			// Mark items in feeds as read_later if they're in the readLaterItems list
