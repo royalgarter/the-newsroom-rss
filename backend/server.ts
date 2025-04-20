@@ -286,7 +286,7 @@ async function getBookmarks(kvkeys) {
 	let items = (await KV.get(kvkeys)) || {value: []};
 
 	for (let i in items.value) {
-		items.value[i].article = await KV.get([...kvkeys, item.link]);
+		items.value[i].article = await KV.get([...kvkeys, items.value[i].link]);
 	}
 
 	return items;
