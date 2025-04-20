@@ -230,16 +230,6 @@ async function fetchRSSLinks({urls, limit=12}) {
 	return render;
 }
 
-function upsertBookmark(items, newItem) {
-	const index = items.findIndex(item => item.link === newItem.link);
-	if (index !== -1) {
-		items[index] = { ...items[index], ...newItem, updatedAt: new Date().toISOString() };
-	} else {
-		items.push({ ...newItem, addedAt: new Date().toISOString() });
-	}
-	return items;
-}
-
 function decodeJWT(token) {
 	try {
 		// console.log('decodeJWT', token)
@@ -268,6 +258,38 @@ async function authorize(hash, sig) {
 	}
 
 	return {valid: false};
+}
+
+function upsertBookmark(items, newItem) {
+	const index = items.findIndex(item => item.link === newItem.link);
+	if (index !== -1) {
+		items[index] = { ...items[index], ...newItem, updatedAt: new Date().toISOString() };
+	} else {
+		items.push({ ...newItem, addedAt: new Date().toISOString() });
+	}
+	return items;
+}
+
+async function saveBookmarks(kvkeys, updatedItems) {
+	let articles = updatedItems.map(x => ({link: x.link, article: x.article}));
+	let items = updatedItems.map(x => ({...x, article: undefined}));
+
+	await KV.set(kvkeys, items);
+
+	for (let a of articles) {
+		delete a.article.title;
+		await KV.set([...kvkeys, a.link], a.article);
+	}
+}
+
+async function getBookmarks(kvkeys) {
+	let items = await KV.get(kvkeys);
+
+	for (let item of items) {
+		item.article = await KV.get([...kvkeys, item.link]);
+	}
+
+	return items;
 }
 
 async function handleRequest(req: Request) {
@@ -385,7 +407,8 @@ async function handleRequest(req: Request) {
 
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user
-			const items = await KV.get([pathname, hash]);
+			const items = await getBookmarks([pathname, hash]);
+
 			return response(JSON.stringify(items?.value || []), {
 				headers: { ...cors, ...head_json },
 			});
@@ -394,7 +417,7 @@ async function handleRequest(req: Request) {
 			try {
 				const {item} = data || {};
 
-				console.dir({share_target: hash, item});
+				// console.dir({share_target: hash, item});
 
 				if (!item?.image_thumb || !item?.description) {
 					const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
@@ -412,16 +435,18 @@ async function handleRequest(req: Request) {
 					item.image_thumb = html.match(REGEX_IMAGE)?.[1] || item.image_thumb ;
 				}
 
-				const existingItems = (await KV.get([pathname, hash]))?.value || [];
+				const existingItems = (await getBookmarks([pathname, hash]))?.value || [];
 
 				const updatedItems = item ? upsertBookmark(existingItems, item) : existingItems;
 
-				await KV.set([pathname, hash], updatedItems);
+				await saveBookmarks([pathname, hash], updatedItems);
 
 				return response(JSON.stringify({ success: true, items: updatedItems, data}), {
 					headers: { ...cors, ...head_json },
 				});
 			} catch (error) {
+				console.log('catch post readlater', error)
+
 				return response(JSON.stringify({ error }), {
 					status: 400,
 					headers: { ...cors, ...head_json },
@@ -429,20 +454,20 @@ async function handleRequest(req: Request) {
 			}
 		} else if (req.method === 'DELETE') {
 			try {
-				const existingItems = (await KV.get([pathname, hash]))?.value || [];
+				const existingItems = (await getBookmarks([pathname, hash]))?.value || [];
 
 				// Remove item with matching URL if it exists
 				const updatedItems = data.link ?
 					existingItems.filter(item => item.link !== data.link) :
 					existingItems;
 
-				await KV.set([pathname, hash], updatedItems);
+				await saveBookmarks([pathname, hash], updatedItems);
 
 				return response(JSON.stringify({ success: true, items: updatedItems }), {
 					headers: { ...cors, ...head_json },
 				});
 			} catch (error) {
-				console.log(error);
+				console.log('catch delete readlater', error)
 
 				return response(JSON.stringify({ error }), {
 					status: 400,
