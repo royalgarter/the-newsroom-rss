@@ -1442,7 +1442,6 @@ function alpineRSS() {
 		},
 		
 		async loadReadLaterItems() {
-
 			console.log('loadReadLaterItems')
 			// Load from local storage first
 			let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
@@ -1478,7 +1477,9 @@ function alpineRSS() {
 				});
 			});
 
-			console.log('loadReadLaterItems done')
+			console.log('loadReadLaterItems done');
+
+			toast('Bookmarks loaded');
 		},
 
 		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
@@ -1504,6 +1505,7 @@ function alpineRSS() {
 				.then(resp => resp.json())
 				.catch(null);
 				console.timeEnd('load tasks')
+				toast('RSS list loaded');
 
 				if (resp_tasks) {
 					this.tasks = resp_tasks?.feeds;
@@ -1657,6 +1659,7 @@ function alpineRSS() {
 				this.debug = "Failed to load feeds. Please check the server logs for more details";
 				this.loading = false;
 			} finally {
+				toast('Feeds loaded');
 				console.log('loadFeedsWithContent.done');
 				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 			}
@@ -1997,6 +2000,8 @@ function alpineRSS() {
 				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 			}, 0.5e3);
 
+
+			toast('Feeds prefetched');
 			return {count};
 		},
 
@@ -2282,10 +2287,11 @@ function alpineRSS() {
 				if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
 					this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
 
-				this.loadReadLaterItems();
 				this.postProcessFeeds({limit});
 				// console.log('inited feeds', this.feeds.length)
 			}
+
+			this.loadReadLaterItems();
 
 			this.loading = false;
 
@@ -2363,11 +2369,11 @@ function alpineRSS() {
 			setIdle(
 				30 * 60e3,
 				() => {
-					console.log("User is idle!"); 
+					toast("Idling..."); 
 					this.loadFeedsWithContent({limit});
 				},
 				() => {
-					console.log("User is active!"); 
+					toast("Reactive..."); 
 					this.loadFeedsWithContent({limit});
 				}
 			);
