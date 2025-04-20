@@ -1083,6 +1083,7 @@ function alpineRSS() {
 		feeds: [],
 		is_hide_feeds: false,
 		loading: false,
+		loadingBookmarks: false,
 		debug: null,
 		params: {
 			l: 6,
@@ -1442,6 +1443,9 @@ function alpineRSS() {
 		},
 		
 		async loadReadLaterItems() {
+			if (this.loadingBookmarks) return;
+
+			this.loadingBookmarks = true;
 			console.log('loadReadLaterItems')
 			// Load from local storage first
 			let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
@@ -1476,6 +1480,8 @@ function alpineRSS() {
 					item.read_later = readLaterItems.some(savedItem => savedItem.link === item.link);
 				});
 			});
+
+			this.loadingBookmarks = false;
 
 			console.log('loadReadLaterItems done');
 
@@ -2287,11 +2293,10 @@ function alpineRSS() {
 				if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
 					this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
 
+				this.loadReadLaterItems();
 				this.postProcessFeeds({limit});
 				// console.log('inited feeds', this.feeds.length)
 			}
-
-			this.loadReadLaterItems();
 
 			this.loading = false;
 
