@@ -1420,9 +1420,11 @@ function alpineRSS() {
 					}
 				} else {
 					// Remove from local storage
+					
 					readLaterItems = readLaterItems.filter(i => i.link !== item.link);
-
 					readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
+					readLaterItems.forEach(x => x.read_later = true);
+
 					this.readlater = {items: readLaterItems};
 					this.storageSet(this.K.readlater, readLaterItems);
 					
