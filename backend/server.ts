@@ -278,17 +278,26 @@ async function saveBookmarks(kvkeys, updatedItems) {
 
 	for (let a of articles) {
 		delete a.article.title;
-		await KV.set([...kvkeys, a.link], a.article);
+		KV.set([...kvkeys, a.link], a.article).then();
 	}
 }
 
 async function getBookmarks(kvkeys) {
 	let items = (await KV.get(kvkeys)) || {value: []};
 
-	for (let i in items.value) {
-		items.value[i].article = await KV.get([...kvkeys, items.value[i].link]);
-	}
+	await Promise.allSettled(
+		Object.keys(items.value).map(i => 
+			KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a})
+		)
+	)
 
+
+	// for (let i in items.value) {
+	// 	items.value[i].article = await KV.get([...kvkeys, items.value[i].link]);
+	// }
+
+	// console.dir(items.value)
+	
 	return items;
 }
 
@@ -398,12 +407,12 @@ async function handleRequest(req: Request) {
 
 		let authorized = await authorize(hash, sig);
 
-		if (!authorized?.valid) {
-			return response(JSON.stringify([]), {
-				status: 401,
-				headers: { ...cors, ...head_json },
-			});
-		}
+		// if (!authorized?.valid) {
+		// 	return response(JSON.stringify([]), {
+		// 		status: 401,
+		// 		headers: { ...cors, ...head_json },
+		// 	});
+		// }
 
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user
