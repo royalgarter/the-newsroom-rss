@@ -271,8 +271,9 @@ function upsertBookmark(items, newItem) {
 }
 
 async function saveBookmarks(kvkeys, updatedItems) {
-	let articles = updatedItems.map(x => ({link: x.link, article: x.article}));
-	let items = updatedItems.map(x => ({...x, article: undefined}));
+	let items = updatedItems.map(x => ({...x, article: undefined, skip_article: undefined}));
+	let articles = updatedItems.filter(x => (!x?.skip_article) && x?.article?.content)
+								.map(x => ({link: x.link, article: x.article}));
 
 	await KV.set(kvkeys, items);
 
@@ -448,6 +449,8 @@ async function handleRequest(req: Request) {
 
 				const updatedItems = item ? upsertBookmark(existingItems, item) : existingItems;
 
+				updatedItems.forEach(x => {x.skip_article = (x.link != item.link)});
+
 				await saveBookmarks([pathname, hash], updatedItems);
 
 				return response(JSON.stringify({ success: true, items: updatedItems, data}), {
@@ -470,6 +473,8 @@ async function handleRequest(req: Request) {
 					existingItems.filter(item => item.link !== data.link) :
 					existingItems;
 
+				await KV.delete([pathname, hash, data.link]);
+				updatedItems.forEach(x => {x.skip_article = true});
 				await saveBookmarks([pathname, hash], updatedItems);
 
 				return response(JSON.stringify({ success: true, items: updatedItems }), {
