@@ -287,7 +287,7 @@ async function getBookmarks(kvkeys) {
 
 	await Promise.allSettled(
 		Object.keys(items.value).map(i => 
-			KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a})
+			KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a?.value})
 		)
 	)
 
