@@ -100,7 +100,7 @@
 			</header>
 		</template>
 
-		<div id='loading_bar' class="flex h-[2px] bg-blue-800 dark:bg-blue-600"
+		<div id='loading_bar' class="flex h-[2px] bg-blue-800 dark:bg-blue-600 transition-[width] duration-500 ease-in-out"
 			:class="(loadingPercent > 0 && loadingPercent < 0.99) ? ('visible w-' + loadingFraction) : 'invisible'"
 		></div>
 
