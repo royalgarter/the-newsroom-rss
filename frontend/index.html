@@ -1635,6 +1635,7 @@ function alpineRSS() {
 
 				if (this.feeds?.length && !respFeeds?.length) {
 					this.loading = false;
+					this.loadingPercent = 1;
 					return console.log("EEMPTYRESPFEEDS");
 				}
 
@@ -1654,10 +1655,10 @@ function alpineRSS() {
 					});
 				});
 
-				this.loadingPercent = 1;
 
 				this.feeds = respFeeds;
 				this.loading = false;
+				this.loadingPercent = 1;
 
 				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
 				if (hash_server) {
@@ -1700,6 +1701,7 @@ function alpineRSS() {
 				console.error("Error fetching feeds:", error);
 				this.debug = "Failed to load feeds. Please check the server logs for more details";
 				this.loading = false;
+				this.loadingPercent = 1;
 			} finally {
 				toast('Feeds loaded');
 				console.log('loadFeedsWithContent.done');
@@ -2168,6 +2170,7 @@ function alpineRSS() {
 				.then(done => {
 					console.log('build tasks done');
 					this.loading = false;
+					this.loadingPercent = 1;
 					window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
 				});
 		},
