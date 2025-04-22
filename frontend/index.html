@@ -96,8 +96,14 @@
 						<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
 					</svg>
 				</button>
+
 			</header>
 		</template>
+
+		<div id='loading_bar' class="flex h-[2px] bg-blue-800 dark:bg-blue-600 transition-[width] duration-500 ease-in-out"
+			:class="(loadingPercent > 0 && loadingPercent < 0.99) ? ('visible w-' + loadingFraction) : 'invisible'"
+		></div>
+
 		<main id="main" class="container mx-auto p-2 flex-1">
 
 			<!-- errors -->
@@ -1085,8 +1091,12 @@ function alpineRSS() {
 
 		feeds: [],
 		is_hide_feeds: false,
+
 		loading: false,
+		loadingPercent: 0,
+		loadingFraction: '1/10',
 		loadingBookmarks: false,
+
 		debug: null,
 		params: {
 			l: 6,
@@ -1503,6 +1513,9 @@ function alpineRSS() {
 			console.log('loadFeedsWithContent', limit, limit_adjust);
 
 			try {
+				this.loadingPercent = 0;
+				let step = 0;
+
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
 				let sig = this?.profile?.signature || '';
@@ -1524,22 +1537,34 @@ function alpineRSS() {
 				}
 
 				console.time('load content')
+
+				step = 0.2 / (urls?.length || 1);
 				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
-					if (force_update) return resolve({url});
+					if (force_update) {
+						this.loadingPercent += step;
+						return resolve({url});
+					}
 
 					let key_nofetch = this.K.noClientFetch + new URL(url).hostname;
 
-					if (this.storageGet(key_nofetch)) return resolve({url});
+					if (this.storageGet(key_nofetch)) {
+						this.loadingPercent += step;
+						return resolve({url});
+					}
+
 					try {
 						fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(5e3)})
 							.then(resp => resp.text())
 							.then(content => resolve({url, content}))
 							.catch(ex => {
 								this.storageSet(key_nofetch, true);
+
+								this.loadingPercent += step;
 								resolve({url});
 							})
 					} catch (ex) {
 						this.storageSet(key_nofetch, true);
+						this.loadingPercent += step;
 						resolve({url})
 					}
 				}))) : [];
@@ -1557,6 +1582,8 @@ function alpineRSS() {
 
 				// console.log('datas:', data.length);
 				console.time('load feeds')
+
+				step = 0.8 / (data?.length || 1);
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
@@ -1568,6 +1595,7 @@ function alpineRSS() {
 						})
 						.then(resp => resp.json())
 						.catch(null)
+						.finally(() => this.loadingPercent += step)
 					]
 					: data.map((item, idx) =>
 						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
@@ -1592,6 +1620,7 @@ function alpineRSS() {
 							return json;
 						})
 						.catch(null)
+						.finally(() => this.loadingPercent += step)
 					)
 				);
 				console.timeEnd('load feeds')
@@ -1606,6 +1635,7 @@ function alpineRSS() {
 
 				if (this.feeds?.length && !respFeeds?.length) {
 					this.loading = false;
+					this.loadingPercent = 1;
 					return console.log("EEMPTYRESPFEEDS");
 				}
 
@@ -1625,8 +1655,10 @@ function alpineRSS() {
 					});
 				});
 
+
 				this.feeds = respFeeds;
 				this.loading = false;
+				this.loadingPercent = 1;
 
 				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
 				if (hash_server) {
@@ -1669,6 +1701,7 @@ function alpineRSS() {
 				console.error("Error fetching feeds:", error);
 				this.debug = "Failed to load feeds. Please check the server logs for more details";
 				this.loading = false;
+				this.loadingPercent = 1;
 			} finally {
 				toast('Feeds loaded');
 				console.log('loadFeedsWithContent.done');
@@ -2137,6 +2170,7 @@ function alpineRSS() {
 				.then(done => {
 					console.log('build tasks done');
 					this.loading = false;
+					this.loadingPercent = 1;
 					window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
 				});
 		},
@@ -2194,6 +2228,18 @@ function alpineRSS() {
 
 			this.$watch('loading', value => {
 				this.title = this.theTitle();
+			});
+
+			this.$watch('loadingPercent', value => {
+				// console.log('loadingPercent:', value);
+
+				const SCALE = 10;
+				let v = value * SCALE;
+				for (let i = 0; i < SCALE; i++) {
+					if (i < v && (i + 1) > v) {
+						this.loadingFraction = (i + 1) + '/' + SCALE;
+					}
+				}
 			});
 
 			this.$watch('feeds', (value, oldValue) => {
