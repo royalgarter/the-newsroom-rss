@@ -1637,6 +1637,8 @@ function alpineRSS() {
 
 				// console.dir({respFeeds})
 
+				console.time('>> load.feeds.postprocess')
+
 				if (this.feeds?.length && !respFeeds?.length) {
 					this.loading = false;
 					this.loadingPercent = 1;
@@ -1699,6 +1701,8 @@ function alpineRSS() {
 				} else {
 					this.storageSet(this.K.tasks, this.tasks);
 				}
+
+				console.timeEnd('>> load.feeds.postprocess')
 
 				// console.log(this.tasks);
 			} catch (error) {
