@@ -1493,6 +1493,8 @@ function alpineRSS() {
 			this.feeds.forEach(feed => {
 				feed.items.forEach(item => {
 					item.read_later = readLaterItems.some(savedItem => savedItem.link === item.link);
+
+					if (item?.article?.content?.search?.(/\{.*error.*E404.*\}/) >= 0) item.article = null;
 				});
 			});
 
