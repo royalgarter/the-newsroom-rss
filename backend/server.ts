@@ -48,6 +48,7 @@ async function parseRSS(url: string, content: string) {
 
 			let key_rss = 'RSS:' + url;
 
+			console.time('>> parseRSS.' + url);
 			content = await Promise.any([
 				new Promise((resolve, reject) => {
 					let cached = CACHE.get(key_rss);
@@ -61,6 +62,7 @@ async function parseRSS(url: string, content: string) {
 						.catch(ex => reject(null));
 				}),
 			]);
+			console.timeEnd('>> parseRSS.' + url);
 		} else {
 			// console.log('parseRSS.content_with_url', url);
 		}
@@ -113,6 +115,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 	// console.log('render')
 	await Promise.allSettled(feeds.map((data, order) => new Promise(resolveFeed => {
 		(async () => {
+			console.time('>> postParseRSS.' + data.rss_url);
+
 			const items = data.entries?.slice(0, limit) || [];
 
 			// console.dir(data)
@@ -147,6 +151,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 						// console.dir(images)
 						let link = item?.links?.[0]?.href;
 						let url = new URL(link).searchParams.get('url');
+
+						console.time('>> postParseRSS.item.' + link);
 
 						if (link.includes('news.google.com/rss/articles/')) {
 							let ggnews = await fetch(`https://feed.newsrss.org/api/feeds/decode-ggnews`
@@ -209,6 +215,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						// console.dir({item, x});
 
 						rss_items.push(x);
+						console.timeEnd('>> postParseRSS.item.' + link);
 					} catch (ex) { console.error(ex); } finally { resolveItem() }
 				})().catch(ex => resolveItem());
 			})));
@@ -222,6 +229,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 			};
 
 			render[order] = result;
+
+			console.timeEnd('>> postParseRSS.' + data.rss_url);
 		})().catch(console.error).finally(resolveFeed);
 	})));
 
