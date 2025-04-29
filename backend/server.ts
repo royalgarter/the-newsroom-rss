@@ -418,7 +418,7 @@ async function handleRequest(req: Request) {
 			if (!feeds?.length) {
 				feeds = await fetchRSSLinks({urls: keys, limit});
 
-				if (feeds.length) CACHE.set(key_feeds, feeds, 60*5);
+				if (feeds.length) CACHE.set(key_feeds, feeds, 60*15);
 			}
 		}
 
