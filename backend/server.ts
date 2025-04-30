@@ -48,6 +48,7 @@ async function parseRSS(url: string, content: string) {
 
 			let key_rss = 'RSS:' + url;
 
+			console.time('>> parseRSS.' + url);
 			content = await Promise.any([
 				new Promise((resolve, reject) => {
 					let cached = CACHE.get(key_rss);
@@ -61,6 +62,7 @@ async function parseRSS(url: string, content: string) {
 						.catch(ex => reject(null));
 				}),
 			]);
+			console.timeEnd('>> parseRSS.' + url);
 		} else {
 			// console.log('parseRSS.content_with_url', url);
 		}
@@ -113,6 +115,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 	// console.log('render')
 	await Promise.allSettled(feeds.map((data, order) => new Promise(resolveFeed => {
 		(async () => {
+			console.time('>> postParseRSS.' + data.rss_url);
+
 			const items = data.entries?.slice(0, limit) || [];
 
 			// console.dir(data)
@@ -148,17 +152,28 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let link = item?.links?.[0]?.href;
 						let url = new URL(link).searchParams.get('url');
 
-						if (link.includes('news.google.com/rss/articles/')) {
-							let ggnews = await fetch(`https://feed.newsrss.org/api/feeds/decode-ggnews`
-								+ `?url=${encodeURIComponent(link)}`
-								+ `&source=${encodeURIComponent(item?.source?.url)}`
-								+ `&title=${encodeURIComponent(item?.title?.value)}`, {
-								headers: head_json, redirect: 'follow', signal: AbortSignal.timeout(10e3)
-							}).then(res => res.json()).catch(null);
+						console.time('>> postParseRSS.item.' + link);
 
-							if (ggnews?.data?.originUrl) {
-								link = ggnews.data.originUrl;
+						if (link.includes('news.google.com/rss/articles/')) {
+							let key_gnews = 'GOOGLE_NEWS:' + link;
+							let gn_link = CACHE.get(key_gnews);
+
+							if (gn_link) {
+								link = gn_link;
 								images = [];
+							} else {
+								let ggnews = await fetch(`https://feed.newsrss.org/api/feeds/decode-ggnews`
+									+ `?url=${encodeURIComponent(link)}`
+									+ `&source=${encodeURIComponent(item?.source?.url)}`
+									+ `&title=${encodeURIComponent(item?.title?.value)}`, {
+									headers: head_json, redirect: 'follow', signal: AbortSignal.timeout(10e3)
+								}).then(res => res.json()).catch(null);
+
+								if (ggnews?.data?.originUrl) {
+									link = ggnews.data.originUrl;
+									images = [];
+									CACHE.set(key_gnews, link);
+								}
 							}
 						}
 
@@ -167,26 +182,36 @@ async function fetchRSSLinks({urls, limit=12}) {
 							images = [];
 						}
 
-						if (link && (images.filter(x => x).length == 0)) { try {
+						images = images.filter(x => x);
+
+						if (link && (images.length == 0)) { try {
+							let key_html = 'HTML:' + link;
 							let key_image = 'HTML_IMAGE:' + link;
 
+							let html = CACHE.get(key_html);
 							let image_og = CACHE.get(key_image);
 
+							// console.log('CACHE html.length, image_og.length', html?.length, image_og?.length)
+
 							if (!image_og) {
-								let html = await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
-												.then(resp => resp.text()).catch(null);
+								html = html || (await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
+												.then(resp => resp.text()).catch(null));
 
 								image_og = (html || '')?.match(REGEX_IMAGE)?.[1];
+
+								// console.log('image_og', image_og);
+
+								if (html) CACHE.set(key_html, html);
 							}
 
 							if (image_og) {
-								CACHE.set(key_image, image_og);
 								images.push(image_og);
+								CACHE.set(key_image, image_og);
 							}
-						} catch {} }
+						} catch (ex) {console.error(ex)} }
 						// console.dir(images)
 
-						if (images.filter(x => x).length == 0) {
+						if (images.length == 0) {
 							images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(link).hostname}&sz=256`)
 							images.push(head.image);
 						}
@@ -209,6 +234,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						// console.dir({item, x});
 
 						rss_items.push(x);
+						console.timeEnd('>> postParseRSS.item.' + link);
 					} catch (ex) { console.error(ex); } finally { resolveItem() }
 				})().catch(ex => resolveItem());
 			})));
@@ -222,6 +248,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 			};
 
 			render[order] = result;
+
+			console.timeEnd('>> postParseRSS.' + data.rss_url);
 		})().catch(console.error).finally(resolveFeed);
 	})));
 
@@ -390,7 +418,7 @@ async function handleRequest(req: Request) {
 			if (!feeds?.length) {
 				feeds = await fetchRSSLinks({urls: keys, limit});
 
-				if (feeds.length) CACHE.set(key_feeds, feeds, 60*5);
+				if (feeds.length) CACHE.set(key_feeds, feeds, 60*15);
 			}
 		}
 
@@ -434,10 +462,13 @@ async function handleRequest(req: Request) {
 					const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 					const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
-					let html = '';
+					let key_html = 'HTML:' + item.link;
+					let html = CACHE.get(key_html);
 					try {
-						html = await fetch(item.link, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
-									.then(resp => resp.text()).catch(null) || '';
+						html = html || (await fetch(item.link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
+									.then(resp => resp.text()).catch(null)) || '';
+
+						if (html) CACHE.set(key_html, html);
 					} catch {}
 
 					item.title = html.match(REGEX_TITLE)?.[1] || item.title ;
@@ -553,10 +584,10 @@ async function handleRequest(req: Request) {
 		if (!urls) return response(JSON.stringify({error: 'E_urls_missing'}));
 
 		let link = decodeURIComponent(urls);
-		let key_link = 'HTML:' + link;
+		let key_html = 'HTML:' + link;
 
 		try {
-			let html = CACHE.get(key_link);
+			let html = CACHE.get(key_html);
 
 			// if (html) console.log(' cached:', link);
 
@@ -564,7 +595,7 @@ async function handleRequest(req: Request) {
 				let response = await fetch(link, {redirect: 'follow', signal: AbortSignal.timeout(20e3)});
 				html = await response?.text?.();
 
-				CACHE.set(key_link, html);
+				CACHE.set(key_html, html);
 			}
 
 			if (!html) return response(JSON.stringify({error: 'E403_html'}), {status: 403});

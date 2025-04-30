@@ -1493,6 +1493,8 @@ function alpineRSS() {
 			this.feeds.forEach(feed => {
 				feed.items.forEach(item => {
 					item.read_later = readLaterItems.some(savedItem => savedItem.link === item.link);
+
+					if (item?.article?.content?.search?.(/\{.*error.*E404.*\}/) >= 0) item.article = null;
 				});
 			});
 
@@ -1520,7 +1522,7 @@ function alpineRSS() {
 
 				let sig = this?.profile?.signature || '';
 
-				console.time('load tasks')
+				console.time('>> load.tasks')
 				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
@@ -1528,7 +1530,7 @@ function alpineRSS() {
 				})
 				.then(resp => resp.json())
 				.catch(null);
-				console.timeEnd('load tasks')
+				console.timeEnd('>> load.tasks')
 				toast('RSS list loaded');
 
 				if (resp_tasks) {
@@ -1536,7 +1538,7 @@ function alpineRSS() {
 					urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
 				}
 
-				console.time('load content')
+				console.time('>> load.content')
 
 				step = 0.2 / (urls?.length || 1);
 				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
@@ -1552,6 +1554,7 @@ function alpineRSS() {
 						return resolve({url});
 					}
 
+					console.time('>> load.content.url.' + url);
 					try {
 						fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(5e3)})
 							.then(resp => resp.text())
@@ -1567,8 +1570,10 @@ function alpineRSS() {
 						this.loadingPercent += step;
 						resolve({url})
 					}
+
+					console.timeEnd('>> load.content.url.' + url);
 				}))) : [];
-				console.timeEnd('load content');
+				console.timeEnd('>> load.content');
 
 				data = data.map(x => x.value);
 
@@ -1581,8 +1586,7 @@ function alpineRSS() {
 				}
 
 				// console.log('datas:', data.length);
-				console.time('load feeds')
-
+				console.time('>> load.feeds')
 				step = 0.8 / (data?.length || 1);
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
@@ -1597,8 +1601,9 @@ function alpineRSS() {
 						.catch(null)
 						.finally(() => this.loadingPercent += step)
 					]
-					: data.map((item, idx) =>
-						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
+					: data.map((item, idx) => {
+						console.time('>> load.feed.item.' + item?.url);
+						return fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(20e3),
@@ -1606,6 +1611,7 @@ function alpineRSS() {
 						})
 						.then(resp => resp.json())
 						.then(json => {
+							console.timeEnd('>> load.feed.item.' + item?.url);
 							// console.log('json', json.feeds[0]);
 
 							let newfeed = json?.feeds?.[0];
@@ -1621,9 +1627,9 @@ function alpineRSS() {
 						})
 						.catch(null)
 						.finally(() => this.loadingPercent += step)
-					)
+					})
 				);
-				console.timeEnd('load feeds')
+				console.timeEnd('>> load.feeds')
 				// console.log('feeds:', parallel);
 
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
@@ -1632,6 +1638,8 @@ function alpineRSS() {
 				console.log('respFeeds:', respFeeds.length);
 
 				// console.dir({respFeeds})
+
+				console.time('>> load.feeds.postprocess')
 
 				if (this.feeds?.length && !respFeeds?.length) {
 					this.loading = false;
@@ -1695,6 +1703,8 @@ function alpineRSS() {
 				} else {
 					this.storageSet(this.K.tasks, this.tasks);
 				}
+
+				console.timeEnd('>> load.feeds.postprocess')
 
 				// console.log(this.tasks);
 			} catch (error) {
@@ -1904,7 +1914,9 @@ function alpineRSS() {
 							let key_nofetch = this.K.noClientFetch + new URL(item.link).hostname;
 
 							let noClientFetch = this.storageGet(key_nofetch);
+							console.time('>> fetch.html.' + item.link);
 							try {
+
 								resp = noClientFetch
 										? await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null)
 										: await fetch(item.link, opts).catch(() => {
@@ -1915,6 +1927,7 @@ function alpineRSS() {
 								this.storageSet(key_nofetch, true);
 								resp = await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null);
 							}
+							console.timeEnd('>> fetch.html.' + item.link);
 
 							// item.prefetching = false;
 
