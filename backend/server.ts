@@ -458,12 +458,12 @@ async function handleRequest(req: Request) {
 
 		let authorized = await authorize(hash, sig);
 
-		// if (!authorized?.valid) {
-		// 	return response(JSON.stringify([]), {
-		// 		status: 401,
-		// 		headers: { ...cors, ...head_json },
-		// 	});
-		// }
+		if (!authorized?.valid) {
+			return response(JSON.stringify([]), {
+				status: 401,
+				headers: { ...cors, ...head_json },
+			});
+		}
 
 		if (req.method === 'GET') {
 			// Retrieve read later items for the user

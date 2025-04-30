@@ -1010,6 +1010,7 @@
 							is_open = false;
 							setTimeout(() => {
 								Alpine.$data(document.querySelector('#expander_readlater')).expanded = Alpine.$data(document.querySelector('body')).is_hide_feeds = (location.hash == '#bookmarks');
+								Alpine.$data(document.querySelector('#expander_declarations')).expanded = (location.hash == '#declarations');
 							}, 100);
 						">
 					</a>
@@ -1565,9 +1566,8 @@ function alpineRSS() {
 					urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
 				}
 
-				console.time('>> load.content')
-
 				step = 0.2 / (urls?.length || 1);
+				console.time('>> load.rss_client_side')
 				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
 					if (force_update) {
 						this.loadingPercent += step;
@@ -1581,7 +1581,7 @@ function alpineRSS() {
 						return resolve({url});
 					}
 
-					console.time('>> load.content.url.' + url);
+					console.time('>> load.rss_client_side.url.' + url);
 					try {
 						fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(5e3)})
 							.then(resp => resp.text())
@@ -1598,9 +1598,10 @@ function alpineRSS() {
 						resolve({url})
 					}
 
-					console.timeEnd('>> load.content.url.' + url);
+					console.timeEnd('>> load.rss_client_side.url.' + url);
 				}))) : [];
-				console.timeEnd('>> load.content');
+				console.timeEnd('>> load.rss_client_side');
+				toast('RSS list prefetched');
 
 				data = data.map(x => x.value);
 
