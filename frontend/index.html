@@ -745,6 +745,7 @@
 
 				<!-- declarations -->
 				<div id="expander_declarations" x-data="{ expanded: false }" class="py-2">
+					<a id="anchor_declarations" href="#declarations" name="declarations" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-02"
@@ -915,12 +916,37 @@
 												<strong class="font-bold">That's it! Now you can see them!</strong>
 											</li>
 										</ul>
+										
 										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md" target="_blank">Get some Awesome RSS Feeds in Collective Directory here</a>
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://docs.rsshub.app/routes/popular" target="_blank">RSSHub</a>
 										</p>
-										<p class="italic text-base mb-4">
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://feedle.world/" target="_blank">Feedle</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://ooh.directory/" target="_blank">ooh.directory</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://rss.feedspot.com/rss_directory/" target="_blank">Feedspot</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://www.billdietrich.me/feedlist.html" target="_blank">Bill Dietrich's feedlist</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://www.youneedfeeds.com/starter-packs" target="_blank">youneedfeeds</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md" target="_blank">Awesome RSS Feeds</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/yavuz/news-feed-list-of-countries/blob/master/README.md" target="_blank">News Feed List of Countries</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/Martinviv/rss-sources/blob/main/README.md" target="_blank">Martin Vivian's sources</a>
+										</p>
+										<!-- <p class="italic text-base mb-4">
 											<strong>Note:</strong> Some websites might not offer RSS feeds directly.
-										</p>
+										</p> -->
 									</div>
 								</div>
 							</section>
@@ -969,6 +995,7 @@
 					{href: '#home', text: '# [Home]'},
 					...this.anchors,
 					{href: '#bookmarks', text: '# [Bookmarks]'},
+					{href: '#declarations', text: '# [About]'},
 				];
 
 				console.log('anchor_jump refreshed');

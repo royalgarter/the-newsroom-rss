@@ -411,14 +411,36 @@ async function handleRequest(req: Request) {
 			feeds = saved.map((x, order) => ({order, ...x}));
 		} else {
 			// feeds = await fetchRSSLinks({urls: keys, limit});
-
-			let key_feeds = 'FEEDS:' + JSON.stringify({keys, limit});
+			let query_feeds = {urls: keys, limit};
+			let key_feeds = 'FEEDS:' + JSON.stringify(query_feeds);
 			feeds = CACHE.get(key_feeds);
 
 			if (!feeds?.length) {
-				feeds = await fetchRSSLinks({urls: keys, limit});
+				let key_feeds_permanent = 'PERMANENT_' + key_feeds;
+				let feeds_permanent = CACHE.get(key_feeds_permanent);
 
-				if (feeds.length) CACHE.set(key_feeds, feeds, 60*15);
+				if (!feeds_permanent?.length) {
+					feeds = await fetchRSSLinks(query_feeds);
+
+					if (feeds?.length) {
+						feeds.forEach(f => f.cache = 'CACHE');
+						CACHE.set(key_feeds, feeds, 60*15);
+						
+						feeds.forEach(f => f.cache = 'CACHE_PERMANENT');
+						CACHE.set(key_feeds_permanent, feeds, 60*60*24*7);
+					}
+				} else {
+					feeds = feeds_permanent;
+					fetchRSSLinks(query_feeds).then(fs => {
+						if (fs?.length) {
+							fs.forEach(f => f.cache = 'CACHE');
+							CACHE.set(key_feeds, fs, 60*15);	
+							
+							fs.forEach(f => f.cache = 'CACHE_PERMANENT');
+							CACHE.set(key_feeds_permanent, fs, 60*60*24*7);
+						}
+					}).catch(e => console.dir({query_feeds, e}))
+				}
 			}
 		}
 
