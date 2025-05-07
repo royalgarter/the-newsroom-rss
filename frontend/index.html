@@ -1213,6 +1213,7 @@ function alpineRSS() {
 			LIMIT: 6,
 
 			DEFAULTS: [
+				`https://news.google.com/rss?hl=${navigator.language}`,
 				'https://feeds.bbci.co.uk/news/rss.xml',
 				'https://feeds.nbcnews.com/feeds/topstories',
 				'https://www.business-standard.com/rss/latest.rss',
@@ -1628,6 +1629,8 @@ function alpineRSS() {
 				if (resp_tasks) {
 					this.tasks = resp_tasks?.feeds;
 					urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
+				} else {
+					urls = this.K.DEFAULTS;
 				}
 
 				step = 0.2 / (urls?.length || 1);
