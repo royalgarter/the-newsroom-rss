@@ -1626,11 +1626,14 @@ function alpineRSS() {
 				console.timeEnd('>> load.tasks')
 				toast('RSS list loaded');
 
-				if (resp_tasks) {
+				if (resp_tasks?.feeds?.length) {
 					this.tasks = resp_tasks?.feeds;
 					urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
-				} else {
+				} else if (!this.feeds?.length && this.tasks?.length) {
+					urls = this.tasks.map(x => x.url);
+				} else if (!this.tasks?.length) {
 					urls = this.K.DEFAULTS;
+				} else {
 				}
 
 				step = 0.2 / (urls?.length || 1);
