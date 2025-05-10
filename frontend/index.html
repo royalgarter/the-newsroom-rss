@@ -969,6 +969,48 @@
 			<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
 		</div>
 
+		<div id="modal" x-show="modal_showed" class="relative z-10" aria-labelledby="modal-prompt" role="dialog" aria-modal="true">
+			<div class="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
+			<div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+				<div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+					<div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+						<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+							<div class="sm:flex sm:items-start">
+								<div class="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:size-10">
+									<svg class="size-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
+										<path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+									</svg>
+								</div>
+								<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" >
+									<h3 class="text-base font-semibold text-gray-900" id="modal-title" x-text="modal_title">
+										Title
+									</h3>
+									<div class="mt-2">
+										<p class="text-sm text-gray-500" id="modal-text" x-text="modal_text">
+											Text.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+							<button class="inline-flex w-full cursor-pointer justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-500 sm:ml-3 sm:w-auto"
+								id="modal-ok" x-text="modal_ok || 'OK'" type="button"
+								@click="modalCallback(true)">
+								OK
+							</button>
+							<button class="mt-3 inline-flex w-full cursor-pointer justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50 sm:mt-0 sm:w-auto"
+								id="modal-cancel" x-text="modal_cancel || 'Cancel'" type="button"
+								@click="modalCallback(false)">
+								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
 		<!-- <div id="scroll_to_top" x-data="{ is_visible: false }"
 			x-init="window.addEventListener('scroll', () => { is_visible = window.scrollY > 1e3; })"
 			x-show="is_visible"
@@ -1053,6 +1095,7 @@
 
 	img.rss-thumb {
 		width: 100%;
+		height: 14rem;
 	}
 
 	p [id*="readability-page"] svg {
@@ -1069,7 +1112,7 @@
 		text-overflow: ellipsis;
 		overflow-wrap: anywhere;
 		max-width: 100%;
-		word-break: break-all;
+		word-break: normal;
 	}
 
 	p.rss-article-content p {
@@ -1101,7 +1144,7 @@ function alpineHead() {
 	return {
 		title: 'The Newsroom RSS',
 		description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
-		host: 'https://rss.shaunsocial.com',
+		host: 'https://newsrss.org',
 	}
 };
 
@@ -1145,10 +1188,32 @@ function alpineRSS() {
 		persona: null,
 		editor_options: null,
 
+		modal_showed: false,
+		modal_result: null,
+		modal_title: 'title',
+		modal_text: 'text',
+		modal_ok: 'OK',
+		modal_cancel: 'Cancel',
+		modal_callback: null,
+		modalShow(title, text, ok='OK', cancel='Cancel', callback=console.log) {
+			this.modal_title = title;
+			this.modal_text = text;
+			this.modal_ok = ok;
+			this.modal_cancel = cancel;
+			this.modal_callback = callback;
+			this.modal_showed = true;
+		},
+		modalCallback(e) {
+			this.modal_result = e;
+			this.modal_callback?.(e);
+			this.modal_showed = false;
+		},
+
 		K: {
 			LIMIT: 6,
 
 			DEFAULTS: [
+				`https://news.google.com/rss?hl=${navigator.language}`,
 				'https://feeds.bbci.co.uk/news/rss.xml',
 				'https://feeds.nbcnews.com/feeds/topstories',
 				'https://www.business-standard.com/rss/latest.rss',
@@ -1561,9 +1626,14 @@ function alpineRSS() {
 				console.timeEnd('>> load.tasks')
 				toast('RSS list loaded');
 
-				if (resp_tasks) {
+				if (resp_tasks?.feeds?.length) {
 					this.tasks = resp_tasks?.feeds;
 					urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
+				} else if (!this.feeds?.length && this.tasks?.length) {
+					urls = this.tasks.map(x => x.url);
+				} else if (!this.tasks?.length) {
+					urls = this.K.DEFAULTS;
+				} else {
 				}
 
 				step = 0.2 / (urls?.length || 1);
@@ -1816,7 +1886,8 @@ function alpineRSS() {
 
 				let len_full = feed.items.length;
 
-				feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
+				// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
+				feed.anchor = feed.rss_url?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
 
 				feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
 					new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]
@@ -2235,21 +2306,30 @@ function alpineRSS() {
 		},
 
 		async clickedProfile() {
-			if (google.accounts && !this.profile?.email) {
+			let THIS = this;
+
+			if (google.accounts && !THIS.profile?.email) {
 				google.accounts.id.prompt();
 				return;
 			}
 
-			google?.accounts.id.revoke(this.profile.email);
+			THIS.modalShow('Confirm', 'Backed to anonymous', null, null, (e) => {
+				if (!e) return;
 
-			toast('Backed to anonymous');
+				google?.accounts.id.revoke(THIS.profile.email);
 
-			this.profile = null;
-			this.storageDel(this.K.profile);
+				toast('Backed to anonymous');
 
-			let hash_local = await this.digest(JSON.stringify(this.tasks) + Date.now());
-			this.params.x = hash_local.slice(0, 6);
-			this.storageSet(this.K.hash, this.params.x);
+				THIS.profile = null;
+				THIS.storageDel(THIS.K.profile);
+
+				THIS.digest(JSON.stringify(THIS.tasks) + Date.now())
+					.then(hash_local => {
+						THIS.params.x = hash_local.slice(0, 6);
+						THIS.storageSet(THIS.K.hash, THIS.params.x);
+					})
+					.catch()
+			});
 		},
 
 		async init() {
@@ -2269,6 +2349,10 @@ function alpineRSS() {
 
 			this.$watch('loading', value => {
 				this.title = this.theTitle();
+			});
+
+			this.$watch('modal_showed', value => {
+				if (this.modal_showed) this.modal_result = null;
 			});
 
 			this.$watch('loadingPercent', value => {
@@ -2480,6 +2564,8 @@ function alpineRSS() {
 					this.loadFeedsWithContent({limit});
 				}
 			);
+
+			// this.modalShow('Hello', 'World')
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })

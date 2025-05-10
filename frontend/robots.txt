@@ -9,4 +9,4 @@ Disallow: /private
 
 # Add any other directories or files that you want to exclude from crawling.
 
-Sitemap: /sitemap.xml
+Sitemap: https://newsrss.org/sitemap.xml

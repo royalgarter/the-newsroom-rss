@@ -8,8 +8,8 @@
   "dir" : "ltr",
   "lang" : "en",
   "scope" : "/",
-  "start_url": "https://rss.shaunsocial.com/",
-  "url" : "https://rss.shaunsocial.com/",
+  "start_url": "https://newsrss.org/",
+  "url" : "https://newsrss.org/",
   "description" : "We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.",
   "orientation" : "natural",
   "related_applications" : [],
@@ -25,14 +25,14 @@
     }
   },
   "scope_extensions": [
-    {"origin": "rss.shaunsocial.com"}
+    {"origin": "newsrss.org"}
   ],
   "launch_handler": {
     "client_mode": "auto"
   },
   "screenshots" : [
     {
-      "src": "screenshots/rss.phamthanh.me_iPhone 14 Pro Max.png",
+      "src": "screenshots/iPhone 14 Pro Max.png",
       "sizes": "1290x2796",
       "type": "image/png",
       "label": "The Newsroom RSS"
