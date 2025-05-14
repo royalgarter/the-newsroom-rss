@@ -477,8 +477,8 @@ async function handleRequest(req: Request) {
 			try {
 				const {item} = data || {};
 
-				item.title = item?.title?.split(/[\.\n]/)?.[0] || item.title;
-				item.link = item?.link?.split(/\s/)?.filter(x => x).find(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+/)) || item.link;
+				item.title = decodeURIComponent(item?.title || '')?.split(/[\.\n]/)?.[0];
+				item.link = item?.link?.split(/\s/)?.filter(x => x).find(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+\//)) || item.link;
 
 				console.dir({share_target: hash, item});
 
