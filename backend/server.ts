@@ -477,7 +477,7 @@ async function handleRequest(req: Request) {
 			try {
 				const {item} = data || {};
 
-				// console.dir({share_target: hash, item});
+				console.dir({share_target: hash, item});
 
 				if (!item?.image_thumb || !item?.description) {
 					const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
