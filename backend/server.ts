@@ -477,6 +477,9 @@ async function handleRequest(req: Request) {
 			try {
 				const {item} = data || {};
 
+				item.title = item?.title?.split(/[\.\n]/)?.[0] || item.title;
+				item.link = item?.link?.split(/\s/)?.filter(x => x).find(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+/)) || item.link;
+
 				console.dir({share_target: hash, item});
 
 				if (!item?.image_thumb || !item?.description) {
@@ -493,9 +496,9 @@ async function handleRequest(req: Request) {
 						if (html) CACHE.set(key_html, html);
 					} catch {}
 
-					item.title = html?.match(REGEX_TITLE)?.[1] || item.title ;
-					item.description = html?.match(REGEX_DESC)?.[1] || item.description ;
-					item.image_thumb = html?.match(REGEX_IMAGE)?.[1] || item.image_thumb ;
+					item.title = html?.match(REGEX_TITLE)?.[1] || item.title;
+					item.description = html?.match(REGEX_DESC)?.[1] || item.description;
+					item.image_thumb = html?.match(REGEX_IMAGE)?.[1] || item.image_thumb;
 				}
 
 				const existingItems = (await getBookmarks([pathname, hash]))?.value || [];
