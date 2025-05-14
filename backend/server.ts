@@ -487,15 +487,15 @@ async function handleRequest(req: Request) {
 					let key_html = 'HTML:' + item.link;
 					let html = CACHE.get(key_html);
 					try {
-						html = html || (await fetch(item.link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
+						html = html || (await fetch(item.link, { redirect: 'follow', signal: AbortSignal.timeout(10e3) })
 									.then(resp => resp.text()).catch(null)) || '';
 
 						if (html) CACHE.set(key_html, html);
 					} catch {}
 
-					item.title = html.match(REGEX_TITLE)?.[1] || item.title ;
-					item.description = html.match(REGEX_DESC)?.[1] || item.description ;
-					item.image_thumb = html.match(REGEX_IMAGE)?.[1] || item.image_thumb ;
+					item.title = html?.match(REGEX_TITLE)?.[1] || item.title ;
+					item.description = html?.match(REGEX_DESC)?.[1] || item.description ;
+					item.image_thumb = html?.match(REGEX_IMAGE)?.[1] || item.image_thumb ;
 				}
 
 				const existingItems = (await getBookmarks([pathname, hash]))?.value || [];
