@@ -406,16 +406,21 @@
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 								>
+									
 									<!-- readlater thumbnail -->
 									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
-											<img width="320" height="320"
-												class="rss-thumb w-full min-h-36 max-h-[320px]"
-												:alt="item.title"
-												:domain="new URL(item.link).hostname"
-												:src="item.image_thumb"
-												onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
-											/>
+											<a :href="'#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
+												:name="'bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')" 
+											>
+												<img width="320" height="320"
+													class="rss-thumb w-full min-h-36 max-h-[320px]"
+													:alt="item.title"
+													:domain="new URL(item.link).hostname"
+													:src="item.image_thumb"
+													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
+												/>
+											</a>
 											<div
 												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
 											</div>
@@ -434,7 +439,6 @@
 											</svg>
 											<span class="ml-1" x-text="item.viewed"></span>
 										</span>
-
 										<a class="rss-title font-semibold max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											
 											:class="( item.image_thumb &&
@@ -2454,6 +2458,9 @@ function alpineRSS() {
 				Alpine.$data(document.querySelector('#expander_settings')).expanded = false;
 				Alpine.$data(document.querySelector('#expander_declarations')).expanded = false;
 				Alpine.$data(document.querySelector('#expander_readlater')).expanded = true;
+
+				let found = this.readlater?.items?.find(x => (x.link == share_url) || (x.saved_at == item.saved_at));
+				if (found) found.read_more = true;
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
