@@ -2442,6 +2442,30 @@ function alpineRSS() {
 					Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 			})
 
+			try {
+				let locale = new Intl.Locale(navigator.language);
+				locale.name = new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region || locale.language);
+				console.log(locale);
+
+				fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsCountry => {
+					let region = locale.region.toUpperCase();
+					let language = locale.language.toUpperCase();
+					let name = locale.name.toUpperCase();
+
+					let found = feedsCountry.find(x => {
+						return (region == x.country)
+						|| (language == x.country)
+						|| navigator.language.includes(x.country)
+						|| stringSimilarity(name, x.name) >= 0.8
+						|| stringSimilarity(name, x.country) >= 0.5
+					});
+
+					if (found?.feeds?.length) {
+						this.K.DEFAULTS = found.feeds.slice(0, 10);
+					}
+				})
+			} catch {}
+
 			this.profile = this.storageGet(this.K.profile) || {};
 			this.params = Object.fromEntries(new URLSearchParams(location.search));
 			this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
@@ -2750,6 +2774,41 @@ function cleanContent(content='') {
 		.replace(/^(\<br\>)+/gi, '').replace(/(\<br\>)+$/gi, '')
 		.replace(/(\<br\>\s*\n*)+/gi, '<br>')
 		.replace(/\s+/gi, ' ');
+}
+
+function stringSimilarity(s1, s2) {
+	const m = s1.length;
+	const n = s2.length;
+
+	// If one or both strings are empty
+	if (m === 0) return n === 0 ? 1 : 0; // Similarity is 1 if both empty, 0 if one is empty.
+	if (n === 0) return 0;
+
+	// Create DP table (m+1 rows, n+1 columns)
+	const matrix = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+	// Initialize first row and column
+	for (let i = 0; i <= m; i++) matrix[i][0] = i;
+	for (let j = 0; j <= n; j++) matrix[0][j] = j;
+
+	// Fill the table
+	for (let i = 1; i <= m; i++) {
+		for (let j = 1; j <= n; j++) {
+			const cost = (s1[i - 1] === s2[j - 1]) ? 0 : 1;
+			matrix[i][j] = Math.min(
+				matrix[i - 1][j] + 1,      // deletion
+				matrix[i][j - 1] + 1,      // insertion
+				matrix[i - 1][j - 1] + cost // substitution or match
+			);
+		}
+	}
+
+	const distance = matrix[m][n];
+	const maxLength = Math.max(m, n);
+
+	// Calculate similarity: 1 - (distance / max_length)
+	// Handle case where max_length is 0 (both empty strings, already handled but defensive)
+	return maxLength === 0 ? 1 : 1 - (distance / maxLength);
 }
 
 function toast(message, timeout=3e3) {
