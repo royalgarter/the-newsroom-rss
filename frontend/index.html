@@ -82,7 +82,23 @@
 					class="self-center size-8 pb-1 rounded-full cursor-pointer"
 					onerror="this.src = '/default-profile-64x64.png';">
 				<a id="anchor_home" href="#home" name="home" class="scroll-smooth"></a>
-				<h1 :class="loading ? 'animate-pulse italic' : ''" class="mx-auto text-center text-2xl font-bold" x-html="title"></h1>
+				<h1 class="mx-auto text-center text-2xl font-bold"
+					:class="loading ? 'animate-pulse italic' : 'cursor-pointer'"
+					x-html="title"
+					@click="if (loading) {
+						window.scrollTo({ top: 0, behavior: 'smooth' });
+					} else {
+						if ('single_view' == params?.f) {
+							const url = new URL(location);
+							url.searchParams.delete('f');
+							url.searchParams.delete('u');
+							location.href = url.toString();
+						} else {
+							location.reload();
+						}
+					}
+					"
+				></h1>
 
 				<button class="rounded-md focus:outline-none focus:shadow-outline-purple cursor-pointe" 
 					@click="toggleDarkMode()" 
@@ -157,8 +173,12 @@
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full="triggerIntersect('full', item.link)"
-									:class="item.viewed && 'opacity-90 italic'"
-									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
+									:class="[
+										item.viewed ? 'opacity-90 italic' : '',
+										params?.s?.includes?.('shadow') ? 'shadow' : '',
+										'single_view' == params?.f ? 'col-span-full' : '',
+									].join(' ')
+									"
 								>
 									<!-- thumbnail -->
 									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
@@ -259,7 +279,31 @@
 													</svg>
 													<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Preview'"></span>
 												</span>
-												<span @click="saveReadLater(item)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
+
+												<span class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto mr-3"
+													@click="
+														let share_url = location.origin + '/?f=single_view&u=' + item.link;
+														toast('Copied: ' + share_url);
+														navigator?.clipboard?.writeText?.(share_url);
+														( 
+															item.article?.content?.length 
+															&& navigator?.share?.({
+																title: item.title || share_url,
+																text: item.description || share_url,
+																url: share_url,
+															})
+														) 
+														|| window.open(share_url, '_blank');
+													" 
+												>
+													<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+													</svg>
+												</span>
+
+												<span class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400"
+													@click="saveReadLater(item)"
+												>
 													<svg 
 														x-cloak 
 														:fill="item.read_later ? 'currentColor' : 'none'" 
@@ -294,7 +338,7 @@
 						</div>
 
 						<!-- feed footer -->
-						<div class="absolute flex items-center justify-between w-full py-6">
+						<div class="absolute flex items-center justify-between w-full py-6" x-show="'single_view' != params?.f">
 							<!-- feed tags -->
 							<div id="feed_tags" class="">
 								<svg viewBox="0 0 24 24" fill="currentColor"
@@ -332,8 +376,12 @@
 						<!-- feed article -->
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
-								:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-								class="hidden sm:block pt-18 grid grid-cols-1 gap-6 transition-all transition-discrete"
+								class="hidden sm:block grid grid-cols-1 gap-6 transition-all transition-discrete"
+								:class="[
+									params?.s?.includes?.('shadow') ? 'shadow' : '',
+									'single_view' != params?.f ? 'pt-18' : 'pt-0',
+								].join(' ')
+								"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
 								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
@@ -1973,8 +2021,8 @@ function alpineRSS() {
 							? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
 							: img0;
 
-						item.toggleReadmore = () => {
-							item.read_more = !item.read_more;
+						item.toggleReadmore = (force_flag) => {
+							item.read_more = force_flag || (!item.read_more);
 
 							if (item.read_more) {
 								feed.read_more_item = item;
@@ -2481,6 +2529,42 @@ function alpineRSS() {
 
 				let found = this.readlater?.items?.find(x => (x.link == share_url) || (x.saved_at == item.saved_at));
 				if (found) found.read_more = true;
+			}
+
+			// Single View
+			if ('single_view' == this.params.f  && this.params.u) {
+				let url = new URL(this.params.u);
+
+				this.feeds = [{
+					link: `${url.protocol}//${url.hostname}`,
+					rss_url: `${url.protocol}//${url.hostname}`,
+					title: url.hostname,
+					items: [{
+						link: this.params.u,
+						author: url.hostname,
+						title: url.pathname,
+						description: this.params.u,
+					}],
+				}];
+
+				await this.postProcessFeeds({limit: 1, auto_fetch_content: true});
+
+				let item0 = this.feeds[0].items[0];
+
+				await item0.prefetchContent?.();
+				let prefetched = setInterval(() => {
+					if (!item0.article.content) return;
+
+					item0.title = item0.article.title || item0.title;
+
+					item0.toggleReadmore(true);
+
+					clearInterval(prefetched);
+				}, 500);
+				
+
+				this.loading = false;
+				return;
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
