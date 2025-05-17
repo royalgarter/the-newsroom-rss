@@ -2443,16 +2443,17 @@ function alpineRSS() {
 			})
 
 			try {
-				let locale = new Intl.Locale(navigator.language);
-				locale.name = new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region || locale.language);
-				console.log(locale);
+				fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsByCountry => {
+					let locale = new Intl.Locale(navigator.language);
+					locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
+					
+					console.log(locale);
 
-				fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsCountry => {
 					let region = locale.region.toUpperCase();
 					let language = locale.language.toUpperCase();
 					let name = locale.name.toUpperCase();
 
-					let found = feedsCountry.find(x => {
+					let found = feedsByCountry.find(x => {
 						return (region == x.country)
 						|| (language == x.country)
 						|| navigator.language.includes(x.country)
@@ -2463,7 +2464,7 @@ function alpineRSS() {
 					if (found?.feeds?.length) {
 						this.K.DEFAULTS = found.feeds.slice(0, 10);
 					}
-				})
+				}).catch(console.log)
 			} catch {}
 
 			this.profile = this.storageGet(this.K.profile) || {};
