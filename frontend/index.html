@@ -282,7 +282,7 @@
 
 												<span class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto mr-3"
 													@click="
-														let share_url = location.origin + '/?f=single_view&u=' + item.link;
+														let share_url = item.article?.content?.length ? (location.origin + '/?f=single_view&u=' + item.link) : item.link;
 														toast('Copied: ' + share_url);
 														navigator?.clipboard?.writeText?.(share_url);
 														( 
