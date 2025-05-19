@@ -1983,7 +1983,7 @@ function alpineRSS() {
 
 			if (!this.feeds?.length) return {count};
 
-			const anchorling = str => (str?.replace(/([^a-zA-Z0-9]|https?)/gi, '-').replace(/\-+/g, '-').replace(/(^\-|\-$)/, '').toLowerCase() || '');
+			const anchorling = str => (str?.replace(/([^a-zA-Z0-9]|https?)/gi, '-').replace(/\-+/g, '-').replace(/(^\-|\-$)/g, '').toLowerCase() || '');
 
 			this.feeds.forEach((feed, feedIdx) => {
 				if (!feed?.items?.length) return;
