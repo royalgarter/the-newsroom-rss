@@ -139,7 +139,9 @@
 					"
 					x-intersect:full="
 						if (window.innerWidth > 640) {
+							let old_href = location.href;
 							location.hash = '#' + feed.anchor;
+							if (old_href != location.href) history.pushState({}, '', location.href);
 						}
 					"
 				>
@@ -1513,9 +1515,10 @@ function alpineRSS() {
 
 							if (!found) return;
 
+							let old_href = location.href;
 							location.hash = found.anchor;
+							if (old_href != location.href) history.pushState({}, '', location.href);
 						});
-						// location.hash = '#' + link?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
 					}
 				break;
 				case 'leave':
