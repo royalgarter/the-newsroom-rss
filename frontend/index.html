@@ -137,6 +137,11 @@
 						feed.items.forEach(x => x.prefetchContent?.());
 						feeds[index+1]?.items?.forEach(x => x.prefetchContent?.());
 					"
+					x-intersect:full="
+						if (window.innerWidth > 640) {
+							location.hash = '#' + feed.anchor;
+						}
+					"
 				>
 					<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
 						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
@@ -183,7 +188,10 @@
 									<!-- thumbnail -->
 									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
-											<a class="rss-thumb" :href="'#' + new URL(item.link).pathname.replace(/[^a-zA-Z0-9_-]/g, '')" :name="new URL(item.link).pathname.replace(/[^a-zA-Z0-9_-]/g, '')">
+											<a class="rss-thumb" 
+												:href="'#' + item.anchor" 
+												:name="item.anchor"
+											>
 												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
@@ -1499,6 +1507,16 @@ function alpineRSS() {
 			switch (type) {
 				case 'full'://case 'enter':
 					trig.tic = Math.min(now, trig.tic || now);
+					if (window.innerWidth <= 640) {
+						this.feeds.forEach(feed => {
+							let found = feed.items.find(x => x.link == link);
+
+							if (!found) return;
+
+							location.hash = found.anchor;
+						});
+						// location.hash = '#' + link?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
+					}
 				break;
 				case 'leave':
 					trig.toc = Math.max(now, trig.toc || now);
@@ -2000,6 +2018,7 @@ function alpineRSS() {
 						item.read_more = false;
 						item.prefetching = false;
 						item.read_later = false;
+						item.anchor = '#' + item.link?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
 
 						item.viewed = this.storageGet(this.K.viewed + item.link);
 
