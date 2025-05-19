@@ -87,7 +87,10 @@
 					x-html="title"
 					@click="if (loading) {
 						window.scrollTo({ top: 0, behavior: 'smooth' });
+						location.hash = '';
 					} else {
+						location.hash = '';
+
 						if ('single_view' == params?.f) {
 							const url = new URL(location);
 							url.searchParams.delete('f');
@@ -137,11 +140,11 @@
 						feed.items.forEach(x => x.prefetchContent?.());
 						feeds[index+1]?.items?.forEach(x => x.prefetchContent?.());
 					"
-					x-intersect:full="
-						if (window.innerWidth > 640) {
+					x-intersect:full.margin.-10%.0%="
+						if (!loading && window.innerWidth > 640) {
 							let old_href = location.href;
 							location.hash = '#' + feed.anchor;
-							if (old_href != location.href) history.pushState({}, '', location.href);
+							if (false && (old_href != location.href)) history.pushState({}, '', location.href);
 						}
 					"
 				>
@@ -179,7 +182,7 @@
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
-									x-intersect.full="triggerIntersect('full', item.link)"
+									x-intersect.full.margin.-10%.0%="triggerIntersect('full', item.link)"
 									:class="[
 										item.viewed ? 'opacity-90 italic' : '',
 										params?.s?.includes?.('shadow') ? 'shadow' : '',
@@ -1103,8 +1106,12 @@
 		>▲</div> -->
 
 		<div id="anchor_jump" x-data="{
-			is_open: false, 
-			anchors: [], 
+			_alBody: Alpine.$data(document.querySelector('body')),
+			_alRead: Alpine.$data(document.querySelector('#expander_readlater')),
+			_alDecl: Alpine.$data(document.querySelector('#expander_declarations')),
+
+			is_open: false,
+			anchors: [],
 			refresh: function() {
 				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
 					href: '#' + a.name,
@@ -1128,9 +1135,14 @@
 					<a :href="anchor.href" class="block p-2 text-gray-800 hover:bg-stone-300" x-text="anchor.text" 
 						@click="
 							is_open = false;
+
+							_alBody.loading = true;
+
 							setTimeout(() => {
-								Alpine.$data(document.querySelector('#expander_readlater')).expanded = Alpine.$data(document.querySelector('body')).is_hide_feeds = (location.hash == '#bookmarks');
-								Alpine.$data(document.querySelector('#expander_declarations')).expanded = (location.hash == '#declarations');
+								_alRead.expanded = _alBody.is_hide_feeds = (location.hash == '#bookmarks');
+								_alDecl.expanded = (location.hash == '#declarations');
+
+								_alBody.loading = false;
 							}, 100);
 						">
 					</a>
@@ -1509,7 +1521,7 @@ function alpineRSS() {
 			switch (type) {
 				case 'full'://case 'enter':
 					trig.tic = Math.min(now, trig.tic || now);
-					if (window.innerWidth <= 640) {
+					if (!this.loading && window.innerWidth <= 640) {
 						this.feeds.forEach(feed => {
 							let found = feed.items.find(x => x.link == link);
 
@@ -1517,7 +1529,7 @@ function alpineRSS() {
 
 							let old_href = location.href;
 							location.hash = found.anchor;
-							if (old_href != location.href) history.pushState({}, '', location.href);
+							if (false && (old_href != location.href)) history.pushState({}, '', location.href);
 						});
 					}
 				break;
@@ -1852,7 +1864,7 @@ function alpineRSS() {
 
 
 				this.feeds = respFeeds;
-				this.loading = false;
+
 				this.loadingPercent = 1;
 
 				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
@@ -1868,6 +1880,7 @@ function alpineRSS() {
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
 				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true}) || {};
+				this.loading = false;
 
 				if (this.params.x) {
 					this.storageSet(this.K.feeds + this.params.x, this.feeds);
@@ -1970,13 +1983,15 @@ function alpineRSS() {
 
 			if (!this.feeds?.length) return {count};
 
+			const anchorling = str => (str?.replace(/([^a-zA-Z0-9]|https?)/gi, '-').replace(/\-+/g, '-').replace(/(^\-|\-$)/, '').toLowerCase() || '');
+
 			this.feeds.forEach((feed, feedIdx) => {
 				if (!feed?.items?.length) return;
 
 				let len_full = feed.items.length;
 
 				// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
-				feed.anchor = feed.rss_url?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
+				feed.anchor = anchorling(feed?.rss_url)
 
 				feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
 					new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]
@@ -2021,7 +2036,7 @@ function alpineRSS() {
 						item.read_more = false;
 						item.prefetching = false;
 						item.read_later = false;
-						item.anchor = '#' + item.link?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
+						item.anchor = anchorling(item?.link);
 
 						item.viewed = this.storageGet(this.K.viewed + item.link);
 
@@ -2246,6 +2261,12 @@ function alpineRSS() {
 				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 			}, 0.5e3);
 
+
+			if (location.hash) {
+				toast('Go to: ' + location.hash);
+				let found = document.querySelector(`[name="${location.hash}"]`);
+				if (found) found.scrollIntoView({ behavior: 'smooth' });
+			}
 
 			toast('Feeds prefetched');
 			return {count};
