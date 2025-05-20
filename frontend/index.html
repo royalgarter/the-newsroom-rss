@@ -142,12 +142,13 @@
 					"
 					x-intersect:full.margin.-10%.0%="
 						if (!loading && window.innerWidth > 640) {
-							location.hash = '#' + feed.anchor;
+
+							const url = new URL(location.href);
+							url.searchParams.set('a', feed.anchor || feed.rss_url );
+							history.pushState(null, '', url.toString());
 
 							if (false) {
-								const url = new URL(location.href);
-								url.searchParams.set('a', feed.anchor || feed.rss_url );
-								history.pushState(null, '', url.toString());
+								location.hash = '#' + feed.anchor;
 							}
 						}
 					"
@@ -1533,11 +1534,11 @@ function alpineRSS() {
 
 							if (!found) return;
 
-							location.hash = found.anchor;
+							// location.hash = found.anchor;
 
-							// const url = new URL(location.href);
-							// url.searchParams.set('a', found.anchor || found.link);
-							// history.pushState(null, '', url.toString());
+							const url = new URL(location.href);
+							url.searchParams.set('a', found.anchor || found.link);
+							history.pushState(null, '', url.toString());
 						});
 					}
 				break;
