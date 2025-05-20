@@ -99,12 +99,6 @@
 			</header>
 		</template>
 		<main id="main" class="container mx-auto p-2 flex-1">
-
-			<!-- errors -->
-			<div class="flex gap-4 items-center mb-4 justify-self-center">
-				<span x-show="debug" class="text-red-500" x-text="debug"></span>
-			</div>
-
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
@@ -914,11 +908,14 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- errors -->
+			<div class="flex gap-4 items-center mb-4 justify-self-center"><span x-show="debug" class="text-red-500" x-text="debug"></span></div>
 		</main>
 
 		<template id="tpl_footer" x-if="ready">
-			<footer class="bg-gray-300 dark:bg-gray-800 p-4 mt-6 text-center text-sm text-stone-900 dark:text-stone-200">
-				<blockquote class="m-2 text-base italic font-semibold">
+			<footer class="bg-gray-300 dark:bg-gray-800 p-4 mt-6 text-center text-xs text-stone-900 dark:text-stone-200">
+				<blockquote class="m-2 text-sm italic">
 					"In the Information Age, ignorance is a choice.", "It's not the news, it's HOW you get the news.", "We just decided to try to do it better."
 				</blockquote>
 				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
