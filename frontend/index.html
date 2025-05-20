@@ -82,7 +82,26 @@
 					class="self-center size-8 pb-1 rounded-full cursor-pointer"
 					onerror="this.src = '/default-profile-64x64.png';">
 				<a id="anchor_home" href="#home" name="home" class="scroll-smooth"></a>
-				<h1 :class="loading ? 'animate-pulse italic' : ''" class="mx-auto text-center text-2xl font-bold" x-html="title"></h1>
+				<h1 class="mx-auto text-center text-2xl font-bold"
+					:class="loading ? 'animate-pulse italic' : 'cursor-pointer'"
+					x-html="title"
+					@click="if (loading) {
+						window.scrollTo({ top: 0, behavior: 'smooth' });
+						location.hash = '';
+					} else {
+						location.hash = '';
+
+						if ('single_view' == params?.f) {
+							const url = new URL(location);
+							url.searchParams.delete('f');
+							url.searchParams.delete('u');
+							location.href = url.toString();
+						} else {
+							location.reload();
+						}
+					}
+					"
+				></h1>
 
 				<button class="rounded-md focus:outline-none focus:shadow-outline-purple cursor-pointe" 
 					@click="toggleDarkMode()" 
@@ -96,8 +115,14 @@
 						<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
 					</svg>
 				</button>
+
 			</header>
 		</template>
+
+		<div id='loading_bar' class="flex h-[2px] bg-blue-800 dark:bg-blue-600 transition-[width] duration-500 ease-in-out"
+			:class="(loadingPercent > 0 && loadingPercent < 0.99) ? ('visible w-' + loadingFraction) : 'invisible'"
+		></div>
+
 		<main id="main" class="container mx-auto p-2 flex-1">
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
@@ -105,7 +130,22 @@
 					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 					x-cloak
 					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
-					x-intersect:once="feed.items.forEach(x => x.prefetchContent?.())"
+					x-intersect:once="
+						feed.items.forEach(x => x.prefetchContent?.());
+						feeds[index+1]?.items?.forEach(x => x.prefetchContent?.());
+					"
+					x-intersect:full.margin.-10%.0%="
+						if (!loading && window.innerWidth > 640) {
+
+							const url = new URL(location.href);
+							url.searchParams.set('a', feed.anchor || feed.rss_url );
+							history.pushState(null, '', url.toString());
+
+							if (false) {
+								location.hash = '#' + feed.anchor;
+							}
+						}
+					"
 				>
 					<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
 						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
@@ -118,12 +158,14 @@
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-3 sm:px-8 md:px-10">
-							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
-								:alt="feed.rss_url || feed.title"
-								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
-								onerror="this.src = '/favicons/ios/128.png';"
-								@click="window.open(feed.rss_url, '_blank')"
+							<!-- <a :href="feed.rss_url" target="_blank" class="inline-block"> -->
+								<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
+									:alt="feed.rss_url || feed.title"
+									:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
+									onerror="this.src = '/favicons/ios/128.png';"
+									@click="window.open(feed.rss_url)"
 								/>
+							<!-- </a> -->
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
 								:title="feed.rss_url"
 								x-text="feed.short || feed.title">
@@ -141,14 +183,21 @@
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
-									x-intersect.full="triggerIntersect('full', item.link)"
-									:class="item.viewed && 'opacity-90 italic'"
-									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
+									x-intersect.full.margin.-10%.0%="triggerIntersect('full', item.link)"
+									:class="[
+										item.viewed ? 'opacity-90 italic' : '',
+										params?.s?.includes?.('shadow') ? 'shadow' : '',
+										'single_view' == params?.f ? 'col-span-full' : '',
+									].join(' ')
+									"
 								>
 									<!-- thumbnail -->
 									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
-											<a class="rss-thumb" :href="'#' + new URL(item.link).pathname.replace(/[^a-zA-Z0-9_-]/g, '')" :name="new URL(item.link).pathname.replace(/[^a-zA-Z0-9_-]/g, '')">
+											<a class="rss-thumb" 
+												:href="'#' + item.anchor" 
+												:name="item.anchor"
+											>
 												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
@@ -189,11 +238,11 @@
 											<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
 											</svg>
-											<span class="ml-1" x-text="item.viewed"></span>
+											<span class="ml-1 text-gray-300 dark:text-gray-500" x-text="item.viewed"></span>
 										</span>
 
 										<div class="items-center">
-											<a class="rss-title font-semibold max-w-full text-lg mb-2 inline hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+											<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 
 												:class="( item.image_thumb &&
 															(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
@@ -208,15 +257,16 @@
 												rel="external"
 											></a>
 
-											<svg id="rss-open-link" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-												class="size-4 cursor-pointer inline mb-1 text-blue-400 dark:text-blue-300 opacity-75 hover:opacity-100"
-												:class="( item.image_thumb &&
-															(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
-														) ? 'visible' : 'invisible'"
-												@click="window.open(item.link, '_blank ')"
-											>
-												<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-											</svg>
+											<a :href="item.link" target="_blank" class="text-blue-400 dark:text-blue-300 visited:text-purple-600">
+												<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+													class="rss-open-link size-4 cursor-pointer inline mb-[6px] opacity-75 hover:opacity-100"
+													:class="( item.image_thumb &&
+																(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
+															) ? 'visible' : 'invisible'"
+												>
+													<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+												</svg>
+											</a>
 										</div>
 
 										<template x-if="!params?.s?.includes?.('title')">
@@ -243,7 +293,31 @@
 													</svg>
 													<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Preview'"></span>
 												</span>
-												<span @click="saveReadLater(item)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
+
+												<span class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto mr-3"
+													@click="
+														let share_url = item.article?.content?.length ? (location.origin + '/?f=single_view&u=' + item.link) : item.link;
+														toast('Copied: ' + share_url);
+														navigator?.clipboard?.writeText?.(share_url);
+														( 
+															item.article?.content?.length 
+															&& navigator?.share?.({
+																title: item.title || share_url,
+																text: item.description || share_url,
+																url: share_url,
+															})
+														) 
+														|| window.open(share_url, '_blank');
+													" 
+												>
+													<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+													</svg>
+												</span>
+
+												<span class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400"
+													@click="saveReadLater(item)"
+												>
 													<svg 
 														x-cloak 
 														:fill="item.read_later ? 'currentColor' : 'none'" 
@@ -278,7 +352,7 @@
 						</div>
 
 						<!-- feed footer -->
-						<div class="absolute flex items-center justify-between w-full py-6">
+						<div class="absolute flex items-center justify-between w-full py-6" x-show="'single_view' != params?.f">
 							<!-- feed tags -->
 							<div id="feed_tags" class="">
 								<svg viewBox="0 0 24 24" fill="currentColor"
@@ -316,8 +390,12 @@
 						<!-- feed article -->
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
-								:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
-								class="hidden sm:block pt-18 grid grid-cols-1 gap-6 transition-all transition-discrete"
+								class="hidden sm:block grid grid-cols-1 gap-6 transition-all transition-discrete"
+								:class="[
+									params?.s?.includes?.('shadow') ? 'shadow' : '',
+									'single_view' != params?.f ? 'pt-18' : 'pt-0',
+								].join(' ')
+								"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
 								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
@@ -359,16 +437,20 @@
 							id="collapse-title-03"
 							type="button"
 							class="cursor-pointer text-slate-600 dark:text-slate-300 flex items-center justify-between w-full text-left font-semibold py-2"
-							@click="expanded = !expanded; Alpine.$data(document.querySelector('body')).is_hide_feeds = expanded;"
 							:aria-expanded="expanded"
 							aria-controls="collapse-03"
-						>
+							@click="
+								expanded = !expanded;
+								Alpine.$data(document.querySelector('body')).is_hide_feeds = expanded;
+								if (!expanded) {
+									Alpine.$data(document.querySelector('body')).loadFeedsWithContent({limit:6});
+									if (location.hash?.length) location.hash = '';
+								}
+							">
 							<div>
 								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline mb-1">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9" />
 								</svg>
-
-
 								<span x-html="'Bookmarks' + (readlater?.items?.length ? ' [' + readlater?.items?.length + ']' : '')" class="inline"></span>
 							</div>
 
@@ -391,20 +473,26 @@
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
 								>
+									
 									<!-- readlater thumbnail -->
 									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
-										<div class="rss-meta relative min-h-36">
-											<a class="rss-thumb" :href="item.link" target="_blank">
-												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
+										<div class="rss-meta relative min-h-36"
+											@click="location.hash = '#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
+										>
+											<a :href="'#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
+												:name="'bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')" 
+											>
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-[320px]"
 													:alt="item.title"
+													:domain="new URL(item.link).hostname"
 													:src="item.image_thumb"
+													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
 												/>
-												<div
-													class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
-												</div>
 											</a>
+											<div
+												class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
+											</div>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-2 py-1 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
 													x-html="item.author?.toString().substr(0, 12).trim()">
@@ -420,9 +508,7 @@
 											</svg>
 											<span class="ml-1" x-text="item.viewed"></span>
 										</span>
-
-										<a class="rss-title font-semibold max-w-full text-lg mb-2 inline-block hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
-											
+										<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											:class="( item.image_thumb &&
 														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
 													) ? 'pointer-events-none' : ''"
@@ -435,6 +521,13 @@
 													)"
 											rel="external"
 										>
+										</a>
+										<a :href="item.link" target="_blank" class="text-blue-400 dark:text-blue-300 visited:text-purple-600">
+											<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+												class="rss-open-link size-4 cursor-pointer inline mb-[6px] opacity-75 hover:opacity-100"
+											>
+												<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+											</svg>
 										</a>
 										<template x-if="!params?.s?.includes?.('title')">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
@@ -458,10 +551,10 @@
 											<span @click="saveReadLater(item, true)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
 												<svg 
 													x-cloak 
-													:fill="item.read_later ? 'currentColor' : 'none'" 
 													viewBox="0 0 24 24" 
 													stroke-width="1.5" 
 													stroke="currentColor" 
+													fill="currentColor"
 													class="size-4"
 												>
 													<path 
@@ -491,7 +584,7 @@
 				</div>
 
 				<!-- settings -->
-				<div x-data="{ expanded: !tasks?.length }" class="py-2">
+				<div id="expander_settings" x-data="{ expanded: !tasks?.length }" class="py-2">
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-01"
@@ -552,7 +645,7 @@
 										</template>
 										<!-- title & description -->
 										<div class="p-4">
-											<p class="rss-title font-semibold max-w-full text-lg mb-2 inline-block text-indigo-800 dark:text-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out" x-html="item.title"></p>
+											<p class="rss-title inline font-semibold max-w-full text-lg mb-2 text-indigo-800 dark:text-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out" x-html="item.title"></p>
 										</div>
 								</template>
 							</div>
@@ -724,7 +817,8 @@
 				</div>
 
 				<!-- declarations -->
-				<div x-data="{ expanded: false }" class="py-2">
+				<div id="expander_declarations" x-data="{ expanded: false }" class="py-2">
+					<a id="anchor_declarations" href="#declarations" name="declarations" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-02"
@@ -895,12 +989,46 @@
 												<strong class="font-bold">That's it! Now you can see them!</strong>
 											</li>
 										</ul>
+										
 										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md" target="_blank">Get some Awesome RSS Feeds in Collective Directory here</a>
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://docs.rsshub.app/routes/popular" target="_blank">RSSHub</a>
 										</p>
-										<p class="italic text-base mb-4">
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://feedle.world/" target="_blank">Feedle</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://ooh.directory/" target="_blank">ooh.directory</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://rss.feedspot.com/rss_directory/" target="_blank">Feedspot</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://www.billdietrich.me/feedlist.html" target="_blank">Bill Dietrich's feedlist</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://www.youneedfeeds.com/starter-packs" target="_blank">youneedfeeds</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md" target="_blank">Awesome RSS Feeds</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/yavuz/news-feed-list-of-countries/blob/master/README.md" target="_blank">News Feed List of Countries</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/Martinviv/rss-sources/blob/main/README.md" target="_blank">Martin Vivian's sources</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://rss.diffbot.com/" target="_blank">Diffbot (RSS Anything: Transform any old website with a list of links into an RSS Feed)</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://politepol.com/en/" target="_blank">PolitePol (Create your feed yourself!)</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://feedsy.xyz/" target="_blank">Feedsy (Create RSS Feeds from any website in Seconds)</a>
+										</p>
+										<!-- <p class="italic text-base mb-4">
 											<strong>Note:</strong> Some websites might not offer RSS feeds directly.
-										</p>
+										</p> -->
 									</div>
 								</div>
 							</section>
@@ -926,6 +1054,48 @@
 			<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
 		</div>
 
+		<div id="modal" x-show="modal_showed" class="relative z-10" aria-labelledby="modal-prompt" role="dialog" aria-modal="true">
+			<div class="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
+			<div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+				<div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+					<div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+						<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+							<div class="sm:flex sm:items-start">
+								<div class="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:size-10">
+									<svg class="size-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
+										<path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+									</svg>
+								</div>
+								<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" >
+									<h3 class="text-base font-semibold text-gray-900" id="modal-title" x-text="modal_title">
+										Title
+									</h3>
+									<div class="mt-2">
+										<p class="text-sm text-gray-500" id="modal-text" x-text="modal_text">
+											Text.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+							<button class="inline-flex w-full cursor-pointer justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-500 sm:ml-3 sm:w-auto"
+								id="modal-ok" x-text="modal_ok || 'OK'" type="button"
+								@click="modalCallback(true)">
+								OK
+							</button>
+							<button class="mt-3 inline-flex w-full cursor-pointer justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50 sm:mt-0 sm:w-auto"
+								id="modal-cancel" x-text="modal_cancel || 'Cancel'" type="button"
+								@click="modalCallback(false)">
+								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
 		<!-- <div id="scroll_to_top" x-data="{ is_visible: false }"
 			x-init="window.addEventListener('scroll', () => { is_visible = window.scrollY > 1e3; })"
 			x-show="is_visible"
@@ -940,8 +1110,12 @@
 		>▲</div> -->
 
 		<div id="anchor_jump" x-data="{
-			is_open: false, 
-			anchors: [], 
+			_alBody: Alpine.$data(document.querySelector('body')),
+			_alRead: Alpine.$data(document.querySelector('#expander_readlater')),
+			_alDecl: Alpine.$data(document.querySelector('#expander_declarations')),
+
+			is_open: false,
+			anchors: [],
 			refresh: function() {
 				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
 					href: '#' + a.name,
@@ -952,14 +1126,30 @@
 					{href: '#home', text: '# [Home]'},
 					...this.anchors,
 					{href: '#bookmarks', text: '# [Bookmarks]'},
+					{href: '#declarations', text: '# [About]'},
 				];
+
+				console.log('anchor_jump refreshed');
 			} }" 
 			x-init="refresh()"
 			class="fixed left-2 bottom-2 text-sm z-100"
 		>
 			<div x-show="is_open" @click.away="is_open = false" class="bg-stone-200 shadow-md rounded mb-2 overflow-y-auto max-h-128">
 				<template x-for="(anchor, index) in anchors" :key="index">
-					<a :href="anchor.href" class="block p-2 text-gray-800 hover:bg-stone-300" x-text="anchor.text" @click="is_open = false"></a>
+					<a :href="anchor.href" class="block p-2 text-gray-800 hover:bg-stone-300" x-text="anchor.text" 
+						@click="
+							is_open = false;
+
+							_alBody.loading = true;
+
+							setTimeout(() => {
+								_alRead.expanded = _alBody.is_hide_feeds = (location.hash == '#bookmarks');
+								_alDecl.expanded = (location.hash == '#declarations');
+
+								_alBody.loading = false;
+							}, 100);
+						">
+					</a>
 				</template>
 			</div>
 			<button @click="is_open = !is_open" class="bg-stone-500 hover:bg-stone-700 text-white font-bold p-2 px-4 flex items-center justify-center h-10 w-10 rounded-full cursor-pointer opacity-80 hover:opacity-100">
@@ -998,7 +1188,8 @@
 	}
 
 	img.rss-thumb {
-		width: 100%;
+		object-fit: cover;
+		height: 14rem;
 	}
 
 	p [id*="readability-page"] svg {
@@ -1010,10 +1201,12 @@
 		place-self: center;
 	}
 
-	p.rss-article-content > * {
+	p.rss-article-content * {
 		text-wrap: wrap;
+		text-overflow: ellipsis;
 		overflow-wrap: anywhere;
 		max-width: 100%;
+		word-break: normal;
 	}
 
 	p.rss-article-content p {
@@ -1023,6 +1216,7 @@
 	p.rss-article-content img {
 		padding: 1rem;
 		place-self: center;
+		margin: 0 auto;
 	}
 </style>
 <script>
@@ -1044,7 +1238,7 @@ function alpineHead() {
 	return {
 		title: 'The Newsroom RSS',
 		description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
-		host: 'https://rss.shaunsocial.com',
+		host: 'https://newsrss.org',
 	}
 };
 
@@ -1062,7 +1256,12 @@ function alpineRSS() {
 
 		feeds: [],
 		is_hide_feeds: false,
+
 		loading: false,
+		loadingPercent: 0,
+		loadingFraction: '1/10',
+		loadingBookmarks: false,
+
 		debug: null,
 		params: {
 			l: 6,
@@ -1083,15 +1282,49 @@ function alpineRSS() {
 		persona: null,
 		editor_options: null,
 
+		modal_showed: false,
+		modal_result: null,
+		modal_title: 'title',
+		modal_text: 'text',
+		modal_ok: 'OK',
+		modal_cancel: 'Cancel',
+		modal_callback: null,
+		modalShow(title, text, ok='OK', cancel='Cancel', callback=console.log) {
+			this.modal_title = title;
+			this.modal_text = text;
+			this.modal_ok = ok;
+			this.modal_cancel = cancel;
+			this.modal_callback = callback;
+			this.modal_showed = true;
+		},
+		modalCallback(e) {
+			this.modal_result = e;
+			this.modal_callback?.(e);
+			this.modal_showed = false;
+		},
+
 		K: {
 			LIMIT: 6,
 
 			DEFAULTS: [
+				`https://news.google.com/rss?hl=${navigator.language}`,
 				'https://feeds.bbci.co.uk/news/rss.xml',
 				'https://feeds.nbcnews.com/feeds/topstories',
 				'https://www.business-standard.com/rss/latest.rss',
 				'https://feeds.npr.org/1128/rss.xml',
 				'https://www.espn.com/espn/rss/news',
+			],
+
+			CATEGORIES: [
+				{"name": "Top Stories", "desc": "This is the main, curated feed highlighting the most important news of the moment."},
+				{"name": "World", "desc": "International news from across the globe."},
+				{"name": "Local", "desc": "News specific to your current location or a location you specify."},
+				{"name": "Business", "desc": "Financial news, market updates, and business trends."},
+				{"name": "Technology", "desc": "Coverage of the tech industry, gadgets, and innovation."},
+				{"name": "Entertainment", "desc": "News about movies, music, celebrities, and pop culture."},
+				{"name": "Sports", "desc": "Coverage of various sports, including scores, highlights, and analysis."},
+				{"name": "Science", "desc": "News and discoveries in the world of science."},
+				{"name": "Health", "desc": "Articles about health, medicine, and wellness."},
 			],
 
 			viewed: VERSION + '_viewed_',
@@ -1292,6 +1525,19 @@ function alpineRSS() {
 			switch (type) {
 				case 'full'://case 'enter':
 					trig.tic = Math.min(now, trig.tic || now);
+					if (!this.loading && window.innerWidth <= 640) {
+						this.feeds.forEach(feed => {
+							let found = feed.items.find(x => x.link == link);
+
+							if (!found) return;
+
+							// location.hash = found.anchor;
+
+							const url = new URL(location.href);
+							url.searchParams.set('a', found.anchor || found.link);
+							history.pushState(null, '', url.toString());
+						});
+					}
 				break;
 				case 'leave':
 					trig.toc = Math.max(now, trig.toc || now);
@@ -1336,6 +1582,8 @@ function alpineRSS() {
 			try {
 				let readLaterItems = this.storageGet(this.K.readlater) || [];
 
+				// console.log(readLaterItems, item.read_later)
+
 				if (!is_remove && item.read_later) {
 					// Save to local storage first for immediate feedback
 
@@ -1354,11 +1602,18 @@ function alpineRSS() {
 						}
 					}
 
-					if (!readLaterItems?.some(i => i.link === item.link)) {
+					let idx = readLaterItems.findIndex(i => i.link === item.link);
+					if (idx < 0) {
 						readLaterItems.push(obj);
-						this.readlater = {items: readLaterItems};
-						this.storageSet(this.K.readlater, readLaterItems);
+					} else {
+						readLaterItems[idx] = {...readLaterItems[idx], ...obj};
 					}
+
+					readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
+					this.readlater = {items: readLaterItems};
+					this.storageSet(this.K.readlater, readLaterItems);
+
+					// console.dir({obj})
 					
 					// Save to Deno KV
 					if (this.params.x) {
@@ -1368,13 +1623,17 @@ function alpineRSS() {
 							body: JSON.stringify({
 								action: 'save',
 								x: this.params.x,
+								sig: this?.profile?.signature || '',
 								item: obj,
 							})
 						}).catch(err => console.error('Failed to save to KV:', err));
 					}
 				} else {
 					// Remove from local storage
+					
 					readLaterItems = readLaterItems.filter(i => i.link !== item.link);
+					readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
+					readLaterItems.forEach(x => x.read_later = true);
 
 					this.readlater = {items: readLaterItems};
 					this.storageSet(this.K.readlater, readLaterItems);
@@ -1386,6 +1645,7 @@ function alpineRSS() {
 							headers: {"content-type": "application/json"},
 							body: JSON.stringify({
 								x: this.params.x,
+								sig: this?.profile?.signature || '',
 								link: item.link
 							})
 						}).catch(err => console.error('Failed to remove from KV:', err));
@@ -1398,15 +1658,18 @@ function alpineRSS() {
 		},
 		
 		async loadReadLaterItems() {
+			if (this.loadingBookmarks) return;
 
+			this.loadingBookmarks = true;
 			console.log('loadReadLaterItems')
+
 			// Load from local storage first
 			let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
 			
 			// If user is identified, try to load from Deno KV
 			if (this.params.x) {
 				try {
-					const response = await fetch(`/api/readlater?x=${this.params.x}`);
+					const response = await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}`);
 					if (response.ok) {
 						const kvItems = await response.json();
 						
@@ -1418,22 +1681,32 @@ function alpineRSS() {
 							// Update local storage
 							this.storageSet(this.K.readlater, readLaterItems);
 						}
+					} else {
+						this.loadingBookmarks = false;
 					}
 				} catch (error) {
 					console.error("Error loading read later items from KV:", error);
+					this.loadingBookmarks = false;
 				}
 			}
 
+			readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 			this.readlater = {items: readLaterItems};
 			
 			// Mark items in feeds as read_later if they're in the readLaterItems list
 			this.feeds.forEach(feed => {
 				feed.items.forEach(item => {
 					item.read_later = readLaterItems.some(savedItem => savedItem.link === item.link);
+
+					if (item?.article?.content?.search?.(/\{.*error.*E404.*\}/) >= 0) item.article = null;
 				});
 			});
 
-			console.log('loadReadLaterItems done')
+			this.loadingBookmarks = false;
+
+			console.log('loadReadLaterItems done');
+
+			toast('Bookmarks loaded');
 		},
 
 		async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
@@ -1446,11 +1719,14 @@ function alpineRSS() {
 			console.log('loadFeedsWithContent', limit, limit_adjust);
 
 			try {
+				this.loadingPercent = 0;
+				let step = 0;
+
 				let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 
 				let sig = this?.profile?.signature || '';
 
-				console.time('load tasks')
+				console.time('>> load.tasks')
 				let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
@@ -1458,38 +1734,59 @@ function alpineRSS() {
 				})
 				.then(resp => resp.json())
 				.catch(null);
-				console.timeEnd('load tasks')
+				console.timeEnd('>> load.tasks')
+				toast('RSS list loaded');
 
-				if (resp_tasks) {
+				if (resp_tasks?.feeds?.length) {
 					this.tasks = resp_tasks?.feeds;
 					urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
+				} else if (!this.feeds?.length && this.tasks?.length) {
+					urls = this.tasks.map(x => x.url);
+				} else if (!this.tasks?.length) {
+					urls = this.K.DEFAULTS;
+				} else {
 				}
 
-				console.time('load content')
+				step = 0.2 / (urls?.length || 1);
+				console.time('>> load.rss_client_side')
 				let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
-					if (force_update) return resolve({url});
+					if (force_update) {
+						this.loadingPercent += step;
+						return resolve({url});
+					}
 
 					let key_nofetch = this.K.noClientFetch + new URL(url).hostname;
 
-					if (this.storageGet(key_nofetch)) return resolve({url});
+					if (this.storageGet(key_nofetch)) {
+						this.loadingPercent += step;
+						return resolve({url});
+					}
+
+					console.time('>> load.rss_client_side.url.' + url);
 					try {
 						fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(5e3)})
 							.then(resp => resp.text())
 							.then(content => resolve({url, content}))
 							.catch(ex => {
 								this.storageSet(key_nofetch, true);
+
+								this.loadingPercent += step;
 								resolve({url});
 							})
 					} catch (ex) {
 						this.storageSet(key_nofetch, true);
+						this.loadingPercent += step;
 						resolve({url})
 					}
-				}))) : [];
-				console.timeEnd('load content');
 
-				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
+					console.timeEnd('>> load.rss_client_side.url.' + url);
+				}))) : [];
+				console.timeEnd('>> load.rss_client_side');
+				toast('RSS list prefetched');
 
 				data = data.map(x => x.value);
+
+				console.dir({urls, data})
 
 				if (!this.params?.x && data.length) {
 					let hash_local = await this.digest(JSON.stringify(data) + Date.now());
@@ -1498,28 +1795,33 @@ function alpineRSS() {
 				}
 
 				// console.log('datas:', data.length);
-				console.time('load feeds')
+				console.time('>> load.feeds')
+				step = 0.8 / (data?.length || 1);
+				let batch = data.map(x => ({url: x.url}));
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
 						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
-							signal: AbortSignal.timeout(20e3),
+							signal: AbortSignal.timeout(60e3),
 							body: JSON.stringify({batch: data, update: force_update}),
 						})
 						.then(resp => resp.json())
 						.catch(null)
+						.finally(() => this.loadingPercent += step)
 					]
-					: data.map((item, idx) =>
-						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
+					: data.map((item, idx) => {
+						console.time('>> load.feed.item.' + item?.url);
+						return fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
-							signal: AbortSignal.timeout(20e3),
-							body: JSON.stringify({keys: [item], batch: data}),
+							signal: AbortSignal.timeout(60e3),
+							body: JSON.stringify({batch, keys: [item]}),
 						})
 						.then(resp => resp.json())
 						.then(json => {
+							console.timeEnd('>> load.feed.item.' + item?.url);
 							// console.log('json', json.feeds[0]);
 
 							let newfeed = json?.feeds?.[0];
@@ -1534,9 +1836,10 @@ function alpineRSS() {
 							return json;
 						})
 						.catch(null)
-					)
+						.finally(() => this.loadingPercent += step)
+					})
 				);
-				console.timeEnd('load feeds')
+				console.timeEnd('>> load.feeds')
 				// console.log('feeds:', parallel);
 
 				let respFeeds = parallel.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || [])
@@ -1544,8 +1847,13 @@ function alpineRSS() {
 
 				console.log('respFeeds:', respFeeds.length);
 
+				// console.dir({respFeeds})
+
+				console.time('>> load.feeds.postprocess')
+
 				if (this.feeds?.length && !respFeeds?.length) {
 					this.loading = false;
+					this.loadingPercent = 1;
 					return console.log("EEMPTYRESPFEEDS");
 				}
 
@@ -1565,8 +1873,10 @@ function alpineRSS() {
 					});
 				});
 
+
 				this.feeds = respFeeds;
-				this.loading = false;
+
+				this.loadingPercent = 1;
 
 				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
 				if (hash_server) {
@@ -1581,6 +1891,7 @@ function alpineRSS() {
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
 				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true}) || {};
+				this.loading = false;
 
 				if (this.params.x) {
 					this.storageSet(this.K.feeds + this.params.x, this.feeds);
@@ -1604,12 +1915,16 @@ function alpineRSS() {
 					this.storageSet(this.K.tasks, this.tasks);
 				}
 
+				console.timeEnd('>> load.feeds.postprocess')
+
 				// console.log(this.tasks);
 			} catch (error) {
 				console.error("Error fetching feeds:", error);
 				this.debug = "Failed to load feeds. Please check the server logs for more details";
 				this.loading = false;
+				this.loadingPercent = 1;
 			} finally {
+				toast('Feeds loaded');
 				console.log('loadFeedsWithContent.done');
 				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 			}
@@ -1679,12 +1994,15 @@ function alpineRSS() {
 
 			if (!this.feeds?.length) return {count};
 
+			const anchorling = str => (str?.replace(/([^a-zA-Z0-9]|https?)/gi, '-').replace(/\-+/g, '-').replace(/(^\-|\-$)/g, '').toLowerCase() || '');
+
 			this.feeds.forEach((feed, feedIdx) => {
 				if (!feed?.items?.length) return;
 
 				let len_full = feed.items.length;
 
-				feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
+				// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
+				feed.anchor = anchorling(feed?.rss_url)
 
 				feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
 					new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]
@@ -1729,6 +2047,7 @@ function alpineRSS() {
 						item.read_more = false;
 						item.prefetching = false;
 						item.read_later = false;
+						item.anchor = anchorling(item?.link);
 
 						item.viewed = this.storageGet(this.K.viewed + item.link);
 
@@ -1750,8 +2069,8 @@ function alpineRSS() {
 							? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
 							: img0;
 
-						item.toggleReadmore = () => {
-							item.read_more = !item.read_more;
+						item.toggleReadmore = (force_flag) => {
+							item.read_more = force_flag || (!item.read_more);
 
 							if (item.read_more) {
 								feed.read_more_item = item;
@@ -1810,7 +2129,9 @@ function alpineRSS() {
 							let key_nofetch = this.K.noClientFetch + new URL(item.link).hostname;
 
 							let noClientFetch = this.storageGet(key_nofetch);
+							console.time('>> fetch.html.' + item.link);
 							try {
+
 								resp = noClientFetch
 										? await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null)
 										: await fetch(item.link, opts).catch(() => {
@@ -1821,6 +2142,7 @@ function alpineRSS() {
 								this.storageSet(key_nofetch, true);
 								resp = await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null);
 							}
+							console.timeEnd('>> fetch.html.' + item.link);
 
 							// item.prefetching = false;
 
@@ -1950,6 +2272,14 @@ function alpineRSS() {
 				this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 			}, 0.5e3);
 
+
+			if (!this.loading && this.params.a) {
+				toast('Go to: ' + this.params.a);
+				let found = document.querySelector(`[href*="${this.params.a}"]`) || document.querySelector(`[name*="${this.params.a}"]`);
+				if (found) found.scrollIntoView({ behavior: 'smooth' });
+			}
+
+			toast('Feeds prefetched');
 			return {count};
 		},
 
@@ -2074,6 +2404,7 @@ function alpineRSS() {
 				.then(done => {
 					console.log('build tasks done');
 					this.loading = false;
+					this.loadingPercent = 1;
 					window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
 				});
 		},
@@ -2097,21 +2428,30 @@ function alpineRSS() {
 		},
 
 		async clickedProfile() {
-			if (google.accounts && !this.profile?.email) {
+			let THIS = this;
+
+			if (google.accounts && !THIS.profile?.email) {
 				google.accounts.id.prompt();
 				return;
 			}
 
-			google?.accounts.id.revoke(this.profile.email);
+			THIS.modalShow('Confirm', 'Backed to anonymous', null, null, (e) => {
+				if (!e) return;
 
-			toast('Backed to anonymous');
+				google?.accounts.id.revoke(THIS.profile.email);
 
-			this.profile = null;
-			this.storageDel(this.K.profile);
+				toast('Backed to anonymous');
 
-			let hash_local = await this.digest(JSON.stringify(this.tasks) + Date.now());
-			this.params.x = hash_local.slice(0, 6);
-			this.storageSet(this.K.hash, this.params.x);
+				THIS.profile = null;
+				THIS.storageDel(THIS.K.profile);
+
+				THIS.digest(JSON.stringify(THIS.tasks) + Date.now())
+					.then(hash_local => {
+						THIS.params.x = hash_local.slice(0, 6);
+						THIS.storageSet(THIS.K.hash, THIS.params.x);
+					})
+					.catch()
+			});
 		},
 
 		async init() {
@@ -2129,32 +2469,70 @@ function alpineRSS() {
 				this.dark = false;
 			}
 
+			// window.onscroll = (e) => {
+			// 	this.loading_scroll = this.loading;
+			// 	this.loading = true;
+			// };
+			// window.onscrollend  = (e) => {
+			// 	this.loading = this.loading_scroll;
+			// };
+
 			this.$watch('loading', value => {
 				this.title = this.theTitle();
 			});
+
+			this.$watch('modal_showed', value => {
+				if (this.modal_showed) this.modal_result = null;
+			});
+
+			this.$watch('loadingPercent', value => {
+				// console.log('loadingPercent:', value);
+
+				const SCALE = 10;
+				let v = value * SCALE;
+				for (let i = 0; i < SCALE; i++) {
+					if (i < v && (i + 1) > v) {
+						this.loadingFraction = (i + 1) + '/' + SCALE;
+					}
+				}
+			});
+
+			this.$watch('feeds', (value, oldValue) => {
+				// console.log('$watch.feeds', oldValue?.length, value?.length)
+
+				if (oldValue.length != value.length)
+					Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
+			})
+
+			try {
+				fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsByCountry => {
+					let locale = new Intl.Locale(navigator.language);
+					locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
+					
+					console.log(locale);
+
+					let region = locale.region.toUpperCase();
+					let language = locale.language.toUpperCase();
+					let name = locale.name.toUpperCase();
+
+					let found = feedsByCountry.find(x => {
+						return (region == x.country)
+						|| (language == x.country)
+						|| navigator.language.includes(x.country)
+						|| stringSimilarity(name, x.name) >= 0.8
+						|| stringSimilarity(name, x.country) >= 0.5
+					});
+
+					if (found?.feeds?.length) {
+						this.K.DEFAULTS = found.feeds.slice(0, 10);
+					}
+				}).catch(console.log)
+			} catch {}
 
 			this.profile = this.storageGet(this.K.profile) || {};
 			this.params = Object.fromEntries(new URLSearchParams(location.search));
 			this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 			this.params.s = this.params.s || this.storageGet(this.K.style);
-
-			if (this.params.x) {
-				console.log('this.params.x existed');
-
-				let jwt = this.profile.jwt || '';
-				let checked_profile = await fetch('/api/jwt/verify?jwt=' + encodeURIComponent(jwt)).then(r => r.json());
-
-				console.dir(checked_profile);
-
-				if (!checked_profile?.verified) {
-					let hash_new = await this.digest(Date.now());
-					this.params.x = hash_new.slice(0, 6);
-
-					const url = new URL(location);
-					url.searchParams.set("x", this.params.x);
-					history.pushState({}, "", url);
-				}
-			}
 
 			let limit = this.params.l || this.K.LIMIT;
 			this.params.l = ~~limit;
@@ -2162,10 +2540,13 @@ function alpineRSS() {
 			this.ready = true;
 			this.loading = true;
 
-			if (this.params.f == 'bookmarks') this.is_hide_feeds = true;
+			if (this.params.f == 'bookmarks' || location.hash?.includes('#bookmark')) this.is_hide_feeds = true;
 
+			// Web Share API: GET
 			if (this.params.url || this.params.text || this.params.title) {
 				// this.debug = JSON.stringify(this.params);
+
+				this.is_hide_feeds = true;
 				
 				console.log('share_target', this.params);
 
@@ -2175,23 +2556,34 @@ function alpineRSS() {
 				if (!share_url && this.params.text.includes('http')) share_url = decodeURIComponent(this.params.text);
 				if (!share_url && this.params.title.includes('http')) share_url = decodeURIComponent(this.params.title);
 
+				share_url = share_url?.split(/\s/)?.filter(x => x).find(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+\//)) || share_url;
+
 				const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 				const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 				const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 				
 				let html = '', item = {};
 				try {
-					html = await fetch(share_url, { redirect: 'follow', signal: AbortSignal.timeout(3e3) })
-								.then(resp => resp.text()).catch(null) || '';
+					let fetch_opts = { redirect: 'follow', signal: AbortSignal.timeout(3e3) };
+
+					toast('Fetching: ' + share_url);
+
+					try { html = await fetch(share_url, fetch_opts).then(r => r.text()).catch(null); } catch (ex) {}
+					try { html = html || await fetch(`/html?u=${encodeURIComponent(share_url)}`, fetch_opts).then(r => r.text()).catch(null); } catch (ex) {}
+					html = html || '';
 
 					let doc = new DOMParser().parseFromString(html, "text/html");
 					item.article = new Readability(doc).parse();
 
+					console.dir(item.article)
+
 					let content = item.article?.content;
 					if (content?.length) {
 						item.article.content = cleanContent(content);
+
+						if (item?.article?.content?.search?.(/\{.*error.*E404.*\}/) >= 0) item.article = null;
 					}
-				} catch {}
+				} catch (ex) {console.log('html.ex', ex)}
 
 				item = {
 					link: share_url,
@@ -2200,7 +2592,7 @@ function alpineRSS() {
 					feed_title: this.params.title || html.match(REGEX_TITLE)?.[1] || '',
 					image_thumb: html.match(REGEX_IMAGE)?.[1],
 					saved_at: new Date().toISOString(),
-					read_later: true,
+					read_later: false,
 					article: item.article,
 				};
 
@@ -2208,33 +2600,58 @@ function alpineRSS() {
 
 				// this.debug = JSON.stringify(item);
 				
-				fetch('/api/readlater', {
-					method: 'POST',
-					headers: {"content-type": "application/json"},
-					body: JSON.stringify({
-						action: 'save',
-						x: this.params.x,
-						item,
-					})
-				})
-				.then(resp => resp.json())
-				.then(json => console.dir({share_target_json: json}))
-				.then(_ => {
-					this.loadReadLaterItems().then(_ => {
-						toast('Bookmarked: ' + item.title);
+				await this.saveReadLater(item);
+				await this.loadReadLaterItems();
+				toast('Bookmarked: ' + item.title);
 
-						let dom = document.querySelector('#expander_readlater');
+				const url = new URL(location);
+				url.searchParams.delete("url");
+				url.searchParams.delete("text");
+				url.searchParams.delete("title");
+				history.pushState({}, "", url);
 
-						if (dom && Alpine.$data(dom)) {
-							Alpine.$data(dom).expanded = false;
+				Alpine.$data(document.querySelector('#expander_settings')).expanded = false;
+				Alpine.$data(document.querySelector('#expander_declarations')).expanded = false;
+				Alpine.$data(document.querySelector('#expander_readlater')).expanded = true;
 
-							document.querySelector('#expander_readlater button')?.click();
+				let found = this.readlater?.items?.find(x => (x.link == share_url) || (x.saved_at == item.saved_at));
+				if (found) found.read_more = true;
+			}
 
-							[...document.querySelectorAll('.rss-meta')].pop().scrollIntoView('smooth');
-						}
-					}).catch(err => console.dir({share_target_catch: err}));
-				})
-				.catch(err => console.dir({share_target_catch: err}))
+			// Single View
+			if ('single_view' == this.params.f  && this.params.u) {
+				let url = new URL(this.params.u);
+
+				this.feeds = [{
+					link: `${url.protocol}//${url.hostname}`,
+					rss_url: `${url.protocol}//${url.hostname}`,
+					title: url.hostname,
+					items: [{
+						link: this.params.u,
+						author: url.hostname,
+						title: url.pathname,
+						description: this.params.u,
+					}],
+				}];
+
+				await this.postProcessFeeds({limit: 1, auto_fetch_content: true});
+
+				let item0 = this.feeds[0].items[0];
+
+				await item0.prefetchContent?.();
+				let prefetched = setInterval(() => {
+					if (!item0.article.content) return;
+
+					item0.title = item0.article.title || item0.title;
+
+					item0.toggleReadmore(true);
+
+					clearInterval(prefetched);
+				}, 500);
+				
+
+				this.loading = false;
+				return;
 			}
 
 			this.profile = this.storageGet(this.K.profile) || {};
@@ -2296,7 +2713,7 @@ function alpineRSS() {
 			// console.log('inited old localStorage')
 
 			window.addEventListener('params-x-changed', function(event) {
-				console.log('params-x-changed', event?.detail);
+				// console.log('params-x-changed', event?.detail);
 
 				let detail = event.detail;
 
@@ -2337,14 +2754,16 @@ function alpineRSS() {
 			setIdle(
 				30 * 60e3,
 				() => {
-					console.log("User is idle!"); 
+					toast("Idling..."); 
 					this.loadFeedsWithContent({limit});
 				},
 				() => {
-					console.log("User is active!"); 
+					toast("Reactive..."); 
 					this.loadFeedsWithContent({limit});
 				}
 			);
+
+			// this.modalShow('Hello', 'World')
 
 			// setInterval(async () => {
 			// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
@@ -2420,7 +2839,44 @@ function cleanContent(content='') {
 		.replace(/\s+/gi, ' ');
 }
 
+function stringSimilarity(s1, s2) {
+	const m = s1.length;
+	const n = s2.length;
+
+	// If one or both strings are empty
+	if (m === 0) return n === 0 ? 1 : 0; // Similarity is 1 if both empty, 0 if one is empty.
+	if (n === 0) return 0;
+
+	// Create DP table (m+1 rows, n+1 columns)
+	const matrix = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+	// Initialize first row and column
+	for (let i = 0; i <= m; i++) matrix[i][0] = i;
+	for (let j = 0; j <= n; j++) matrix[0][j] = j;
+
+	// Fill the table
+	for (let i = 1; i <= m; i++) {
+		for (let j = 1; j <= n; j++) {
+			const cost = (s1[i - 1] === s2[j - 1]) ? 0 : 1;
+			matrix[i][j] = Math.min(
+				matrix[i - 1][j] + 1,      // deletion
+				matrix[i][j - 1] + 1,      // insertion
+				matrix[i - 1][j - 1] + cost // substitution or match
+			);
+		}
+	}
+
+	const distance = matrix[m][n];
+	const maxLength = Math.max(m, n);
+
+	// Calculate similarity: 1 - (distance / max_length)
+	// Handle case where max_length is 0 (both empty strings, already handled but defensive)
+	return maxLength === 0 ? 1 : 1 - (distance / maxLength);
+}
+
 function toast(message, timeout=3e3) {
+	console.log('> TOAST:', message);
+
 	const toastBox = document.getElementById('toast');
 	const toastMsg = document.getElementById('toast-message');
 
