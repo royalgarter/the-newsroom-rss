@@ -477,7 +477,10 @@ async function handleRequest(req: Request) {
 		}
 
 		return response(JSON.stringify({feeds, hash}), {
-			headers: { ...cors, ...head_json },
+			headers: {
+				...cors, ...head_json,
+				"Cache-Control": "public, max-age=300"
+			},
 		});
 	}
 
