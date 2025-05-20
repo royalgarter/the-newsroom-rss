@@ -140,11 +140,9 @@
 						feed.items.forEach(x => x.prefetchContent?.());
 						feeds[index+1]?.items?.forEach(x => x.prefetchContent?.());
 					"
-					x-intersect:full.margin.-10%.0%="
+					x-intersect:full="
 						if (!loading && window.innerWidth > 640) {
-							let old_href = location.href;
 							location.hash = '#' + feed.anchor;
-							if (false && (old_href != location.href)) history.pushState({}, '', location.href);
 						}
 					"
 				>
@@ -182,7 +180,7 @@
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
-									x-intersect.full.margin.-10%.0%="triggerIntersect('full', item.link)"
+									x-intersect.full="triggerIntersect('full', item.link)"
 									:class="[
 										item.viewed ? 'opacity-90 italic' : '',
 										params?.s?.includes?.('shadow') ? 'shadow' : '',
