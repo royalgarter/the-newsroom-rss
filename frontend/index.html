@@ -1800,6 +1800,7 @@ function alpineRSS() {
 				// console.log('datas:', data.length);
 				console.time('>> load.feeds')
 				step = 0.8 / (data?.length || 1);
+				let batch = data.map(x => ({url: x.url}));
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
@@ -1819,7 +1820,7 @@ function alpineRSS() {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(60e3),
-							body: JSON.stringify({keys: [item], batch: data}),
+							body: JSON.stringify({batch, keys: [item]}),
 						})
 						.then(resp => resp.json())
 						.then(json => {

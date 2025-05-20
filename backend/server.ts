@@ -20,9 +20,20 @@ const cors = {
 const KV = await Deno.openKv(Deno.env.get("DENO_KV_URL"));
 const CACHE = {
 	MAP: new Map(),
-	set: (k, v, e=60*60*24*7) => setTimeout(() => CACHE.MAP.delete(k), e*1e3) && CACHE.MAP.set(k, v),
+	TIMER: new Map(),
 	get: (k) => CACHE.MAP.get(k),
 	del: (k) => CACHE.MAP.delete(k),
+	set: (k, v, e=60*60*24*7) => {
+		// console.log('set_cache', k, e);
+
+		CACHE.MAP.set(k, v);
+
+		let oldtime = CACHE.TIMER.get(k)
+		if (oldtime) clearTimeout(oldtime);
+
+		let newtime = setTimeout(() => CACHE.MAP.delete(k), e*1e3);
+		CACHE.TIMER.set(k, newtime);
+	},
 }
 setInterval(() => console.log('CACHE.MAP.size:', CACHE.MAP.size), 10*60e3);
 
@@ -48,18 +59,27 @@ async function parseRSS(url: string, content: string) {
 
 			let key_rss = 'RSS:' + url;
 
+			// console.log('>> parseRSS.' + url);
 			console.time('>> parseRSS.' + url);
 			content = await Promise.any([
 				new Promise((resolve, reject) => {
 					let cached = CACHE.get(key_rss);
-					if (cached) setTimeout(resolve, 3e3, cached);
-					else reject(null);
+					if (cached) {
+						setTimeout(() => resolve(cached), 3e3);
+					} else {
+						reject(null);
+					}
 				}),
 				new Promise((resolve, reject) => {
-					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(10e3)})
+					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(30e3)})
 						.then(resp => resp.text())
-						.then(text => CACHE.set(key_rss, text, 60*15) && resolve(text))
-						.catch(ex => reject(null));
+						.then(text => {
+							CACHE.set(key_rss, text, 60*15);
+							resolve(text);
+						})
+						.catch(ex => {
+							reject(null);
+						});
 				}),
 			]);
 			console.timeEnd('>> parseRSS.' + url);
@@ -87,7 +107,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 	let feeds = [];
 
-	// console.log('urls', urls, urls.length)
+	// console.log('fetchRSSLinks', urls.length)
 
 	if (Array.isArray(urls)) {
 		feeds = await Promise.allSettled(
@@ -110,6 +130,8 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 	const SPLIT = /[\:\,\.\-\_\/\|\~]/;
 	const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+
+	// console.log('fetchRSSLinks_2', feeds.length)
 
 	let render = Array(feeds.length).fill(null);
 	// console.log('render')
@@ -152,7 +174,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						let link = item?.links?.[0]?.href;
 						let url = new URL(link).searchParams.get('url');
 
-						console.time('>> postParseRSS.item.' + link);
+						//console.time('>> postParseRSS.item.' + link);
 
 						if (link.includes('news.google.com/rss/articles/')) {
 							let key_gnews = 'GOOGLE_NEWS:' + link;
@@ -234,7 +256,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 						// console.dir({item, x});
 
 						rss_items.push(x);
-						console.timeEnd('>> postParseRSS.item.' + link);
+						//console.timeEnd('>> postParseRSS.item.' + link);
 					} catch (ex) { console.error(ex); } finally { resolveItem() }
 				})().catch(ex => resolveItem());
 			})));
@@ -411,15 +433,22 @@ async function handleRequest(req: Request) {
 			feeds = saved.map((x, order) => ({order, ...x}));
 		} else {
 			// feeds = await fetchRSSLinks({urls: keys, limit});
+
 			let query_feeds = {urls: keys, limit};
-			let key_feeds = 'FEEDS:' + JSON.stringify(query_feeds);
+			let key_feeds = 'FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
+
 			feeds = CACHE.get(key_feeds);
 
+			// console.dir({key_feeds, feeds});
+
 			if (!feeds?.length) {
+				// console.log('CACHE NOT exists');
+
 				let key_feeds_permanent = 'PERMANENT_' + key_feeds;
 				let feeds_permanent = CACHE.get(key_feeds_permanent);
 
 				if (!feeds_permanent?.length) {
+					// console.log('CACHE_PERMANENT NOT exists');
 					feeds = await fetchRSSLinks(query_feeds);
 
 					if (feeds?.length) {
@@ -430,6 +459,7 @@ async function handleRequest(req: Request) {
 						CACHE.set(key_feeds_permanent, feeds, 60*60*24*7);
 					}
 				} else {
+					// console.log('CACHE_PERMANENT exists');
 					feeds = feeds_permanent;
 					fetchRSSLinks(query_feeds).then(fs => {
 						if (fs?.length) {
@@ -441,6 +471,8 @@ async function handleRequest(req: Request) {
 						}
 					}).catch(e => console.dir({query_feeds, e}))
 				}
+			} else {
+				// console.log('CACHE exists');
 			}
 		}
 
