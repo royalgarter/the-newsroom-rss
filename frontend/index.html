@@ -140,9 +140,13 @@
 						feed.items.forEach(x => x.prefetchContent?.());
 						feeds[index+1]?.items?.forEach(x => x.prefetchContent?.());
 					"
-					x-intersect:full="
+					x-intersect:full.margin.-10%.0%="
 						if (!loading && window.innerWidth > 640) {
-							location.hash = '#' + feed.anchor;
+							false && (location.hash = '#' + feed.anchor);
+
+							const url = new URL(location.href);
+							url.searchParams.set('a', feed.anchor || feed.rss_url );
+							history.pushState(null, '', url.toString());
 						}
 					"
 				>
@@ -157,12 +161,13 @@
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-3 sm:px-8 md:px-10">
-							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
-								:alt="feed.rss_url || feed.title"
-								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
-								onerror="this.src = '/favicons/ios/128.png';"
-								@click="window.open(feed.rss_url, '_blank')"
+							<a :href="feed.rss_url" target="_blank">
+								<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
+									:alt="feed.rss_url || feed.title"
+									:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
+									onerror="this.src = '/favicons/ios/128.png';"
 								/>
+							</a>
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
 								:title="feed.rss_url"
 								x-text="feed.short || feed.title">
@@ -180,7 +185,7 @@
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
-									x-intersect.full="triggerIntersect('full', item.link)"
+									x-intersect.full.margin.-10%.0%="triggerIntersect('full', item.link)"
 									:class="[
 										item.viewed ? 'opacity-90 italic' : '',
 										params?.s?.includes?.('shadow') ? 'shadow' : '',
@@ -1525,9 +1530,11 @@ function alpineRSS() {
 
 							if (!found) return;
 
-							let old_href = location.href;
-							location.hash = found.anchor;
-							if (false && (old_href != location.href)) history.pushState({}, '', location.href);
+							// location.hash = found.anchor;
+
+							const url = new URL(location.href);
+							url.searchParams.set('a', found.anchor || found.link);
+							history.pushState(null, '', url.toString());
 						});
 					}
 				break;
@@ -2260,9 +2267,9 @@ function alpineRSS() {
 			}, 0.5e3);
 
 
-			if (location.hash) {
-				toast('Go to: ' + location.hash);
-				let found = document.querySelector(`[name="${location.hash}"]`);
+			if (!this.loading && this.params.a) {
+				toast('Go to: ' + this.params.a);
+				let found = document.querySelector(`[href*="${this.params.a}"]`) || document.querySelector(`[name*="${this.params.a}"]`);
 				if (found) found.scrollIntoView({ behavior: 'smooth' });
 			}
 
@@ -2455,6 +2462,14 @@ function alpineRSS() {
 				document.documentElement.classList.remove('dark');
 				this.dark = false;
 			}
+
+			// window.onscroll = (e) => {
+			// 	this.loading_scroll = this.loading;
+			// 	this.loading = true;
+			// };
+			// window.onscrollend  = (e) => {
+			// 	this.loading = this.loading_scroll;
+			// };
 
 			this.$watch('loading', value => {
 				this.title = this.theTitle();
