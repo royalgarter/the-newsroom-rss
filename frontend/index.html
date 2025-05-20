@@ -142,11 +142,13 @@
 					"
 					x-intersect:full.margin.-10%.0%="
 						if (!loading && window.innerWidth > 640) {
-							false && (location.hash = '#' + feed.anchor);
+							location.hash = '#' + feed.anchor;
 
-							const url = new URL(location.href);
-							url.searchParams.set('a', feed.anchor || feed.rss_url );
-							history.pushState(null, '', url.toString());
+							if (false) {
+								const url = new URL(location.href);
+								url.searchParams.set('a', feed.anchor || feed.rss_url );
+								history.pushState(null, '', url.toString());
+							}
 						}
 					"
 				>
@@ -161,13 +163,14 @@
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-3 sm:px-8 md:px-10">
-							<a :href="feed.rss_url" target="_blank">
+							<!-- <a :href="feed.rss_url" target="_blank" class="inline-block"> -->
 								<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
 									:alt="feed.rss_url || feed.title"
 									:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
 									onerror="this.src = '/favicons/ios/128.png';"
+									@click="window.open(feed.rss_url)"
 								/>
-							</a>
+							<!-- </a> -->
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
 								:title="feed.rss_url"
 								x-text="feed.short || feed.title">
@@ -1530,11 +1533,11 @@ function alpineRSS() {
 
 							if (!found) return;
 
-							// location.hash = found.anchor;
+							location.hash = found.anchor;
 
-							const url = new URL(location.href);
-							url.searchParams.set('a', found.anchor || found.link);
-							history.pushState(null, '', url.toString());
+							// const url = new URL(location.href);
+							// url.searchParams.set('a', found.anchor || found.link);
+							// history.pushState(null, '', url.toString());
 						});
 					}
 				break;
