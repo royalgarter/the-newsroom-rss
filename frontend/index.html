@@ -1665,6 +1665,7 @@ function alpineRSS() {
 
 			this.loadingBookmarks = true;
 			console.log('loadReadLaterItems')
+
 			// Load from local storage first
 			let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
 			
@@ -1683,9 +1684,12 @@ function alpineRSS() {
 							// Update local storage
 							this.storageSet(this.K.readlater, readLaterItems);
 						}
+					} else {
+						this.loadingBookmarks = false;
 					}
 				} catch (error) {
 					console.error("Error loading read later items from KV:", error);
+					this.loadingBookmarks = false;
 				}
 			}
 
@@ -1785,7 +1789,7 @@ function alpineRSS() {
 
 				data = data.map(x => x.value);
 
-				// console.dir({data})
+				console.dir({urls, data})
 
 				if (!this.params?.x && data.length) {
 					let hash_local = await this.digest(JSON.stringify(data) + Date.now());
