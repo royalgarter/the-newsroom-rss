@@ -37,6 +37,8 @@ const CACHE = {
 }
 setInterval(() => console.log('CACHE.MAP.size:', CACHE.MAP.size), 10*60e3);
 
+const FETCH_INTERVAL = {};
+
 async function test() {  
 	// console.log(Deno.env.get("DENO_KV_ACCESS_TOKEN"));
 	// console.log(Deno.env.get("DENO_KV_URL"));
@@ -438,6 +440,20 @@ async function handleRequest(req: Request) {
 			let key_feeds = 'FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
 
 			feeds = CACHE.get(key_feeds);
+
+			if (!FETCH_INTERVAL[key_feeds]) {
+				FETCH_INTERVAL[key_feeds] = setInterval(query_feeds => {
+					fetchRSSLinks(query_feeds).then(feeds => {
+						if (!feeds?.length) return;
+
+						feeds.forEach(f => f.cache = 'CACHE');
+						CACHE.set(key_feeds, feeds, 60*15);
+
+						feeds.forEach(f => f.cache = 'CACHE_PERMANENT');
+						CACHE.set(key_feeds_permanent, feeds, 60*60*24*7);
+					}).catch(console.log);
+				}, 15*60e3, query_feeds);
+			}
 
 			// console.dir({key_feeds, feeds});
 
