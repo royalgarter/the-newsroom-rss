@@ -2455,6 +2455,8 @@ function alpineRSS() { return {
 
 		let THIS = this;
 
+		let savedHash = this.storageGet(this.K.hash);
+
 		if ( localStorage.getItem('theme') === 'dark' ||
 			 (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
 		) {
@@ -2525,7 +2527,6 @@ function alpineRSS() { return {
 			}).catch(console.log)
 		} catch {}
 
-		let savedHash = this.storageGet(this.K.hash);
 		this.profile = this.storageGet(this.K.profile) || {};
 		this.params = Object.fromEntries(new URLSearchParams(location.search));
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);

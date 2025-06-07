@@ -438,6 +438,9 @@ async function handleRequest(req: Request) {
 
 			let query_feeds = {urls: keys, limit};
 			let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
+			let key_feeds_permanent = 'PERMANENT_' + key_feeds;
+			
+			let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
 
 			feeds = CACHE.get(key_feeds);
 
@@ -458,11 +461,7 @@ async function handleRequest(req: Request) {
 			// console.dir({key_feeds, feeds});
 
 			if (!feeds?.length) {
-				// console.log('CACHE NOT exists');
-
-				let key_feeds_permanent = 'PERMANENT_' + key_feeds;
-				let feeds_permanent = CACHE.get(key_feeds_permanent);
-
+				console.log('CACHE NOT exists', key_feeds);
 				if (!feeds_permanent?.length) {
 					// console.log('CACHE_PERMANENT NOT exists');
 					feeds = await fetchRSSLinks(query_feeds);
@@ -473,10 +472,12 @@ async function handleRequest(req: Request) {
 						
 						feeds.forEach(f => f.cache = 'CACHE_PERMANENT');
 						CACHE.set(key_feeds_permanent, feeds, 60*60*24*7);
+						
+						feeds.forEach(f => f.cache = 'CACHE_KV');
 						KV.set([key_feeds_permanent], feeds);
 					}
 				} else {
-					// console.log('CACHE_PERMANENT exists');
+					console.log('CACHE_PERMANENT exists', key_feeds_permanent);
 					feeds = feeds_permanent;
 					fetchRSSLinks(query_feeds).then(fs => {
 						if (fs?.length) {
@@ -485,6 +486,8 @@ async function handleRequest(req: Request) {
 							
 							fs.forEach(f => f.cache = 'CACHE_PERMANENT');
 							CACHE.set(key_feeds_permanent, fs, 60*60*24*7);
+
+							fs.forEach(f => f.cache = 'CACHE_KV');
 							KV.set([key_feeds_permanent], fs);
 						}
 					}).catch(e => console.dir({query_feeds, e}))
