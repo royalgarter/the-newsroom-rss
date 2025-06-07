@@ -1760,7 +1760,7 @@ function alpineRSS() { return {
 
 				console.time('>> load.rss_client_side.url.' + url);
 				try {
-					fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(5e3)})
+					fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(3e3)})
 						.then(resp => resp.text())
 						.then(content => resolve({url, content}))
 						.catch(ex => {
