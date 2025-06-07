@@ -354,6 +354,29 @@ async function getBookmarks(kvkeys) {
 	return items;
 }
 
+async function saveFeedCache({feeds, key_feeds, key_feeds_permanent}) {
+	if (!feeds?.length) return;
+
+	feeds = feeds.filter(x => x?.items?.length);
+
+	/* LAYER: 0 */
+	if (!key_feeds) return;
+	feeds.forEach(f => f.cache = 'CACHE');
+	CACHE.set(key_feeds, feeds, 60*15);
+	
+	/* LAYER: 1 */
+	if (!key_feeds_permanent) return;
+	feeds.forEach(f => f.cache = 'CACHE_PERMANENT');
+	CACHE.set(key_feeds_permanent, feeds, 60*60*24*7);
+	
+	/* LAYER: 2 */
+	feeds.forEach(f => {
+		f.cache = 'CACHE_KV';
+		f.items = f.items.slice(0, 6);
+	});
+	KV.set([key_feeds_permanent], feeds).catch(() => {});
+}
+
 async function handleRequest(req: Request) {
 	const {pathname, searchParams} = new URL(req.url);
 
@@ -466,31 +489,14 @@ async function handleRequest(req: Request) {
 					// console.log('CACHE_PERMANENT NOT exists');
 					feeds = await fetchRSSLinks(query_feeds);
 
-					if (feeds?.length) {
-						feeds.forEach(f => f.cache = 'CACHE');
-						CACHE.set(key_feeds, feeds, 60*15);
-						
-						feeds.forEach(f => f.cache = 'CACHE_PERMANENT');
-						CACHE.set(key_feeds_permanent, feeds, 60*60*24*7);
-						
-						feeds.forEach(f => f.cache = 'CACHE_KV');
-						KV.set([key_feeds_permanent], feeds).catch(() => {});
-					}
+					saveFeedCache({feeds, key_feeds, key_feeds_permanent})
 				} else {
 					console.log('CACHE_PERMANENT exists', key_feeds_permanent);
 					feeds = feeds_permanent;
-					fetchRSSLinks(query_feeds).then(fs => {
-						if (fs?.length) {
-							fs.forEach(f => f.cache = 'CACHE');
-							CACHE.set(key_feeds, fs, 60*15);	
-							
-							fs.forEach(f => f.cache = 'CACHE_PERMANENT');
-							CACHE.set(key_feeds_permanent, fs, 60*60*24*7);
-
-							fs.forEach(f => f.cache = 'CACHE_KV');
-							KV.set([key_feeds_permanent], fs).catch(() => {});
-						}
-					}).catch(e => console.dir({query_feeds, e}))
+					
+					/*force async*/fetchRSSLinks(query_feeds)
+						.then(fs => saveFeedCache({feeds: fs, key_feeds, key_feeds_permanent}))
+						.catch(e => console.dir({query_feeds, e}))
 				}
 			} else {
 				// console.log('CACHE exists');
