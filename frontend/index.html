@@ -8,7 +8,7 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="color-scheme" content="light dark">
 		<meta name="description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
-		<meta name="keyworks" content="news, rss, feed, aggregator, reader, alpinejs, tailwindcss">
+		<meta name="keywords" content="news, rss, feed, aggregator, reader, alpinejs, tailwindcss">
 
 		<link rel="canonical" :href="host">
 		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
@@ -87,7 +87,10 @@
 					x-html="title"
 					@click="if (loading) {
 						window.scrollTo({ top: 0, behavior: 'smooth' });
+						location.hash = '';
 					} else {
+						location.hash = '';
+
 						if ('single_view' == params?.f) {
 							const url = new URL(location);
 							url.searchParams.delete('f');
@@ -121,12 +124,6 @@
 		></div>
 
 		<main id="main" class="container mx-auto p-2 flex-1">
-
-			<!-- errors -->
-			<div class="flex gap-4 items-center mb-4 justify-self-center">
-				<span x-show="debug" class="text-red-500" x-text="debug"></span>
-			</div>
-
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
@@ -137,9 +134,16 @@
 						feed.items.forEach(x => x.prefetchContent?.());
 						feeds[index+1]?.items?.forEach(x => x.prefetchContent?.());
 					"
-					x-intersect:full="
-						if (window.innerWidth > 640) {
-							location.hash = '#' + feed.anchor;
+					x-intersect:full.margin.-10%.0%="
+						if (!loading && window.innerWidth > 640) {
+
+							const url = new URL(location.href);
+							url.searchParams.set('a', feed.anchor || feed.rss_url );
+							history.pushState(null, '', url.toString());
+
+							if (false) {
+								location.hash = '#' + feed.anchor;
+							}
 						}
 					"
 				>
@@ -154,12 +158,14 @@
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-3 sm:px-8 md:px-10">
-							<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
-								:alt="feed.rss_url || feed.title"
-								:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
-								onerror="this.src = '/favicons/ios/128.png';"
-								@click="window.open(feed.rss_url, '_blank')"
+							<!-- <a :href="feed.rss_url" target="_blank" class="inline-block"> -->
+								<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
+									:alt="feed.rss_url || feed.title"
+									:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
+									onerror="this.src = '/favicons/ios/128.png';"
+									@click="window.open(feed.rss_url)"
 								/>
+							<!-- </a> -->
 							<h2 class="text-indigo-950 dark:text-indigo-200 text-xl font-bold mx-auto"
 								:title="feed.rss_url"
 								x-text="feed.short || feed.title">
@@ -177,7 +183,7 @@
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
-									x-intersect.full="triggerIntersect('full', item.link)"
+									x-intersect.full.margin.-10%.0%="triggerIntersect('full', item.link)"
 									:class="[
 										item.viewed ? 'opacity-90 italic' : '',
 										params?.s?.includes?.('shadow') ? 'shadow' : '',
@@ -1030,11 +1036,14 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- errors -->
+			<div class="flex gap-4 items-center mb-4 justify-self-center"><span x-show="debug" class="text-red-500" x-text="debug"></span></div>
 		</main>
 
 		<template id="tpl_footer" x-if="ready">
-			<footer class="bg-gray-300 dark:bg-gray-800 p-4 mt-6 text-center text-sm text-stone-900 dark:text-stone-200">
-				<blockquote class="m-2 text-base italic font-semibold">
+			<footer class="bg-gray-300 dark:bg-gray-800 p-4 mt-6 text-center text-xs text-stone-900 dark:text-stone-200">
+				<blockquote class="m-2 text-sm italic">
 					"In the Information Age, ignorance is a choice.", "It's not the news, it's HOW you get the news.", "We just decided to try to do it better."
 				</blockquote>
 				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
@@ -1101,8 +1110,12 @@
 		>▲</div> -->
 
 		<div id="anchor_jump" x-data="{
-			is_open: false, 
-			anchors: [], 
+			_alBody: Alpine.$data(document.querySelector('body')),
+			_alRead: Alpine.$data(document.querySelector('#expander_readlater')),
+			_alDecl: Alpine.$data(document.querySelector('#expander_declarations')),
+
+			is_open: false,
+			anchors: [],
 			refresh: function() {
 				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
 					href: '#' + a.name,
@@ -1126,9 +1139,14 @@
 					<a :href="anchor.href" class="block p-2 text-gray-800 hover:bg-stone-300" x-text="anchor.text" 
 						@click="
 							is_open = false;
+
+							_alBody.loading = true;
+
 							setTimeout(() => {
-								Alpine.$data(document.querySelector('#expander_readlater')).expanded = Alpine.$data(document.querySelector('body')).is_hide_feeds = (location.hash == '#bookmarks');
-								Alpine.$data(document.querySelector('#expander_declarations')).expanded = (location.hash == '#declarations');
+								_alRead.expanded = _alBody.is_hide_feeds = (location.hash == '#bookmarks');
+								_alDecl.expanded = (location.hash == '#declarations');
+
+								_alBody.loading = false;
 							}, 100);
 						">
 					</a>
@@ -1506,15 +1524,18 @@ function alpineRSS() {
 			switch (type) {
 				case 'full'://case 'enter':
 					trig.tic = Math.min(now, trig.tic || now);
-					if (window.innerWidth <= 640) {
+					if (!this.loading && window.innerWidth <= 640) {
 						this.feeds.forEach(feed => {
 							let found = feed.items.find(x => x.link == link);
 
 							if (!found) return;
 
-							location.hash = found.anchor;
+							// location.hash = found.anchor;
+
+							const url = new URL(location.href);
+							url.searchParams.set('a', found.anchor || found.link);
+							history.pushState(null, '', url.toString());
 						});
-						// location.hash = '#' + link?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
 					}
 				break;
 				case 'leave':
@@ -1640,6 +1661,7 @@ function alpineRSS() {
 
 			this.loadingBookmarks = true;
 			console.log('loadReadLaterItems')
+
 			// Load from local storage first
 			let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
 			
@@ -1658,9 +1680,12 @@ function alpineRSS() {
 							// Update local storage
 							this.storageSet(this.K.readlater, readLaterItems);
 						}
+					} else {
+						this.loadingBookmarks = false;
 					}
 				} catch (error) {
 					console.error("Error loading read later items from KV:", error);
+					this.loadingBookmarks = false;
 				}
 			}
 
@@ -1760,7 +1785,7 @@ function alpineRSS() {
 
 				data = data.map(x => x.value);
 
-				// console.dir({data})
+				console.dir({urls, data})
 
 				if (!this.params?.x && data.length) {
 					let hash_local = await this.digest(JSON.stringify(data) + Date.now());
@@ -1771,13 +1796,14 @@ function alpineRSS() {
 				// console.log('datas:', data.length);
 				console.time('>> load.feeds')
 				step = 0.8 / (data?.length || 1);
+				let batch = data.map(x => ({url: x.url}));
 				let parallel = await Promise.allSettled(
 					(force_update || !data?.length)
 					? [
 						fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
-							signal: AbortSignal.timeout(20e3),
+							signal: AbortSignal.timeout(60e3),
 							body: JSON.stringify({batch: data, update: force_update}),
 						})
 						.then(resp => resp.json())
@@ -1789,8 +1815,8 @@ function alpineRSS() {
 						return fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
-							signal: AbortSignal.timeout(20e3),
-							body: JSON.stringify({keys: [item], batch: data}),
+							signal: AbortSignal.timeout(60e3),
+							body: JSON.stringify({batch, keys: [item]}),
 						})
 						.then(resp => resp.json())
 						.then(json => {
@@ -1848,7 +1874,7 @@ function alpineRSS() {
 
 
 				this.feeds = respFeeds;
-				this.loading = false;
+
 				this.loadingPercent = 1;
 
 				let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
@@ -1864,6 +1890,7 @@ function alpineRSS() {
 				if (!this.feeds.length) return console.log("EEMPTYFEEDS");
 
 				let {count} = this.postProcessFeeds({limit, auto_fetch_content: true}) || {};
+				this.loading = false;
 
 				if (this.params.x) {
 					this.storageSet(this.K.feeds + this.params.x, this.feeds);
@@ -1966,13 +1993,15 @@ function alpineRSS() {
 
 			if (!this.feeds?.length) return {count};
 
+			const anchorling = str => (str?.replace(/([^a-zA-Z0-9]|https?)/gi, '-').replace(/\-+/g, '-').replace(/(^\-|\-$)/g, '').toLowerCase() || '');
+
 			this.feeds.forEach((feed, feedIdx) => {
 				if (!feed?.items?.length) return;
 
 				let len_full = feed.items.length;
 
 				// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
-				feed.anchor = feed.rss_url?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
+				feed.anchor = anchorling(feed?.rss_url)
 
 				feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
 					new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]
@@ -2017,7 +2046,7 @@ function alpineRSS() {
 						item.read_more = false;
 						item.prefetching = false;
 						item.read_later = false;
-						item.anchor = '#' + item.link?.replace(/([^a-zA-Z0-9]|https?)/gi,'').toLowerCase();
+						item.anchor = anchorling(item?.link);
 
 						item.viewed = this.storageGet(this.K.viewed + item.link);
 
@@ -2243,6 +2272,12 @@ function alpineRSS() {
 			}, 0.5e3);
 
 
+			if (!this.loading && this.params.a) {
+				toast('Go to: ' + this.params.a);
+				let found = document.querySelector(`[href*="${this.params.a}"]`) || document.querySelector(`[name*="${this.params.a}"]`);
+				if (found) found.scrollIntoView({ behavior: 'smooth' });
+			}
+
 			toast('Feeds prefetched');
 			return {count};
 		},
@@ -2432,6 +2467,14 @@ function alpineRSS() {
 				document.documentElement.classList.remove('dark');
 				this.dark = false;
 			}
+
+			// window.onscroll = (e) => {
+			// 	this.loading_scroll = this.loading;
+			// 	this.loading = true;
+			// };
+			// window.onscrollend  = (e) => {
+			// 	this.loading = this.loading_scroll;
+			// };
 
 			this.$watch('loading', value => {
 				this.title = this.theTitle();
