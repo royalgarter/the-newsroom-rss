@@ -474,7 +474,7 @@ async function handleRequest(req: Request) {
 						CACHE.set(key_feeds_permanent, feeds, 60*60*24*7);
 						
 						feeds.forEach(f => f.cache = 'CACHE_KV');
-						KV.set([key_feeds_permanent], feeds);
+						KV.set([key_feeds_permanent], feeds).catch(() => {});
 					}
 				} else {
 					console.log('CACHE_PERMANENT exists', key_feeds_permanent);
@@ -488,7 +488,7 @@ async function handleRequest(req: Request) {
 							CACHE.set(key_feeds_permanent, fs, 60*60*24*7);
 
 							fs.forEach(f => f.cache = 'CACHE_KV');
-							KV.set([key_feeds_permanent], fs);
+							KV.set([key_feeds_permanent], fs).catch(() => {});
 						}
 					}).catch(e => console.dir({query_feeds, e}))
 				}
