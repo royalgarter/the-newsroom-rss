@@ -48,7 +48,7 @@ async function test() {
 	// console.log("Random UUID:", myUUID);
 }
 
-async function parseRSS(url: string, content: string) {
+async function parseRSS(url: string, content: string, pioneer: Boolean) {
 	try {
 		if (!url) return {rss_url: url};
 
@@ -73,7 +73,7 @@ async function parseRSS(url: string, content: string) {
 					}
 				}),
 				new Promise((resolve, reject) => {
-					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(30e3)})
+					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 5e3 : 30e3)})
 						.then(resp => resp.text())
 						.then(text => {
 							CACHE.set(key_rss, text, 60*15);
@@ -104,7 +104,7 @@ async function parseRSS(url: string, content: string) {
 	}
 }
 
-async function fetchRSSLinks({urls, limit=12}) {
+async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 	if (!urls) return [];
 
 	let feeds = [];
@@ -115,7 +115,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 		feeds = await Promise.allSettled(
 			urls
 			.filter(({url}) => url)
-			.map(({url, content}) => parseRSS(url, content))
+			.map(({url, content}) => parseRSS(url, content, pioneer))
 		);
 	}
 
@@ -125,7 +125,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 
 		// console.dir({urls, feedUrls})
 
-		feeds = await Promise.allSettled(feedUrls.map(parseRSS));
+		feeds = await Promise.allSettled(feedUrls.map(url => parseRSS(url, null, pioneer)));
 	}
 
 	feeds = feeds.map(p => p.value).filter(x => x);
@@ -190,7 +190,7 @@ async function fetchRSSLinks({urls, limit=12}) {
 									+ `?url=${encodeURIComponent(link)}`
 									+ `&source=${encodeURIComponent(item?.source?.url)}`
 									+ `&title=${encodeURIComponent(item?.title?.value)}`, {
-									headers: head_json, redirect: 'follow', signal: AbortSignal.timeout(10e3)
+									headers: head_json, redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 5e3 :10e3)
 								}).then(res => res.json()).catch(null);
 
 								if (ggnews?.data?.originUrl) {
@@ -383,7 +383,7 @@ async function handleRequest(req: Request) {
 	const localpath = `./frontend${pathname}`;
 
 	let params = Object.fromEntries(searchParams);
-	let {u: urls='', l: limit, x: hash, v: ver, sig} = params;
+	let {u: urls='', l: limit, x: hash, v: ver, sig, pioneer} = params;
 
 	// console.log(pathname, params);
 	const response = (data, options) => {
@@ -459,7 +459,7 @@ async function handleRequest(req: Request) {
 		} else {
 			// feeds = await fetchRSSLinks({urls: keys, limit});
 
-			let query_feeds = {urls: keys, limit};
+			let query_feeds = {urls: keys, limit, pioneer};
 			let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
 			let key_feeds_permanent = 'PERMANENT_' + key_feeds;
 			
@@ -484,14 +484,14 @@ async function handleRequest(req: Request) {
 			// console.dir({key_feeds, feeds});
 
 			if (!feeds?.length) {
-				console.log('CACHE NOT exists', key_feeds);
+				// console.log('CACHE NOT exists', key_feeds);
 				if (!feeds_permanent?.length) {
 					// console.log('CACHE_PERMANENT NOT exists');
 					feeds = await fetchRSSLinks(query_feeds);
 
 					saveFeedCache({feeds, key_feeds, key_feeds_permanent})
 				} else {
-					console.log('CACHE_PERMANENT exists', key_feeds_permanent);
+					// console.log('CACHE_PERMANENT exists', key_feeds_permanent);
 					feeds = feeds_permanent;
 					
 					/*force async*/fetchRSSLinks(query_feeds)
@@ -679,7 +679,7 @@ async function handleRequest(req: Request) {
 			// if (html) console.log(' cached:', link);
 
 			if (!html) {
-				let response = await fetch(link, {redirect: 'follow', signal: AbortSignal.timeout(20e3)});
+				let response = await fetch(link, {redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 5e3 : 20e3)}).catch(() => null);
 				html = await response?.text?.();
 
 				CACHE.set(key_html, html);

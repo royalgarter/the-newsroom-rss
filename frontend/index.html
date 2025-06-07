@@ -1247,6 +1247,7 @@ function alpineRSS() { return {
 
 	dark: false,
 	ready: false,
+	pioneer: false,
 
 	readlater: {},
 
@@ -1753,7 +1754,7 @@ function alpineRSS() { return {
 
 				let key_nofetch = this.K.noClientFetch + new URL(url).hostname;
 
-				if (this.storageGet(key_nofetch)) {
+				if (this.pioneer || this.storageGet(key_nofetch)) {
 					this.loadingPercent += step;
 					return resolve({url});
 				}
@@ -1797,7 +1798,11 @@ function alpineRSS() { return {
 			let parallel = await Promise.allSettled(
 				(force_update || !data?.length)
 				? [
-					fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
+					fetch([`/api/feeds?type=batch`,
+						`&l=${limit + limit_adjust}`,
+						`&x=${this.params.x || ''}`,
+						`&sig=${sig}`,
+					].join(''), {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
 						signal: AbortSignal.timeout(60e3),
@@ -1809,7 +1814,13 @@ function alpineRSS() { return {
 				]
 				: data.map((item, idx) => {
 					console.time('>> load.feed.item.' + item?.url);
-					return fetch(`/api/feeds?l=${limit + limit_adjust}&x=${this.params.x || ''}&sig=${sig}`, {
+					
+					return fetch([`/api/feeds?type=keys`,
+						`&l=${limit + limit_adjust}`,
+						`&x=${this.params.x || ''}`,
+						`&sig=${sig}`,
+						`&pioneer=${this.pioneer || ''}`
+					].join(''), {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
 						signal: AbortSignal.timeout(60e3),
@@ -1888,6 +1899,7 @@ function alpineRSS() { return {
 
 			let {count} = this.postProcessFeeds({limit, auto_fetch_content: true}) || {};
 			this.loading = false;
+			this.pioneer = false;
 
 			if (this.params.x) {
 				this.storageSet(this.K.feeds + this.params.x, this.feeds);
@@ -2531,6 +2543,8 @@ function alpineRSS() { return {
 		this.params = Object.fromEntries(new URLSearchParams(location.search));
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = this.params.s || this.storageGet(this.K.style);
+
+		if (!savedHash || !this.params?.x || (savedHash !== this.params.x)) this.pioneer = true;
 
 		let limit = this.params.l || this.K.LIMIT;
 		this.params.l = ~~limit;
