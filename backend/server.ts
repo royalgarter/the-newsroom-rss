@@ -133,6 +133,8 @@ async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 
 	const SPLIT = /[\:\,\.\-\_\/\|\~]/;
 	const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+	const LAST_WEEK = new Date(Date.now() - 7*24*60*60e3);
+	const LAST_MONTH = new Date(Date.now() - 31*24*60*60e3);
 
 	// console.log('fetchRSSLinks_2', feeds.length)
 
@@ -220,7 +222,7 @@ async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 
 							if (!image_og) {
 								html = html || (await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
-												.then(resp => resp.text()).catch(null));
+												.then(resp => resp.text()).catch(_ => null));
 
 								image_og = (html || '')?.match(REGEX_IMAGE)?.[1];
 
