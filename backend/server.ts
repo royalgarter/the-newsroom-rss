@@ -271,6 +271,7 @@ async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 				...head,
 				items: rss_items
 						.filter(x => x)
+						.filter(x => x.published && (new Date(x.published) > LAST_MONTH))
 						.sort((a, b) => (b.images?.length - a.images?.length) || (b.published - a.published)),
 			};
 
