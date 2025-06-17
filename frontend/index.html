@@ -2515,22 +2515,25 @@ function alpineRSS() { return {
 		})
 
 		try {
+			let {country} = await fetch('https://api.country.is/').then(r => r.json()).catch(_ => ({}));
+
 			fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsByCountry => {
 				let locale = new Intl.Locale(navigator.language);
 				locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
 				
-				console.log(locale);
+				console.dir({country, locale});
 
 				let region = locale.region.toUpperCase();
 				let language = locale.language.toUpperCase();
 				let name = locale.name.toUpperCase();
 
 				let found = feedsByCountry.find(x => {
-					return (region == x.country)
-					|| (language == x.country)
-					|| navigator.language.includes(x.country)
-					|| stringSimilarity(name, x.name) >= 0.8
-					|| stringSimilarity(name, x.country) >= 0.5
+					return (country && (country == x.country))
+						|| (region == x.country)
+						|| (language == x.country)
+						|| navigator.language.includes(x.country)
+						|| stringSimilarity(name, x.name) >= 0.8
+						|| stringSimilarity(name, x.country) >= 0.5
 				});
 
 				if (found?.feeds?.length) {
