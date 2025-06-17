@@ -21,6 +21,7 @@ const KV = await Deno.openKv(Deno.env.get("DENO_KV_URL"));
 const CACHE = {
 	MAP: new Map(),
 	TIMER: new Map(),
+
 	get: (k) => CACHE.MAP.get(k),
 	del: (k) => CACHE.MAP.delete(k),
 	set: (k, v, e=60*60*24*7) => {
@@ -383,7 +384,7 @@ async function handleRequest(req: Request) {
 	const localpath = `./frontend${pathname}`;
 
 	let params = Object.fromEntries(searchParams);
-	let {u: urls='', l: limit, x: hash, v: ver, sig, pioneer} = params;
+	let {u: urls='', l: limit, x: hash, v: ver, sig, pioneer, cachy} = params;
 
 	// console.log(pathname, params);
 	const response = (data, options) => {
@@ -483,7 +484,9 @@ async function handleRequest(req: Request) {
 
 			// console.dir({key_feeds, feeds});
 
-			if (!feeds?.length) {
+			if (cachy == 'no_cache') {
+				feeds = (await fetchRSSLinks(query_feeds)) || feeds || feeds_permanent;
+			} else if (!feeds?.length) {
 				// console.log('CACHE NOT exists', key_feeds);
 				if (!feeds_permanent?.length) {
 					// console.log('CACHE_PERMANENT NOT exists');
@@ -493,13 +496,16 @@ async function handleRequest(req: Request) {
 				} else {
 					// console.log('CACHE_PERMANENT exists', key_feeds_permanent);
 					feeds = feeds_permanent;
-					
+
 					/*force async*/fetchRSSLinks(query_feeds)
 						.then(fs => saveFeedCache({feeds: fs, key_feeds, key_feeds_permanent}))
 						.catch(e => console.dir({query_feeds, e}))
 				}
 			} else {
 				// console.log('CACHE exists');
+				/*force async*/fetchRSSLinks(query_feeds)
+						.then(fs => saveFeedCache({feeds: fs, key_feeds, key_feeds_permanent}))
+						.catch(e => console.dir({query_feeds, e}))
 			}
 		}
 

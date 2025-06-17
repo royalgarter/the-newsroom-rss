@@ -2244,7 +2244,7 @@ function alpineRSS() { return {
 
 				feed.items.forEach(x => x.disable = false);
 
-				fetch(`/api/feeds?l=${feed.items.length*2}&x=${this.params.x || ''}`, {
+				fetch(`/api/feeds?l=${feed.items.length*2}&x=${this.params.x || ''}&cachy=no_cache`, {
 					method: 'POST',
 					headers: {"content-type": "application/json"},
 					signal: AbortSignal.timeout(20e3),
