@@ -127,7 +127,7 @@
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
-					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
+					:class="style()?.shadow ? 'shadow' : ''"
 					x-cloak
 					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
 					x-intersect:once="
@@ -180,19 +180,20 @@
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
-								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
+								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full.margin.-10%.0%="triggerIntersect('full', item.link)"
 									:class="[
 										item.viewed ? 'opacity-90 italic' : '',
-										params?.s?.includes?.('shadow') ? 'shadow' : '',
+										style()?.shadow ? 'shadow' : '',
+										style()?.preview ? 'pb-8' : '',
 										'single_view' == params?.f ? 'col-span-full' : '',
 									].join(' ')
 									"
 								>
 									<!-- thumbnail -->
-									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
+									<template x-if="style()?.img && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
 											<a class="rss-thumb" 
 												:href="'#' + item.anchor" 
@@ -234,7 +235,7 @@
 
 									<!-- title & description -->
 									<div id="rss-item-title-desc" class="p-4 text-gray-400 dark:text-gray-300">
-										<span x-show="item.viewed" class="py-1 text-xs font-regular mr-1 flex flex-row items-center">
+										<span x-show="item.viewed && style()?.preview" class="py-1 text-xs font-regular mr-1 flex flex-row items-center">
 											<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
 											</svg>
@@ -242,34 +243,29 @@
 										</span>
 
 										<div class="items-center">
-											<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
-
-												:class="( item.image_thumb &&
-															(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
-														) ? 'pointer-events-none' : ''"
-												:href="item.link" target="_blank"
-												:title="item.title"
-												x-html="decodeHTML(item.title).substr(0, 150) + (
-															params?.s?.includes?.('title')
-																? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
-																: ''
-														)"
-												rel="external"
-											></a>
-
 											<a :href="item.link" target="_blank" class="text-blue-400 dark:text-blue-300 visited:text-purple-600">
 												<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
 													class="rss-open-link size-4 cursor-pointer inline mb-[6px] opacity-75 hover:opacity-100"
-													:class="( item.image_thumb &&
-																(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
-															) ? 'visible' : 'invisible'"
+													x-show="item.image_thumb && !style()?.img"
 												>
 													<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
 												</svg>
 											</a>
+											<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+
+												:class="( item.image_thumb &&
+															!style()?.img
+														) ? 'pointer-events-none' : ''"
+												:href="item.link" target="_blank"
+												:title="item.title"
+												x-html="decodeHTML(item.title).substr(0, 150) + (
+															style()?.img ? '' : (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + timeSince(new Date(item.published)) + '</sup>')
+														)"
+												rel="external"
+											></a>
 										</div>
 
-										<template x-if="!params?.s?.includes?.('title')">
+										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
 											>
@@ -278,7 +274,7 @@
 									</div>
 
 									<!-- item article -->
-									<template x-if="!params?.s?.includes?.('title')">
+									<template x-if="style()?.preview">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
 											<div class="cursor-pointer px-4 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
 												<span class="py-1 text-xs font-regular flex flex-row items-center"
@@ -392,13 +388,13 @@
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
 								class="hidden sm:block grid grid-cols-1 gap-6 transition-all transition-discrete"
 								:class="[
-									params?.s?.includes?.('shadow') ? 'shadow' : '',
+									style()?.shadow ? 'shadow' : '',
 									'single_view' != params?.f ? 'pt-18' : 'pt-0',
 								].join(' ')
 								"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
-								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
+								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="style()?.shadow ? 'shadow' : ''">
 									<div class="px-4 py-2 flex flex-row items-center">
 										<span class="py-1 text-xl font-bold flex flex-row items-center">
 											<p class="rss-article-title text-gray-600 dark:text-gray-300 whitespace-pre-line break-words" x-html="feed.article?.title || ''">
@@ -475,7 +471,7 @@
 								>
 									
 									<!-- readlater thumbnail -->
-									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
+									<template x-if="style()?.img && item.image_thumb">
 										<div class="rss-meta relative min-h-36"
 											@click="location.hash = '#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
 										>
@@ -510,12 +506,12 @@
 										</span>
 										<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											:class="( item.image_thumb &&
-														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
+														!style()?.img
 													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
 											:title="item.title"
 											x-html="decodeHTML(item.title).substr(0, 150) + (
-														params?.s?.includes?.('title')
+														style()?.title
 															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
 															: ''
 													)"
@@ -529,7 +525,7 @@
 												<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
 											</svg>
 										</a>
-										<template x-if="!params?.s?.includes?.('title')">
+										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
 											>
@@ -771,7 +767,7 @@
 											</div>
 											<div class="w-full cursor-pointer">
 												<select class="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="settings-style" x-model="params.s">
-													<template x-for="sty in ['full','noimg','nopreview','title']">
+													<template x-for="sty in Object.keys(style_flags)">
 														<option :value="sty" x-text="sty" :selected="params.s == sty"></option>
 													</template>
 												</select>
@@ -1273,6 +1269,15 @@ function alpineRSS() { return {
 	is_noimg: false,
 
 	review_feed: null,
+
+	style() { return {...this.style_flags[this.params?.s || 'full'], s: this.params?.s}; },
+	style_flags: {
+		tiny: {title: 1, desc: 0, img: 0, preview: 0},
+		title: {title: 1, desc: 0, img: 1, preview: 0},
+		noimg: {title: 1, desc: 1, img: 0, preview: 1},
+		nopreview: {title: 1, desc: 1, img: 1, preview: 0},
+		full: {title: 1, desc: 1, img: 1, preview: 1},
+	},
 
 	google: null,
 	profile: null,
@@ -1969,6 +1974,8 @@ function alpineRSS() { return {
 	},
 
 	timeSince(date) {
+		date = Math.min(Date.now() - 60e3, date);
+
 		let seconds = Math.floor((new Date() - date) / 1000);
 
 		let interval = seconds / 31536000;
@@ -2125,7 +2132,7 @@ function alpineRSS() { return {
 					};
 
 					item.prefetchContent = async () => {
-						if (this.params?.s?.includes?.('nopreview')) return;
+						if (!this.style()?.preview) return;
 
 						// console.log('prefetchContent', item.title);
 
@@ -2486,6 +2493,12 @@ function alpineRSS() { return {
 		// window.onscrollend  = (e) => {
 		// 	this.loading = this.loading_scroll;
 		// };
+
+		this.$watch('params.s', value => {
+			const url = new URL(location.href);
+			url.searchParams.set('s', this.params.s);
+			history.pushState(null, '', url.toString());
+		});
 
 		this.$watch('loading', value => {
 			this.title = this.theTitle();
