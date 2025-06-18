@@ -1578,9 +1578,9 @@ function alpineRSS() { return {
 
 	async saveReadLater(item, is_remove) {
 		if (!item || !item.link) return;
-		
+
 		item.read_later = !item.read_later;
-		
+
 		try {
 			let readLaterItems = this.storageGet(this.K.readlater) || [];
 
@@ -1616,7 +1616,7 @@ function alpineRSS() { return {
 				this.storageSet(this.K.readlater, readLaterItems);
 
 				// console.dir({obj})
-				
+
 				// Save to Deno KV
 				if (this.params.x) {
 					await fetch('/api/readlater', {
@@ -1632,14 +1632,14 @@ function alpineRSS() { return {
 				}
 			} else {
 				// Remove from local storage
-				
+
 				readLaterItems = readLaterItems.filter(i => i.link !== item.link);
 				readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 				readLaterItems.forEach(x => x.read_later = true);
 
 				this.readlater = {items: readLaterItems};
 				this.storageSet(this.K.readlater, readLaterItems);
-				
+
 				// Remove from Deno KV
 				if (this.params.x) {
 					await fetch('/api/readlater', {
@@ -1658,7 +1658,7 @@ function alpineRSS() { return {
 			item.read_later = !item.read_later; // Revert the state if there's an error
 		}
 	},
-	
+
 	async loadReadLaterItems() {
 		if (this.loadingBookmarks) return;
 
@@ -1667,19 +1667,19 @@ function alpineRSS() { return {
 
 		// Load from local storage first
 		let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
-		
+
 		// If user is identified, try to load from Deno KV
 		if (this.params.x) {
 			try {
 				const response = await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}`);
 				if (response.ok) {
 					const kvItems = await response.json();
-					
+
 					// Merge items from KV with local storage, prioritizing KV
 					if (Array.isArray(kvItems)) {
 						// Remove local items that aren't in KV
 						readLaterItems = kvItems;
-						
+
 						// Update local storage
 						this.storageSet(this.K.readlater, readLaterItems);
 					}
@@ -1694,7 +1694,7 @@ function alpineRSS() { return {
 
 		readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 		this.readlater = {items: readLaterItems};
-		
+
 		// Mark items in feeds as read_later if they're in the readLaterItems list
 		this.feeds.forEach(feed => {
 			feed.items.forEach(item => {
@@ -1819,7 +1819,7 @@ function alpineRSS() { return {
 				]
 				: data.map((item, idx) => {
 					console.time('>> load.feed.item.' + item?.url);
-					
+
 					return fetch([`/api/feeds?type=keys`,
 						`&l=${limit + limit_adjust}`,
 						`&x=${this.params.x || ''}`,
@@ -2251,6 +2251,7 @@ function alpineRSS() { return {
 
 				feed.items.forEach(x => x.disable = false);
 
+				this.loading = true;
 				fetch(`/api/feeds?l=${feed.items.length*2}&x=${this.params.x || ''}&cachy=no_cache`, {
 					method: 'POST',
 					headers: {"content-type": "application/json"},
@@ -2260,14 +2261,15 @@ function alpineRSS() { return {
 				.then(resp => resp.json())
 				.then(resp => {
 					let new_items = resp?.feeds?.[0]?.items;
-					
+
 					if (!new_items?.length) return;
-					
+
 					feed.items = new_items;
 					feed.postProcessItems(true);
 					feed.items.forEach(x => x.prefetchContent?.());
 				})
 				.catch(null)
+				.finally(_ => {this.loading = false});
 			};
 
 			feed.postProcessItems();
@@ -2533,7 +2535,7 @@ function alpineRSS() { return {
 			fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsByCountry => {
 				let locale = new Intl.Locale(navigator.language);
 				locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
-				
+
 				console.dir({country, locale});
 
 				let region = locale.region.toUpperCase();
@@ -2575,7 +2577,7 @@ function alpineRSS() { return {
 			// this.debug = JSON.stringify(this.params);
 
 			this.is_hide_feeds = true;
-			
+
 			console.log('share_target', this.params);
 
 			toast('Shared: ' + JSON.stringify(this.params));
@@ -2589,7 +2591,7 @@ function alpineRSS() { return {
 			const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 			const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 			const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
-			
+
 			let html = '', item = {};
 			try {
 				let fetch_opts = { redirect: 'follow', signal: AbortSignal.timeout(3e3) };
@@ -2627,7 +2629,7 @@ function alpineRSS() { return {
 			toast('Saving: ' + item.title);
 
 			// this.debug = JSON.stringify(item);
-			
+
 			await this.saveReadLater(item);
 			await this.loadReadLaterItems();
 			toast('Bookmarked: ' + item.title);
@@ -2676,7 +2678,7 @@ function alpineRSS() { return {
 
 				clearInterval(prefetched);
 			}, 500);
-			
+
 
 			this.loading = false;
 			return;
@@ -2752,17 +2754,17 @@ function alpineRSS() { return {
 			if (!x) return;
 
 			let is_reload = THIS.params.x && (x != THIS.params.x)
-			
+
 			THIS.params.x = x;
 			THIS.storageSet(THIS.K.hash, THIS.params.x);
-			
+
 			THIS.profile = detail.profile;
 			THIS.storageSet(THIS.K.profile, THIS.profile);
 
 			const url = new URL(location);
 			url.searchParams.set("x", x);
 			history.pushState({}, "", url);
-			
+
 			if (document.querySelector('#img-profile').src != detail.profile?.picture) {
 				document.querySelector('#img-profile').src = detail.profile?.picture;
 			}
@@ -2782,11 +2784,11 @@ function alpineRSS() { return {
 		setIdle(
 			30 * 60e3,
 			() => {
-				toast("Idling..."); 
+				toast("Idling...");
 				this.loadFeedsWithContent({limit});
 			},
 			() => {
-				toast("Reactive..."); 
+				toast("Reactive...");
 				this.loadFeedsWithContent({limit});
 			}
 		);
