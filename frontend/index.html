@@ -69,6 +69,15 @@
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
+		<!-- Google tag (gtag.js) -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF3W5SZ5PM"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+
+			gtag('config', 'G-SF3W5SZ5PM');
+		</script>
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
 		<template id="tpl_header" x-if="ready">
@@ -2348,6 +2357,8 @@ function alpineRSS() { return {
 
 			this.input = '';
 			this.review_feed = null;
+
+			saveTasks(true);
 		} catch (ex) {
 			console.error(ex.message);
 		}
@@ -2392,7 +2403,7 @@ function alpineRSS() { return {
 		}
 	},
 
-	saveTasks() {
+	saveTasks(noReload) {
 		let encodedUrls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 
 		let limit = ~~(this.params?.l || this.K.LIMIT);
@@ -2407,7 +2418,7 @@ function alpineRSS() { return {
 		console.log('url:', url.toString());
 		history.pushState({}, "", url.toString());
 
-		this.loading = true;
+		this.loading = noReload ? false : true;
 		this.storageDel(this.K.feeds);
 		this.storageSet(this.K.tasks, this.tasks);
 		if (this.params.x) {
@@ -2419,7 +2430,9 @@ function alpineRSS() { return {
 
 		this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
 			.then(done => {
-				console.log('build tasks done');
+				if (noReload) return;
+
+				console.log('saveTasks done');
 				this.loading = false;
 				this.loadingPercent = 1;
 				window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
