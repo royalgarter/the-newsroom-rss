@@ -69,6 +69,15 @@
 
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script> -->
+		<!-- Google tag (gtag.js) -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF3W5SZ5PM"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+
+			gtag('config', 'G-SF3W5SZ5PM');
+		</script>
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
 		<template id="tpl_header" x-if="ready">
@@ -127,7 +136,7 @@
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
-					:class="params?.s?.includes?.('shadow') ? 'shadow' : ''"
+					:class="style()?.shadow ? 'shadow' : ''"
 					x-cloak
 					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
 					x-intersect:once="
@@ -180,19 +189,20 @@
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
-								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative pb-8"
+								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
 									x-intersect:leave="triggerIntersect('leave', item.link)"
 									x-intersect.full.margin.-10%.0%="triggerIntersect('full', item.link)"
 									:class="[
 										item.viewed ? 'opacity-90 italic' : '',
-										params?.s?.includes?.('shadow') ? 'shadow' : '',
+										style()?.shadow ? 'shadow' : '',
+										style()?.preview ? 'pb-8' : '',
 										'single_view' == params?.f ? 'col-span-full' : '',
 									].join(' ')
 									"
 								>
 									<!-- thumbnail -->
-									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
+									<template x-if="style()?.img && item.image_thumb">
 										<div class="rss-meta relative min-h-36">
 											<a class="rss-thumb" 
 												:href="'#' + item.anchor" 
@@ -234,7 +244,7 @@
 
 									<!-- title & description -->
 									<div id="rss-item-title-desc" class="p-4 text-gray-400 dark:text-gray-300">
-										<span x-show="item.viewed" class="py-1 text-xs font-regular mr-1 flex flex-row items-center">
+										<span x-show="item.viewed && style()?.preview" class="py-1 text-xs font-regular mr-1 flex flex-row items-center">
 											<svg x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
 											</svg>
@@ -242,34 +252,29 @@
 										</span>
 
 										<div class="items-center">
-											<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
-
-												:class="( item.image_thumb &&
-															(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
-														) ? 'pointer-events-none' : ''"
-												:href="item.link" target="_blank"
-												:title="item.title"
-												x-html="decodeHTML(item.title).substr(0, 150) + (
-															params?.s?.includes?.('title')
-																? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
-																: ''
-														)"
-												rel="external"
-											></a>
-
 											<a :href="item.link" target="_blank" class="text-blue-400 dark:text-blue-300 visited:text-purple-600">
 												<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
 													class="rss-open-link size-4 cursor-pointer inline mb-[6px] opacity-75 hover:opacity-100"
-													:class="( item.image_thumb &&
-																(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
-															) ? 'visible' : 'invisible'"
+													x-show="item.image_thumb && !style()?.img"
 												>
 													<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
 												</svg>
 											</a>
+											<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
+
+												:class="( item.image_thumb &&
+															!style()?.img
+														) ? 'pointer-events-none' : ''"
+												:href="item.link" target="_blank"
+												:title="item.title"
+												x-html="decodeHTML(item.title).substr(0, 150) + (
+															style()?.img ? '' : (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + timeSince(new Date(item.published)) + '</sup>')
+														)"
+												rel="external"
+											></a>
 										</div>
 
-										<template x-if="!params?.s?.includes?.('title')">
+										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
 											>
@@ -278,7 +283,7 @@
 									</div>
 
 									<!-- item article -->
-									<template x-if="!params?.s?.includes?.('title')">
+									<template x-if="style()?.preview">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
 											<div class="cursor-pointer px-4 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
 												<span class="py-1 text-xs font-regular flex flex-row items-center"
@@ -392,13 +397,13 @@
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
 								class="hidden sm:block grid grid-cols-1 gap-6 transition-all transition-discrete"
 								:class="[
-									params?.s?.includes?.('shadow') ? 'shadow' : '',
+									style()?.shadow ? 'shadow' : '',
 									'single_view' != params?.f ? 'pt-18' : 'pt-0',
 								].join(' ')
 								"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore()"
 							>
-								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="params?.s?.includes?.('shadow') ? 'shadow' : ''">
+								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="style()?.shadow ? 'shadow' : ''">
 									<div class="px-4 py-2 flex flex-row items-center">
 										<span class="py-1 text-xl font-bold flex flex-row items-center">
 											<p class="rss-article-title text-gray-600 dark:text-gray-300 whitespace-pre-line break-words" x-html="feed.article?.title || ''">
@@ -475,7 +480,7 @@
 								>
 									
 									<!-- readlater thumbnail -->
-									<template x-if="!params?.s?.includes?.('no') && item.image_thumb">
+									<template x-if="style()?.img && item.image_thumb">
 										<div class="rss-meta relative min-h-36"
 											@click="location.hash = '#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
 										>
@@ -510,12 +515,12 @@
 										</span>
 										<a class="rss-title inline font-semibold max-w-full text-lg mb-2 hover:text-indigo-600 dark:hover:text-indigo-300 visited:text-fuchsia-800 transition duration-500 ease-in-out"
 											:class="( item.image_thumb &&
-														(!params?.s?.includes?.('no') && !params?.s?.includes?.('title'))
+														!style()?.img
 													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
 											:title="item.title"
 											x-html="decodeHTML(item.title).substr(0, 150) + (
-														params?.s?.includes?.('title')
+														style()?.title
 															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
 															: ''
 													)"
@@ -529,7 +534,7 @@
 												<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
 											</svg>
 										</a>
-										<template x-if="!params?.s?.includes?.('title')">
+										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
 												x-html="item.description ? decodeHTML(item.description) : ''"
 											>
@@ -771,7 +776,7 @@
 											</div>
 											<div class="w-full cursor-pointer">
 												<select class="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="settings-style" x-model="params.s">
-													<template x-for="sty in ['full','noimg','nopreview','title']">
+													<template x-for="sty in Object.keys(style_flags)">
 														<option :value="sty" x-text="sty" :selected="params.s == sty"></option>
 													</template>
 												</select>
@@ -817,7 +822,7 @@
 				</div>
 
 				<!-- declarations -->
-				<div id="expander_declarations" x-data="{ expanded: false }" class="py-2">
+				<div id="expander_declarations" x-data="{ expanded: (location.hash == '#declarations') || false }" class="py-2">
 					<a id="anchor_declarations" href="#declarations" name="declarations" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
@@ -1016,6 +1021,9 @@
 										</p>
 										<p class="text-base mb-4">
 											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/Martinviv/rss-sources/blob/main/README.md" target="_blank">Martin Vivian's sources</a>
+										</p>
+										<p class="text-base mb-4">
+											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://atomstr.data.haus/" target="_blank">atomstr - RSS/Atom gateway to Nostr.</a>
 										</p>
 										<p class="text-base mb-4">
 											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://rss.diffbot.com/" target="_blank">Diffbot (RSS Anything: Transform any old website with a list of links into an RSS Feed)</a>
@@ -1273,6 +1281,15 @@ function alpineRSS() { return {
 	is_noimg: false,
 
 	review_feed: null,
+
+	style() { return {...this.style_flags[this.params?.s || 'full'], s: this.params?.s}; },
+	style_flags: {
+		tiny: {title: 1, desc: 0, img: 0, preview: 0},
+		title: {title: 1, desc: 0, img: 1, preview: 0},
+		noimg: {title: 1, desc: 1, img: 0, preview: 1},
+		nopreview: {title: 1, desc: 1, img: 1, preview: 0},
+		full: {title: 1, desc: 1, img: 1, preview: 1},
+	},
 
 	google: null,
 	profile: null,
@@ -1573,9 +1590,9 @@ function alpineRSS() { return {
 
 	async saveReadLater(item, is_remove) {
 		if (!item || !item.link) return;
-		
+
 		item.read_later = !item.read_later;
-		
+
 		try {
 			let readLaterItems = this.storageGet(this.K.readlater) || [];
 
@@ -1611,7 +1628,7 @@ function alpineRSS() { return {
 				this.storageSet(this.K.readlater, readLaterItems);
 
 				// console.dir({obj})
-				
+
 				// Save to Deno KV
 				if (this.params.x) {
 					await fetch('/api/readlater', {
@@ -1627,14 +1644,14 @@ function alpineRSS() { return {
 				}
 			} else {
 				// Remove from local storage
-				
+
 				readLaterItems = readLaterItems.filter(i => i.link !== item.link);
 				readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 				readLaterItems.forEach(x => x.read_later = true);
 
 				this.readlater = {items: readLaterItems};
 				this.storageSet(this.K.readlater, readLaterItems);
-				
+
 				// Remove from Deno KV
 				if (this.params.x) {
 					await fetch('/api/readlater', {
@@ -1653,7 +1670,7 @@ function alpineRSS() { return {
 			item.read_later = !item.read_later; // Revert the state if there's an error
 		}
 	},
-	
+
 	async loadReadLaterItems() {
 		if (this.loadingBookmarks) return;
 
@@ -1662,19 +1679,19 @@ function alpineRSS() { return {
 
 		// Load from local storage first
 		let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
-		
+
 		// If user is identified, try to load from Deno KV
 		if (this.params.x) {
 			try {
 				const response = await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}`);
 				if (response.ok) {
 					const kvItems = await response.json();
-					
+
 					// Merge items from KV with local storage, prioritizing KV
 					if (Array.isArray(kvItems)) {
 						// Remove local items that aren't in KV
 						readLaterItems = kvItems;
-						
+
 						// Update local storage
 						this.storageSet(this.K.readlater, readLaterItems);
 					}
@@ -1689,7 +1706,7 @@ function alpineRSS() { return {
 
 		readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 		this.readlater = {items: readLaterItems};
-		
+
 		// Mark items in feeds as read_later if they're in the readLaterItems list
 		this.feeds.forEach(feed => {
 			feed.items.forEach(item => {
@@ -1814,7 +1831,7 @@ function alpineRSS() { return {
 				]
 				: data.map((item, idx) => {
 					console.time('>> load.feed.item.' + item?.url);
-					
+
 					return fetch([`/api/feeds?type=keys`,
 						`&l=${limit + limit_adjust}`,
 						`&x=${this.params.x || ''}`,
@@ -1969,6 +1986,8 @@ function alpineRSS() { return {
 	},
 
 	timeSince(date) {
+		date = Math.min(Date.now() - 60e3, date);
+
 		let seconds = Math.floor((new Date() - date) / 1000);
 
 		let interval = seconds / 31536000;
@@ -2125,7 +2144,7 @@ function alpineRSS() { return {
 					};
 
 					item.prefetchContent = async () => {
-						if (this.params?.s?.includes?.('nopreview')) return;
+						if (!this.style()?.preview) return;
 
 						// console.log('prefetchContent', item.title);
 
@@ -2244,7 +2263,8 @@ function alpineRSS() { return {
 
 				feed.items.forEach(x => x.disable = false);
 
-				fetch(`/api/feeds?l=${feed.items.length*2}&x=${this.params.x || ''}`, {
+				this.loading = true;
+				fetch(`/api/feeds?l=${feed.items.length*2}&x=${this.params.x || ''}&cachy=no_cache`, {
 					method: 'POST',
 					headers: {"content-type": "application/json"},
 					signal: AbortSignal.timeout(20e3),
@@ -2253,14 +2273,15 @@ function alpineRSS() { return {
 				.then(resp => resp.json())
 				.then(resp => {
 					let new_items = resp?.feeds?.[0]?.items;
-					
+
 					if (!new_items?.length) return;
-					
+
 					feed.items = new_items;
 					feed.postProcessItems(true);
 					feed.items.forEach(x => x.prefetchContent?.());
 				})
 				.catch(null)
+				.finally(_ => {this.loading = false});
 			};
 
 			feed.postProcessItems();
@@ -2339,6 +2360,8 @@ function alpineRSS() { return {
 
 			this.input = '';
 			this.review_feed = null;
+
+			saveTasks(true);
 		} catch (ex) {
 			console.error(ex.message);
 		}
@@ -2383,7 +2406,7 @@ function alpineRSS() { return {
 		}
 	},
 
-	saveTasks() {
+	saveTasks(noReload) {
 		let encodedUrls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 
 		let limit = ~~(this.params?.l || this.K.LIMIT);
@@ -2398,7 +2421,7 @@ function alpineRSS() { return {
 		console.log('url:', url.toString());
 		history.pushState({}, "", url.toString());
 
-		this.loading = true;
+		this.loading = noReload ? false : true;
 		this.storageDel(this.K.feeds);
 		this.storageSet(this.K.tasks, this.tasks);
 		if (this.params.x) {
@@ -2410,7 +2433,9 @@ function alpineRSS() { return {
 
 		this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
 			.then(done => {
-				console.log('build tasks done');
+				if (noReload) return;
+
+				console.log('saveTasks done');
 				this.loading = false;
 				this.loadingPercent = 1;
 				window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
@@ -2487,6 +2512,12 @@ function alpineRSS() { return {
 		// 	this.loading = this.loading_scroll;
 		// };
 
+		this.$watch('params.s', value => {
+			const url = new URL(location.href);
+			url.searchParams.set('s', this.params.s);
+			history.pushState(null, '', url.toString());
+		});
+
 		this.$watch('loading', value => {
 			this.title = this.theTitle();
 		});
@@ -2515,22 +2546,25 @@ function alpineRSS() { return {
 		})
 
 		try {
+			let {country} = await fetch('https://api.country.is/').then(r => r.json()).catch(_ => ({}));
+
 			fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsByCountry => {
 				let locale = new Intl.Locale(navigator.language);
 				locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
-				
-				console.log(locale);
+
+				console.dir({country, locale});
 
 				let region = locale.region.toUpperCase();
 				let language = locale.language.toUpperCase();
 				let name = locale.name.toUpperCase();
 
 				let found = feedsByCountry.find(x => {
-					return (region == x.country)
-					|| (language == x.country)
-					|| navigator.language.includes(x.country)
-					|| stringSimilarity(name, x.name) >= 0.8
-					|| stringSimilarity(name, x.country) >= 0.5
+					return (country && (country == x.country))
+						|| (region == x.country)
+						|| (language == x.country)
+						|| navigator.language.includes(x.country)
+						|| stringSimilarity(name, x.name) >= 0.8
+						|| stringSimilarity(name, x.country) >= 0.5
 				});
 
 				if (found?.feeds?.length) {
@@ -2559,7 +2593,7 @@ function alpineRSS() { return {
 			// this.debug = JSON.stringify(this.params);
 
 			this.is_hide_feeds = true;
-			
+
 			console.log('share_target', this.params);
 
 			toast('Shared: ' + JSON.stringify(this.params));
@@ -2573,7 +2607,7 @@ function alpineRSS() { return {
 			const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 			const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 			const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
-			
+
 			let html = '', item = {};
 			try {
 				let fetch_opts = { redirect: 'follow', signal: AbortSignal.timeout(3e3) };
@@ -2611,7 +2645,7 @@ function alpineRSS() { return {
 			toast('Saving: ' + item.title);
 
 			// this.debug = JSON.stringify(item);
-			
+
 			await this.saveReadLater(item);
 			await this.loadReadLaterItems();
 			toast('Bookmarked: ' + item.title);
@@ -2660,7 +2694,7 @@ function alpineRSS() { return {
 
 				clearInterval(prefetched);
 			}, 500);
-			
+
 
 			this.loading = false;
 			return;
@@ -2736,17 +2770,17 @@ function alpineRSS() { return {
 			if (!x) return;
 
 			let is_reload = THIS.params.x && (x != THIS.params.x)
-			
+
 			THIS.params.x = x;
 			THIS.storageSet(THIS.K.hash, THIS.params.x);
-			
+
 			THIS.profile = detail.profile;
 			THIS.storageSet(THIS.K.profile, THIS.profile);
 
 			const url = new URL(location);
 			url.searchParams.set("x", x);
 			history.pushState({}, "", url);
-			
+
 			if (document.querySelector('#img-profile').src != detail.profile?.picture) {
 				document.querySelector('#img-profile').src = detail.profile?.picture;
 			}
@@ -2766,11 +2800,11 @@ function alpineRSS() { return {
 		setIdle(
 			30 * 60e3,
 			() => {
-				toast("Idling..."); 
+				toast("Idling...");
 				this.loadFeedsWithContent({limit});
 			},
 			() => {
-				toast("Reactive..."); 
+				toast("Reactive...");
 				this.loadFeedsWithContent({limit});
 			}
 		);
