@@ -1832,23 +1832,37 @@ function alpineRSS() { return {
 				: data.map((item, idx) => {
 					console.time('>> load.feed.item.' + item?.url);
 
-					return fetch([`/api/feeds?type=keys`,
+					let fetch_url = [
+						`/api/feeds?type=keys`,
 						`&l=${limit + limit_adjust}`,
 						`&x=${this.params.x || ''}`,
 						`&sig=${sig}`,
 						`&pioneer=${this.pioneer || ''}`
-					].join(''), {
+					].join(''); 
+					
+					let fetch_opts = {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
 						signal: AbortSignal.timeout(60e3),
 						body: JSON.stringify({batch, keys: [item]}),
-					})
-					.then(resp => resp.json())
-					.then(json => {
+					};
+
+					let fetchReceiveJSON = async (json, skipCheck) => {
 						console.timeEnd('>> load.feed.item.' + item?.url);
 						// console.log('json', json.feeds[0]);
 
 						let newfeed = json?.feeds?.[0];
+
+						let last_published = newfeed.items?.filter(x => x.published)?.map(x => x.published)?.sort()?.pop();
+						
+						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*24)) ) {
+							setTimeout(() => {
+								fetch(fetch_url, fetch_opts)
+								.then(resp => resp.json())
+								.then(json => fetchReceiveJSON(json, true))
+								.catch(null)
+							}, 30e3);
+						}
 
 						let found = newfeed && this.feeds.find(f => f.rss_url == newfeed?.rss_url);
 
@@ -1858,7 +1872,11 @@ function alpineRSS() { return {
 						}
 
 						return json;
-					})
+					}
+
+					return fetch(fetch_url, fetch_opts)
+					.then(resp => resp.json())
+					.then(json => fetchReceiveJSON(json))
 					.catch(null)
 					.finally(() => this.loadingPercent += step)
 				})
