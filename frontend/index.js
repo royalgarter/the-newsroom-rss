@@ -594,7 +594,7 @@ function alpineRSS() { return {
 						`&l=${limit + limit_adjust}`,
 						`&x=${this.params.x || ''}`,
 						`&sig=${sig}`,
-						`&pioneer=${this.pioneer || ''}`
+						`&pioneer=${this.pioneer || ''}`,
 					].join('');
 
 					let fetch_opts = {

@@ -828,7 +828,7 @@
 				<!-- declarations -->
 				<div x-data="{
 					html_declarations: function() {
-						fetch('/components/declarations.html', {cache: force-cache'}).then(r => r.text()).then(html => this.$root.innerHTML = html);
+						fetch('/components/declarations.html').then(r => r.text()).then(html => {this.$root.innerHTML = html});
 					}
 				}" x-init="html_declarations">
 				</div>
