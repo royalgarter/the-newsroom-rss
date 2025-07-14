@@ -826,226 +826,11 @@
 				</div>
 
 				<!-- declarations -->
-				<div id="expander_declarations" x-data="{ expanded: (location.hash == '#declarations') || false }" class="py-2">
-					<a id="anchor_declarations" href="#declarations" name="declarations" class="scroll-smooth"></a>
-					<h3 class="text-xl">
-						<button
-							id="collapse-title-02"
-							type="button"
-							class="cursor-pointer text-slate-600 dark:text-slate-300 flex items-center justify-between w-full text-left font-semibold py-2"
-							@click="expanded = !expanded"
-							:aria-expanded="expanded"
-							aria-controls="collapse-02"
-						>
-							<div>
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline mb-1">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-								</svg>
-
-								<span>Why You Need RSS in Your Life</span>
-							</div>
-
-							<svg x-cloak class="fill-indigo-500 dark:fill-indigo-300 shrink-0 ml-8" width="16" height="16">
-								<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
-								<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" :class="{'!rotate-180': expanded}" />
-							</svg>
-						</button>
-					</h3>
-					<div
-						id="collapse-02"
-						role="region"
-						aria-labelledby="collapse-title-02"
-						class="grid text-sm text-slate-600 dark:text-slate-300 overflow-hidden w-full transition-all duration-300 ease-in-out"
-						:class="expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] hidden'"
-						>
-						<div class="m-auto my-4 p-2 max-w-auto rounded-md bg-gray-100 dark:bg-gray-800">
-							<!--  uses radio buttons -->
-							<section class="flex flex-row flex-wrap m-4 py-4 rounded-lg">
-								<input id="tab-one" type="radio" name="tabs" class="cursor-pointer peer/tab-one opacity-0 absolute" checked />
-								<label for="tab-one" class="bg-slate-200 dark:bg-slate-700 hover:bg-stone-200 dark:hover:bg-stone-600 peer-checked/tab-one:bg-stone-200 dark:peer-checked/tab-one:bg-stone-600 text-lg font-semibold cursor-default px-2 py-1 rounded-tl-lg block">
-									Fantastic RSS
-								</label>
-
-								<input id="tab-two" type="radio" name="tabs" class="cursor-pointer peer/tab-two opacity-0 absolute" />
-								<label for="tab-two" class="bg-slate-300 dark:bg-slate-600 hover:bg-stone-200 dark:hover:bg-stone-600 peer-checked/tab-two:bg-stone-200 dark:peer-checked/tab-two:bg-stone-600 text-lg font-semibold cursor-default px-2 py-1 block">
-									by Will McAvoy
-								</label>
-
-								<input id="tab-three" type="radio" name="tabs" class="cursor-pointer peer/tab-three opacity-0 absolute" />
-								<label for="tab-three" class="bg-slate-400 dark:bg-slate-500 hover:bg-stone-200 dark:hover:bg-stone-600 peer-checked/tab-three:bg-stone-200 dark:peer-checked/tab-three:bg-stone-600 text-lg font-semibold cursor-default px-2 py-1 block">
-									, Charlie Skinner
-								</label>
-
-								<input id="tab-four" type="radio" name="tabs" class="cursor-pointer peer/tab-four opacity-0 absolute" />
-								<label for="tab-four" class="bg-slate-500 dark:bg-slate-400 hover:bg-stone-200 dark:hover:bg-stone-600 peer-checked/tab-four:bg-stone-200 dark:peer-checked/tab-four:bg-stone-600 text-lg font-semibold cursor-default px-2 py-1 rounded-tr-lg block">
-									& Where To Find Them
-								</label>
-
-								<div class="basis-full h-0"></div>
-
-								<div class="bg-stone-200 dark:bg-stone-600 hidden peer-checked/tab-one:block p-2 w-full transition-all transition-discrete">
-									<div class="container mx-auto p-6 max-w-4xl">
-										<p class="text-base mb-4">
-											<strong class="font-bold">Reclaim Your Internet: Why You Need RSS in Your Life</strong>
-										</p>
-										<p class="text-base mb-4">Tired of endless scrolling, clickbait, and algorithms dictating what you see online? As a seasoned news professional, I've seen firsthand how the internet has changed. But amidst the noise, a powerful tool remains: RSS.</p>
-										<p class="text-base mb-4">RSS (Really Simple Syndication) is your personal internet concierge. Instead of visiting countless websites, RSS brings the content <em class="italic">you</em> want directly to you. Imagine a single, customizable feed filled with the latest articles, blog posts, and videos from your favorite sources. No ads, no distractions, just the information you need, when you need it. </p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">Here's why you should embrace RSS:</strong>
-										</p>
-										<ul class="list-disc pl-6 mb-4">
-											<li class="mb-2">
-												<strong class="font-bold">Time is precious:</strong> Stop wasting hours hopping between websites. RSS delivers updates in a clean, efficient format, saving you valuable time.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Control your information:</strong> Algorithms push content based on assumptions. RSS puts <em class="italic">you</em> in control. Subscribe to the sources you trust, and filter out the rest.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Stay informed, truly informed:</strong> Break free from echo chambers. RSS allows you to curate a diverse range of perspectives, fostering a more well-rounded understanding of the world.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Rediscover the open web:</strong> Support independent creators and niche publications. RSS connects you directly to the sources you value, bypassing social media gatekeepers.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">It's easier than you think:</strong> Numerous user-friendly RSS readers are available for your computer, phone, or tablet. A quick search will reveal the perfect option for you.
-											</li>
-										</ul>
-										<p class="text-base mb-4">In a world of information overload, RSS is a lifeline. It's a tool for reclaiming your attention, fostering informed citizenship, and connecting with the content that truly matters. Don't let the algorithms win. Take control of your internet experience and discover the power of RSS. You won't regret it.</p>
-									</div>
-								</div>
-								<div class="bg-stone-200 dark:bg-stone-600 hidden peer-checked/tab-two:block p-2 w-full transition-all transition-discrete">
-									<div class="container mx-auto p-6 max-w-4xl">
-										<p class="text-base mb-4">
-											<strong class="font-bold">(Clears throat)</strong>
-										</p>
-										<p class="text-base mb-4">Good evening. Tonight, I want to talk about something that may seem… arcane. Something that might not trend on Twitter, but that, in its own quiet way, is essential to an informed citizenry. I'm speaking, of course, about RSS.</p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">(A hint of exasperation flickers)</strong>
-										</p>
-										<p class="text-base mb-4">Yes, RSS. I can practically hear the collective groan. But before you reach for the remote, consider this: In an age of disinformation, of algorithm-driven echo chambers, RSS offers a path to a more… curated, dare I say, <em class="italic">civilized</em> consumption of information. </p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">(A touch of passion)</strong>
-										</p>
-										<p class="text-base mb-4">It's a simple concept, really. Instead of passively accepting whatever Facebook or Google deems worthy of your attention, RSS allows you to actively select your sources. It's like building your own bespoke news feed, tailored to your interests, your values, your intellectual curiosity.</p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">(A wry smile)</strong>
-										</p>
-										<p class="text-base mb-4">Think of it as the antidote to the outrage industrial complex. Instead of being bombarded with sensational headlines designed to provoke an emotional response, you can focus on substantive reporting, on thoughtful analysis, on the kind of journalism that actually… informs.</p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">(A plea)</strong>
-										</p>
-										<p class="text-base mb-4">I know it's not as flashy as the latest viral video. It doesn't offer the instant gratification of a perfectly crafted meme. But RSS offers something far more valuable: control. Control over your information, control over your attention, control over your own intellectual development.</p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">(Straightens up)</strong>
-										</p>
-										<p class="text-base mb-4">In a society increasingly defined by its ability to process and disseminate information, the ability to curate your own information stream is not merely a convenience, it's a civic responsibility. It's a way to resist the forces of ignorance and manipulation. It's a way to reclaim the promise of the internet as a tool for enlightenment.</p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">(A hint of hope)</strong>
-										</p>
-										<p class="text-base mb-4">So, tonight, I urge you to consider RSS. It may not be the sexiest topic, but it is, I believe, a vital one. It's a small step, perhaps, but a step in the right direction. A step towards a more informed, a more engaged, a more… civilized society.</p>
-									</div>
-								</div>
-								<div class="bg-stone-200 dark:bg-stone-600 hidden peer-checked/tab-three:block p-2 w-full transition-all transition-discrete">
-									<div class="container mx-auto p-6 max-w-4xl">
-										<p class="text-base mb-4">
-											<strong class="font-bold">Goddammit, Use RSS! Are You People Trying to Stay Uncivilized?</strong>
-										</p>
-										<p class="text-base mb-4">Alright, listen up! I haven't got all day, and neither do you, unless you <em class="italic">enjoy</em> being spoon-fed drivel by Zuckerberg and his army of algorithm-pushing monkeys. I'm talking about RSS. Yes, RSS! The thing you millennials probably think is some kind of obscure bird disease. </p>
-										<p class="text-base mb-4">This isn't some newfangled social media crap. This is a <em class="italic">tool</em>. A way to get real goddamn information without having to wade through a swamp of cat videos and Kardashian updates. Are you civilized, or trained seals? </p>
-										<p class="text-base mb-4">
-											<strong class="font-bold">Here's the deal, and listen close:</strong>
-										</p>
-										<ul class="list-disc pl-6 mb-4">
-											<li class="mb-2">
-												<strong class="font-bold">Time is Money, and You're Wasting Both:</strong> Stop clicking around like a bunch of caffeinated hamsters. RSS delivers the news you need, straight to your reader. No ads, no distractions, just the facts. It's called efficiency, people. Look it up.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Think for Yourselves, For Christ's Sake:</strong> You're letting some computer program decide what's important? You're supposed to be skeptical! RSS lets you choose your sources, so you can actually, you know, <em class="italic">think</em> for yourselves.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Get the Whole Story, Not Just the Sound Bites:</strong> The world is complicated. It's messy. You're not going to understand it by reading 140-character tweets. RSS lets you dig deeper, explore different perspectives, and actually, you know, <em class="italic">report</em>.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Support Real Journalism, Not Just Corporate Garbage:</strong> There are still some good people out there, trying to do honest work. They need your support. RSS lets you connect directly with those sources, instead of lining the pockets of some soulless corporation.
-											</li>
-										</ul>
-										<p class="text-base mb-4">Look, I'm not asking you to cure cancer. I'm asking you to use your goddamn brains. The internet is a powerful tool, but it can also make you stupid. RSS is the antidote. The world isn't going to wait for you to catch up. Now get out of my office!</p>
-									</div>
-								</div>
-								<div class="bg-stone-200 dark:bg-stone-600 hidden peer-checked/tab-four:block p-2 w-full transition-all transition-discrete">
-									<div class="container mx-auto p-6 max-w-4xl">
-										<p class="text-base mb-4">
-											<strong class="font-bold">Easy Guide to Getting News from Your Favorite Paper with RSS</strong>
-										</p>
-										<p class="text-base mb-4">Want the latest headlines without constantly checking the website? Here's how to find the RSS feed:</p>
-										<ul class="list-disc pl-6 mb-4">
-											<li class="mb-2">
-												<strong class="font-bold">Look for the RSS Icon:</strong> Some websites show a small RSS icon (looks like a radio signal) near articles or at the bottom of the page.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Check the Website Directly:</strong> Browse the website's bottom (footer) or "Contact Us" page for links labeled "RSS," "Subscribe," or "Feeds."
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Search the Website:</strong> Use the site's search box and type "RSS feed."
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Google It:</strong> The easiest way! Search Google for "[ <em class="italic">Newspaper Name</em>] RSS feed". For example, "New York Times RSS feed."
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">Copy the Link:</strong> Once you find the feed link (it'll look like a web address), copy it.
-											</li>
-											<li class="mb-2">
-												<strong class="font-bold">That's it! Now you can see them!</strong>
-											</li>
-										</ul>
-										
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://docs.rsshub.app/routes/popular" target="_blank">RSSHub</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://feedle.world/" target="_blank">Feedle</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://ooh.directory/" target="_blank">ooh.directory</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://rss.feedspot.com/rss_directory/" target="_blank">Feedspot</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://www.billdietrich.me/feedlist.html" target="_blank">Bill Dietrich's feedlist</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://www.youneedfeeds.com/starter-packs" target="_blank">youneedfeeds</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/plenaryapp/awesome-rss-feeds/blob/master/README.md" target="_blank">Awesome RSS Feeds</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/yavuz/news-feed-list-of-countries/blob/master/README.md" target="_blank">News Feed List of Countries</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://github.com/Martinviv/rss-sources/blob/main/README.md" target="_blank">Martin Vivian's sources</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://atomstr.data.haus/" target="_blank">atomstr - RSS/Atom gateway to Nostr.</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://rss.diffbot.com/" target="_blank">Diffbot (RSS Anything: Transform any old website with a list of links into an RSS Feed)</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://politepol.com/en/" target="_blank">PolitePol (Create your feed yourself!)</a>
-										</p>
-										<p class="text-base mb-4">
-											<a class="text-blue-500 dark:text-blue-300 font-semibold" href="https://feedsy.xyz/" target="_blank">Feedsy (Create RSS Feeds from any website in Seconds)</a>
-										</p>
-										<!-- <p class="italic text-base mb-4">
-											<strong>Note:</strong> Some websites might not offer RSS feeds directly.
-										</p> -->
-									</div>
-								</div>
-							</section>
-						</div>
-					</div>
+				<div x-data="{
+					html_declarations: function() {
+						fetch('/components/declarations.html', {cache: force-cache'}).then(r => r.text()).then(html => this.$root.innerHTML = html);
+					}
+				}" x-init="html_declarations">
 				</div>
 			</div>
 
@@ -1124,7 +909,6 @@
 		<div id="anchor_jump" x-data="{
 			_alBody: Alpine.$data(document.querySelector('body')),
 			_alRead: Alpine.$data(document.querySelector('#expander_readlater')),
-			_alDecl: Alpine.$data(document.querySelector('#expander_declarations')),
 
 			is_open: false,
 			anchors: [],
@@ -1156,7 +940,9 @@
 
 							setTimeout(() => {
 								_alRead.expanded = _alBody.is_hide_feeds = (location.hash == '#bookmarks');
-								_alDecl.expanded = (location.hash == '#declarations');
+
+								const _alDecl = Alpine.$data(document.querySelector('#expander_declarations'));
+								if (_alDecl) _alDecl.expanded = (location.hash == '#declarations');
 
 								_alBody.loading = false;
 							}, 100);
