@@ -373,6 +373,11 @@ function alpineRSS() { return {
 					}
 				}
 
+				obj.published_formatted = this.timeSince(new Date(obj.published));
+				obj.title_formatted = this.decodeHTML(obj.title).substr(0, 150);
+				obj.description_formatted = obj.description ? this.decodeHTML(obj.description) : '';
+				obj.author_formatted_short = obj.author?.toString().substr(0, 12).trim();
+
 				let idx = readLaterItems.findIndex(i => i.link === item.link);
 				if (idx < 0) {
 					readLaterItems.push(obj);
@@ -462,6 +467,12 @@ function alpineRSS() { return {
 		}
 
 		readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
+		readLaterItems.forEach(item => {
+			item.published_formatted = this.timeSince(new Date(item.published));
+			item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
+			item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
+			item.author_formatted_short = item.author?.toString().substr(0, 12).trim();
+		});
 		this.readlater = {items: readLaterItems};
 
 		// Mark items in feeds as read_later if they're in the readLaterItems list
@@ -847,36 +858,43 @@ function alpineRSS() { return {
 			}
 
 			feed.postProcessItems = (is_load_more) => {
-				// console.log('viewed_0.1', feed.items.length, limit)
+                // console.log('viewed_0.1', feed.items.length, limit)
 
-				feed.items.forEach((item, idx) => {
-					item.read_more = false;
-					item.prefetching = false;
-					item.read_later = false;
-					item.anchor = anchorling(item?.link);
+                feed.items.forEach((item, idx) => {
+                    item.read_more = false;
+                    item.prefetching = false;
+                    item.read_later = false;
+                    item.anchor = anchorling(item?.link);
 
-					item.viewed = this.storageGet(this.K.viewed + item.link);
+                    item.viewed = this.storageGet(this.K.viewed + item.link);
 
-					if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
-						item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
-					}
+                    if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
+                        item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
+                    }
 
-					item.description = item.description
-						?.replace(/\<\/?[^>]*\>/g, '\n\n')
-						.replace(/\n\n+/g, '\n\n')
-						.replace(/\s+/g, ' ')
-						.substr(0, 400)
-						.trim()
-					|| '';
+                    item.description = item.description
+                        ?.replace(/\<\/?\[^>]*\>/g, '\n\n')
+                        .replace(/\n\n+/g, '\n\n')
+                        .replace(/\s+/g, ' ')
+                        .substr(0, 400)
+                        .trim()
+                    || '';
 
-					let img0 = item.images?.[0];
+                    let img0 = item.images?.[0];
 
-					item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
-						? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
-						: img0;
+                    item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
+                        ? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
+                        : img0;
 
-					item.toggleReadmore = (force_flag) => {
-						item.read_more = force_flag || (!item.read_more);
+                    item.published_formatted = (this.timeSince(new Date(item.published)) + ' ago')
+                                            || new Date(item.published).toString().split(' GMT').shift()
+                                            || (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim();
+                    item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
+                    item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
+                    item.author_formatted = item.author?.toString().substr(0, 20).trim();
+
+                    item.toggleReadmore = (force_flag) => {
+                        item.read_more = force_flag || (!item.read_more);
 
 						if (item.read_more) {
 							feed.read_more_item = item;

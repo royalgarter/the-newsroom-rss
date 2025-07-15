@@ -228,18 +228,14 @@
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-2 py-1 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
-													x-html="item.author?.toString().substr(0, 20).trim()">
+													x-html="item.author_formatted">
 												</div>
 											</a>
 
 											<a class="rss-author" :href="item.link" target="_blank">
 												<div class="text-xs p-1 h-10 w-10 absolute top-0 right-0 bg-indigo-600 dark:bg-indigo-400 text-white dark:text-gray-900 rounded-full flex flex-col items-center justify-center mt-3 mr-2 hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out">
 													<small class="break-words text-center"
-														x-html="
-															(timeSince(new Date(item.published)) + ' ago')
-															|| new Date(item.published).toString().split(' GMT').shift()
-															|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim()
-														">
+														x-html="item.published_formatted">
 													</small>
 												</div>
 											</a>
@@ -271,8 +267,8 @@
 														) ? 'pointer-events-none' : ''"
 												:href="item.link" target="_blank"
 												:title="item.title"
-												x-html="decodeHTML(item.title).substr(0, 150) + (
-															style()?.img ? '' : (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + timeSince(new Date(item.published)) + '</sup>')
+												x-html="item.title_formatted + (
+															style()?.img ? '' : (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + item.published_formatted + '</sup>')
 														)"
 												rel="external"
 											></a>
@@ -280,7 +276,7 @@
 
 										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
-												x-html="item.description ? decodeHTML(item.description) : ''"
+												x-html="item.description_formatted"
 											>
 											</p>
 										</template>
@@ -504,7 +500,7 @@
 											</div>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
 												<div class="absolute bottom-0 left-0 bg-indigo-600 dark:bg-indigo-400 px-2 py-1 text-white dark:text-gray-900 text-sm hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-200 transition duration-500 ease-in-out"
-													x-html="item.author?.toString().substr(0, 12).trim()">
+													x-html="item.author_formatted_short">
 												</div>
 											</a>
 										</div>
@@ -523,9 +519,9 @@
 													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
 											:title="item.title"
-											x-html="decodeHTML(item.title).substr(0, 150) + (
+											x-html="item.title_formatted + (
 														style()?.title
-															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + timeSince(new Date(item.published)) + ']</sup>')
+															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + item.published_formatted + ']</sup>')
 															: ''
 													)"
 											rel="external"
@@ -540,7 +536,7 @@
 										</a>
 										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
-												x-html="item.description ? decodeHTML(item.description) : ''"
+												x-html="item.description_formatted"
 											>
 											</p>
 										</template>
