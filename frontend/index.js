@@ -1535,6 +1535,8 @@ function alpineRSS() { return {
 			.catch(null);
 		// console.log('inited contents')
 
+		this.initializeIntersectionObservers();
+
 		if (this.storageGet(this.K.persona)) {
 			this.persona = this.storageGet(this.K.persona);
 
@@ -1612,6 +1614,55 @@ function alpineRSS() { return {
 		// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
 		// 	console.log('vector2', vector2);
 		// }, 10e3);
+	},
+
+	initializeIntersectionObservers() {
+		const feedObserver = new IntersectionObserver((entries, observer) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const feedIndex = parseInt(entry.target.dataset.feedIndex, 10);
+					const feed = this.feeds[feedIndex];
+					if (feed) {
+						feed.items.forEach(item => item.prefetchContent?.());
+						if (this.feeds[feedIndex + 1]) {
+							this.feeds[feedIndex + 1].items.forEach(item => item.prefetchContent?.());
+						}
+					}
+					observer.unobserve(entry.target);
+				}
+			});
+		}, { threshold: 0.1 });
+
+		const itemObserver = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				const link = entry.target.dataset.link;
+				if (entry.isIntersecting) {
+					if (entry.intersectionRatio >= 1.0) {
+						this.triggerIntersect('full', link);
+					} else {
+						this.triggerIntersect('enter', link);
+					}
+				} else {
+					this.triggerIntersect('leave', link);
+				}
+			});
+		}, { threshold: [0, 1.0], rootMargin: '-10% 0% -10% 0%' });
+
+		this.$watch('feeds', () => {
+			this.$nextTick(() => {
+				document.querySelectorAll('.rss-feed').forEach((el, index) => {
+					el.dataset.feedIndex = index;
+					feedObserver.observe(el);
+				});
+				document.querySelectorAll('.rss-item').forEach(el => {
+					const link = el.querySelector('a.rss-title')?.href;
+					if (link) {
+						el.dataset.link = link;
+						itemObserver.observe(el);
+					}
+				});
+			});
+		});
 	},
 }};
 
