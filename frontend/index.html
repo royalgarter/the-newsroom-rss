@@ -138,6 +138,7 @@
 
 		<main id="main" class="container mx-auto p-2 flex-1">
 			<!-- feeds -->
+			<!-- TODO: x-intersect bad performance -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
 					:class="style()?.shadow ? 'shadow' : ''"
@@ -192,6 +193,7 @@
 					<div class="max-w-screen-2xl mx-auto px-3 sm:px-8 md:px-10  pt-3 sm:pt-4 md:pt-6  pb-18 sm:pb-18 md:pb-18">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
+							<!-- TODO: x-intersect bad performance -->
 							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative"
 									x-intersect:enter="triggerIntersect('enter', item.link)"
