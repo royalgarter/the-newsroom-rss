@@ -286,7 +286,7 @@ function alpineRSS() { return {
 		return updatedMean;
 	},
 
-	triggerIntersect(type, link) { // TODO: very bad performance
+	triggerIntersect(type, link) {
 		if (!link) return console.log('ELINK');
 
 		let trig = this.TRIGGER[link] || {};

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html amp lang="en" class="scroll-smooth">
+<html amp lang="en" class="scroll-smooth overflow-x-hidden">
 	<head x-data="alpineHead()">
 		<title x-html="title">The Newsroom RSS</title>
 
@@ -52,10 +52,10 @@
 		<script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
 		<!-- <link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" /> -->
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
+		<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" /> -->
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" />
 		<!-- <script defer src="//unpkg.com/alpinejs-component@latest/dist/component.min.js"></script> -->
-		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+		<!-- <script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script> -->
 		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@mozilla/readability@0.x.x/Readability.min.js" />
@@ -83,7 +83,7 @@
 		<script type="module" src="module.mjs"></script>
 
 	</head>
-	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col overflow-x-hidden">
 		<template id="tpl_header" x-if="ready">
 			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-between max-w-auto">
 				<img width="32" height="32"
@@ -138,13 +138,11 @@
 
 		<main id="main" class="container mx-auto p-2 flex-1">
 			<!-- feeds -->
-			<!-- TODO: x-intersect bad performance -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
 					:class="style()?.shadow ? 'shadow' : ''"
 					x-cloak
 					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
-					
 				>
 					<span class="relative flex size-2" :class="loading ? 'visible' : 'invisible'">
 						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
@@ -178,7 +176,6 @@
 					<div class="max-w-screen-2xl mx-auto px-3 sm:px-8 md:px-10  pt-3 sm:pt-4 md:pt-6  pb-18 sm:pb-18 md:pb-18">
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
 							<!-- rss-item -->
-							<!-- TODO: x-intersect bad performance -->
 							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
 								<div class="rss-item bg-slate-50 dark:bg-slate-700 rounded overflow-hidden relative"
 									:class="[
