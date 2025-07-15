@@ -612,7 +612,7 @@ function alpineRSS() { return {
 
 						let last_published = newfeed.items?.filter(x => x.published)?.map(x => x.published)?.sort()?.pop();
 
-						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*24)) ) {
+						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
 							setTimeout(() => {
 								fetch(fetch_url, fetch_opts)
 								.then(resp => resp.json())
