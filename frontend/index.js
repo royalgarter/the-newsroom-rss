@@ -24,6 +24,9 @@ function alpineRSS() { return {
 	loadingFraction: '1/10',
 	loadingBookmarks: false,
 
+	linkToItemMap: new Map(),
+	viewedItemsCache: {},
+
 	debug: null,
 	params: {
 		l: 6,
@@ -286,63 +289,107 @@ function alpineRSS() { return {
 		return updatedMean;
 	},
 
+	initializeIntersectionObservers() {
+		const feedObserver = new IntersectionObserver((entries, observer) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const feedIndex = parseInt(entry.target.dataset.feedIndex, 10);
+					const feed = this.feeds[feedIndex];
+					if (feed) {
+						feed.items.forEach(item => item.prefetchContent?.());
+						if (this.feeds[feedIndex + 1]) {
+							this.feeds[feedIndex + 1].items.forEach(item => item.prefetchContent?.());
+						}
+					}
+					observer.unobserve(entry.target);
+				}
+			});
+		}, { threshold: 0.1 });
+
+		const itemObserver = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				const link = entry.target.dataset.link;
+				if (entry.isIntersecting) {
+					if (entry.intersectionRatio >= 1.0) {
+						this.triggerIntersect('full', link);
+					} else {
+						this.triggerIntersect('enter', link);
+					}
+				} else {
+					this.triggerIntersect('leave', link);
+				}
+			});
+		}, { threshold: [0, 1.0], rootMargin: '-10% 0% -10% 0%' });
+
+		this.$watch('feeds', () => {
+			this.$nextTick(() => {
+				document.querySelectorAll('.rss-feed').forEach((el, index) => {
+					el.dataset.feedIndex = index;
+					feedObserver.observe(el);
+				});
+				document.querySelectorAll('.rss-item').forEach(el => {
+					const link = el.querySelector('a.rss-title')?.href;
+					if (link) {
+						el.dataset.link = link;
+						itemObserver.observe(el);
+					}
+				});
+			});
+		});
+
+		// Save viewed items every 5 seconds
+		setInterval(() => {
+			this.saveViewedItemsCache();
+		}, 5e3);
+	},
 	triggerIntersect(type, link) {
 		if (!link) return console.log('ELINK');
 
 		let trig = this.TRIGGER[link] || {};
-
 		let now = new Date();
+		const item = this.linkToItemMap.get(link);
 
 		switch (type) {
-			case 'full'://case 'enter':
+			case 'full':
 				trig.tic = Math.min(now, trig.tic || now);
-				if (!this.loading && window.innerWidth <= 640) {
-					this.feeds.forEach(feed => {
-						let found = feed.items.find(x => x.link == link);
-
-						if (!found) return;
-
-						// location.hash = found.anchor;
-
-						const url = new URL(location.href);
-						url.searchParams.set('a', found.anchor || found.link);
-						history.pushState(null, '', url.toString());
-					});
+				if (!this.loading && window.innerWidth <= 640 && item) {
+					const url = new URL(location.href);
+					url.searchParams.set('a', item.anchor || item.link);
+					history.pushState(null, '', url.toString());
 				}
 			break;
 			case 'leave':
 				trig.toc = Math.max(now, trig.toc || now);
-				// trig.tic = Math.min(trig.toc, trig.tic || now);
 
 				if (trig.tic && trig.toc) {
 					let delta = trig.toc - trig.tic;
-
 					trig.sum = trig.sum || 0;
 					trig.sum += delta;
 
-					// console.log('delta', delta)
-
 					if (trig.sum > this.TRIGGER.LIMIT) {
-						// console.log(' > viewed', link);
-
-						this.storageSet(this.K.viewed + link, now.toString().split(' GMT').shift());
-
-						this.feeds.forEach(feed => {
-							let found = feed.items.find(x => x.link == link);
-
-							if (!found) return;
-
-							found.viewed = this.storageGet(this.K.viewed + link);
-						});
+						const viewedAt = now.toString().split(' GMT').shift();
+						this.viewedItemsCache[link] = viewedAt;
+						if (item) {
+							item.viewed = viewedAt;
+						}
 					} else {
 						trig.tic = trig.toc;
-						// console.log(' > reset', link);
 					}
 				}
 			break;
 		}
 
 		this.TRIGGER[link] = trig;
+	},
+
+	// Periodically save viewed items from cache to localStorage
+	saveViewedItemsCache() {
+		for (const link in this.viewedItemsCache) {
+			if (Object.hasOwnProperty.call(this.viewedItemsCache, link)) {
+				this.storageSet(this.K.viewed + link, this.viewedItemsCache[link]);
+			}
+		}
+		this.viewedItemsCache = {}; // Clear cache after saving
 	},
 
 	async saveReadLater(item, is_remove) {
@@ -689,6 +736,7 @@ function alpineRSS() { return {
 
 
 			this.feeds = respFeeds;
+			this.linkToItemMap.clear(); // Clear the map before repopulating
 
 			this.loadingPercent = 1;
 
@@ -866,6 +914,7 @@ function alpineRSS() { return {
                     item.read_later = false;
                     item.anchor = anchorling(item?.link);
 
+                    this.linkToItemMap.set(item.link, item);
                     item.viewed = this.storageGet(this.K.viewed + item.link);
 
                     if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
@@ -1614,55 +1663,6 @@ function alpineRSS() { return {
 		// 	const vector2 = await window.embedder?.('this is text', { pooling: 'mean', normalize: true })
 		// 	console.log('vector2', vector2);
 		// }, 10e3);
-	},
-
-	initializeIntersectionObservers() {
-		const feedObserver = new IntersectionObserver((entries, observer) => {
-			entries.forEach(entry => {
-				if (entry.isIntersecting) {
-					const feedIndex = parseInt(entry.target.dataset.feedIndex, 10);
-					const feed = this.feeds[feedIndex];
-					if (feed) {
-						feed.items.forEach(item => item.prefetchContent?.());
-						if (this.feeds[feedIndex + 1]) {
-							this.feeds[feedIndex + 1].items.forEach(item => item.prefetchContent?.());
-						}
-					}
-					observer.unobserve(entry.target);
-				}
-			});
-		}, { threshold: 0.1 });
-
-		const itemObserver = new IntersectionObserver((entries) => {
-			entries.forEach(entry => {
-				const link = entry.target.dataset.link;
-				if (entry.isIntersecting) {
-					if (entry.intersectionRatio >= 1.0) {
-						this.triggerIntersect('full', link);
-					} else {
-						this.triggerIntersect('enter', link);
-					}
-				} else {
-					this.triggerIntersect('leave', link);
-				}
-			});
-		}, { threshold: [0, 1.0], rootMargin: '-10% 0% -10% 0%' });
-
-		this.$watch('feeds', () => {
-			this.$nextTick(() => {
-				document.querySelectorAll('.rss-feed').forEach((el, index) => {
-					el.dataset.feedIndex = index;
-					feedObserver.observe(el);
-				});
-				document.querySelectorAll('.rss-item').forEach(el => {
-					const link = el.querySelector('a.rss-title')?.href;
-					if (link) {
-						el.dataset.link = link;
-						itemObserver.observe(el);
-					}
-				});
-			});
-		});
 	},
 }};
 

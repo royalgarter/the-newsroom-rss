@@ -8,7 +8,6 @@
   "dir" : "ltr",
   "lang" : "en",
   "scope" : "/",
-  "start_url": "https://newsrss.org/",
   "url" : "https://newsrss.org/",
   "description" : "We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.",
   "orientation" : "natural",
@@ -18,6 +17,7 @@
   "share_target": {
     "action": "/",
     "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
     "params": {
       "url": "url",
       "title": "title",

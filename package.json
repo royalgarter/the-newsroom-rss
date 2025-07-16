@@ -1,5 +1,6 @@
 {
   "scripts": {
-    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --env-file=.env backend/server.ts"
+    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --env-file=.env backend/server.ts",
+    "build:tailwind": "npx @tailwindcss/cli -i ./frontend/style.css -o ./frontend/index.css --content \"frontend/**/*.html,./frontend/**/*.js\""
   }
 }
