@@ -48,8 +48,8 @@
 
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4" />
-		<script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4" /> -->
+		<!-- <script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
 
 		<!-- <link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" /> -->
 		<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" /> -->
@@ -79,6 +79,7 @@
 			gtag('config', 'G-SF3W5SZ5PM');
 		</script>
 
+		<link rel="stylesheet" type="text/css" href="index.css">
 		<script src="index.js"></script>
 		<script type="module" src="module.mjs"></script>
 
@@ -945,65 +946,3 @@
 		</div>
 	</body>
 </html>
-
-<style type="text/tailwindcss">
-	[x-cloak] { display: none !important; }
-
-	@custom-variant dark (&:where(.dark, .dark *));
-
-	img {
-		max-width: 100%;
-		height: auto;
-	}
-
-	img.rss-favicon {
-		width: 24px;
-		height: 24px;
-	}
-
-	img.rss-thumb {
-		object-fit: cover;
-		height: 14rem;
-	}
-
-	p [id*="readability-page"] svg {
-		display: none;
-	}
-
-	p [id*="readability-page"] img {
-		padding: 1rem 3rem;
-		place-self: center;
-	}
-
-	p.rss-article-content * {
-		text-wrap: wrap;
-		text-overflow: ellipsis;
-		overflow-wrap: anywhere;
-		max-width: 100%;
-		word-break: normal;
-	}
-
-	p.rss-article-content p {
-		padding: 0.5rem 0rem;
-	}
-
-	p.rss-article-content img {
-		padding: 1rem;
-		place-self: center;
-		margin: 0 auto;
-	}
-</style>
-<script>
-	/*tailwind.config = {
-		theme: {
-		},
-		corePlugins: {
-			preflight: false,
-		},
-		experimental: {
-			optimizeUniversalDefaults: true,
-		}
-	}*/
-</script>
-
-
