@@ -56,24 +56,54 @@ export async function handleFeeds(req: Request) {
     hash = hash || crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 8);
     let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
+    limit = Math.min(Math.max(limit || 6, 6), 100);
+
+    let query_feeds = { urls: keys, limit, pioneer };
+    let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
+    let key_feeds_permanent = 'PERMANENT_' + key_feeds;
+
     if (update && saved) {
         let v = (await KV.get(['/api/feeds', hash, 'version']))?.value || '0';
         v = (~~v) + 1;
         let save_obj = saved.map((x, order) => ({ order, ...x }));
+
         KV.set(['/api/feeds', hash], save_obj);
         KV.set(['/api/feeds', hash, v], save_obj);
         KV.set(['/api/feeds', hash, 'version'], v);
+
         console.log('saved', saved.length, '/api/feeds', hash, v, save_obj);
+
+        CACHE.del(key_feeds);
+        CACHE.del(key_feeds_permanent);
+        KV.delete([key_feeds_permanent]).then().catch();
     }
 
     if (params.is_tasks) {
         feeds = saved.map((x, order) => ({ order, ...x }));
     } else {
-        let query_feeds = { urls: keys, limit, pioneer };
-        let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
-        let key_feeds_permanent = 'PERMANENT_' + key_feeds;
         let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
         feeds = CACHE.get(key_feeds);
+
+        console.dir({cachy, query_feeds, key_feeds, key_feeds_permanent})
+
+        if (cachy == 'no_cache') {
+            feeds = (await fetchRSSLinks(query_feeds)) || feeds || feeds_permanent;
+            saveFeedCache({ limit, feeds, key_feeds, key_feeds_permanent });
+        } else if (!feeds?.length) {
+            if (!feeds_permanent?.length) {
+                feeds = await fetchRSSLinks(query_feeds);
+                saveFeedCache({ limit, feeds, key_feeds, key_feeds_permanent })
+            } else {
+                feeds = feeds_permanent;
+                fetchRSSLinks(query_feeds)
+                    .then(fs => saveFeedCache({ limit, feeds: fs, key_feeds, key_feeds_permanent }))
+                    .catch(e => console.dir({ query_feeds, e }))
+            }
+        } else {
+            fetchRSSLinks(query_feeds)
+                .then(fs => saveFeedCache({ limit, feeds: fs, key_feeds, key_feeds_permanent }))
+                .catch(e => console.dir({ query_feeds, e }))
+        }
 
         if (!FETCH_INTERVAL[key_feeds]) {
             FETCH_INTERVAL[key_feeds] = setInterval(query_feeds => {
@@ -85,24 +115,6 @@ export async function handleFeeds(req: Request) {
                     CACHE.set(key_feeds_permanent, feeds, 60 * 60 * 24 * 7);
                 }).catch(console.log);
             }, 15 * 60e3, query_feeds);
-        }
-
-        if (cachy == 'no_cache') {
-            feeds = (await fetchRSSLinks(query_feeds)) || feeds || feeds_permanent;
-        } else if (!feeds?.length) {
-            if (!feeds_permanent?.length) {
-                feeds = await fetchRSSLinks(query_feeds);
-                saveFeedCache({ feeds, key_feeds, key_feeds_permanent })
-            } else {
-                feeds = feeds_permanent;
-                fetchRSSLinks(query_feeds)
-                    .then(fs => saveFeedCache({ feeds: fs, key_feeds, key_feeds_permanent }))
-                    .catch(e => console.dir({ query_feeds, e }))
-            }
-        } else {
-            fetchRSSLinks(query_feeds)
-                .then(fs => saveFeedCache({ feeds: fs, key_feeds, key_feeds_permanent }))
-                .catch(e => console.dir({ query_feeds, e }))
         }
     }
 

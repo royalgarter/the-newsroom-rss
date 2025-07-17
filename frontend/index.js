@@ -626,14 +626,16 @@ function alpineRSS() { return {
 			// console.log('datas:', data.length);
 			// console.time('>> load.feeds')
 			step = 0.8 / (data?.length || 1);
+			let limit_adjusted = parseInt(limit) + parseInt(limit_adjust);
 			let batch = data.map(x => ({url: x.url}));
 			let parallel = await Promise.allSettled(
 				(force_update || !data?.length)
 				? [
-					fetch([`/api/feeds?type=batch`,
-						`&l=${limit + limit_adjust}`,
-						`&x=${this.params.x || ''}`,
+					fetch([
+						`/api/feeds?type=batch`,
 						`&sig=${sig}`,
+						`&l=${limit_adjusted}`,
+						`&x=${this.params.x || ''}`,
 					].join(''), {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
@@ -649,9 +651,9 @@ function alpineRSS() { return {
 
 					let fetch_url = [
 						`/api/feeds?type=keys`,
-						`&l=${limit + limit_adjust}`,
-						`&x=${this.params.x || ''}`,
 						`&sig=${sig}`,
+						`&l=${limit_adjusted}`,
+						`&x=${this.params.x || ''}`,
 						`&pioneer=${this.pioneer || ''}`,
 					].join('');
 

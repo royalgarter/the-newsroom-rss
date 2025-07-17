@@ -204,8 +204,10 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
     return render;
 }
 
-export async function saveFeedCache({feeds, key_feeds, key_feeds_permanent}) {
+export async function saveFeedCache({limit=6, feeds, key_feeds, key_feeds_permanent}) {
 	if (!feeds?.length) return;
+
+    limit = Math.min(Math.max(limit || 6, 6), 24);
 
 	feeds = feeds.filter(x => x?.items?.length);
 
@@ -222,7 +224,7 @@ export async function saveFeedCache({feeds, key_feeds, key_feeds_permanent}) {
 	/* LAYER: 2 */
 	feeds.forEach(f => {
 		f.cache = 'CACHE_KV';
-		f.items = f.items.slice(0, 6);
+		f.items = f.items.slice(0, limit);
 	});
 	KV.set([key_feeds_permanent], feeds).catch(() => {});
 }
