@@ -97,14 +97,13 @@ async function processRssItem(item, head, pioneer) {
                 let key_html = 'HTML:' + link;
                 let key_image = 'HTML_IMAGE:' + link;
 
-                let html = CACHE.get(key_html);
                 let image_og = CACHE.get(key_image);
 
                 if (!image_og) {
-                    html = html || (await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
+                    let html = CACHE.get(key_html) || (await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
                         .then(resp => resp.text()).catch(_ => null));
 
-                    const REGEX_IMAGE = /<meta[^>]*property=[\"']\\w+:image[\"'][^>]*content=[\"']([^\"']*)["'][^>]*>/i;
+                    const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/;
                     image_og = (html || '')?.match(REGEX_IMAGE)?.[1];
 
                     if (html) CACHE.set(key_html, html);
@@ -121,6 +120,8 @@ async function processRssItem(item, head, pioneer) {
             images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(link).hostname}&sz=256`)
             images.push(head.image);
         }
+
+        // console.log('processRssItem', link, images);
 
         return {
             link,
