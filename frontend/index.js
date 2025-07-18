@@ -484,7 +484,7 @@ function alpineRSS() { return {
 		if (this.loadingBookmarks) return;
 
 		this.loadingBookmarks = true;
-		console.log('loadReadLaterItems')
+		// console.log('loadReadLaterItems')
 
 		// Load from local storage first
 		let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
@@ -615,7 +615,7 @@ function alpineRSS() { return {
 
 			data = data.map(x => x.value);
 
-			console.dir({urls, data})
+			// console.dir({urls, data})
 
 			if (!this.params?.x && data.length) {
 				let hash_local = await this.digest(JSON.stringify(data) + Date.now());
@@ -870,6 +870,8 @@ function alpineRSS() { return {
 
 			// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 			feed.anchor = anchorling(feed?.rss_url)
+			feed.short_title = new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0];
+			feed.favicon_url = 'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128';
 
 			feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
 				new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]
@@ -924,7 +926,7 @@ function alpineRSS() { return {
                     }
 
                     item.description = item.description
-                        ?.replace(/\<\/?\[^>]*\>/g, '\n\n')
+                        ?.replace(/<\/?\[^>]*\>/g, '\n\n')
                         .replace(/\n\n+/g, '\n\n')
                         .replace(/\s+/g, ' ')
                         .substr(0, 400)
@@ -1400,7 +1402,7 @@ function alpineRSS() { return {
 				let locale = new Intl.Locale(navigator.language);
 				locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
 
-				console.dir({country, locale});
+				// console.dir({country, locale});
 
 				let region = locale.region.toUpperCase();
 				let language = locale.language.toUpperCase();
@@ -1450,7 +1452,7 @@ function alpineRSS() { return {
 			if (!share_url && this.params.text.includes('http')) share_url = decodeURIComponent(this.params.text);
 			if (!share_url && this.params.title.includes('http')) share_url = decodeURIComponent(this.params.title);
 
-			share_url = share_url?.split(/\s/)?.filter(x => x).find(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+\//)) || share_url;
+			share_url = share_url?.split(/\s/)?.[0]?.filter(x => x).find(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+\//)) || share_url;
 
 			const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 			const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
@@ -1469,7 +1471,7 @@ function alpineRSS() { return {
 				let doc = new DOMParser().parseFromString(html, "text/html");
 				item.article = new Readability(doc).parse();
 
-				console.dir(item.article)
+				// console.dir(item.article)
 
 				let content = item.article?.content;
 				if (content?.length) {
@@ -1770,7 +1772,7 @@ function stringSimilarity(s1, s2) {
 }
 
 function toast(message, timeout=3e3) {
-	console.log('> TOAST:', message);
+	// console.log('> TOAST:', message);
 
 	const toastBox = document.getElementById('toast');
 	const toastMsg = document.getElementById('toast-message');

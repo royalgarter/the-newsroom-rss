@@ -152,14 +152,14 @@
 
 					<!-- feed title -->
 					<a target="_blank" class="rss-feed-anchor scroll-smooth"
-						:title="new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0]"
+						:title="feed.short_title"
 						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-3 sm:px-8 md:px-10">
 							<!-- <a :href="feed.rss_url" target="_blank" class="inline-block"> -->
 								<img width="24" height="24" class="rss-favicon self-center size-6 mr-2 md:mr-4 cursor-pointer"
 									:alt="feed.rss_url || feed.title"
-									:src="'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128'"
+									:src="feed.favicon_url"
 									onerror="this.src = '/favicons/ios/128.png';"
 									@click="window.open(feed.rss_url)"
 								/>
@@ -901,8 +901,6 @@
 					{href: '#bookmarks', text: '# [Bookmarks]'},
 					{href: '#declarations', text: '# [About]'},
 				];
-
-				console.log('anchor_jump refreshed');
 			} }" 
 			x-init="refresh()"
 			class="fixed left-2 bottom-2 text-sm z-100"

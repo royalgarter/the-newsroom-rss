@@ -167,7 +167,7 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
     let render = Array(feeds.length).fill(null);
     await Promise.allSettled(feeds.map((data, order) => new Promise(resolveFeed => {
         (async () => {
-            console.time('>> postParseRSS.' + data.rss_url);
+            // console.time('>> postParseRSS.' + data.rss_url);
 
             const items = data.entries?.slice(0, limit) || [];
 
@@ -179,7 +179,7 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
                 order,
             };
 
-            const SPLIT = /[\:\,\.\-\_\/\|\~]/;
+            const SPLIT = /[\:\,\.\/\|\~]/;
             head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
             head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
 
@@ -196,7 +196,7 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 
             render[order] = result;
 
-            console.timeEnd('>> postParseRSS.' + data.rss_url);
+            // console.timeEnd('>> postParseRSS.' + data.rss_url);
         })().catch(console.error).finally(resolveFeed);
     })));
 

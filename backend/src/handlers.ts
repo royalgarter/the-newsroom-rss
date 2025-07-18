@@ -84,7 +84,7 @@ export async function handleFeeds(req: Request) {
         let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
         feeds = CACHE.get(key_feeds);
 
-        console.dir({cachy, query_feeds, key_feeds, key_feeds_permanent})
+        // console.dir({cachy, query_feeds, key_feeds, key_feeds_permanent})
 
         if (cachy == 'no_cache') {
             feeds = (await fetchRSSLinks(query_feeds)) || feeds || feeds_permanent;
