@@ -290,6 +290,34 @@ export async function handleStatic(req: Request) {
     return null;
 }
 
+export async function handleEmbedding(req: Request) {
+    const { searchParams } = new URL(req.url);
+    let params = Object.fromEntries(searchParams);
+    let text = decodeURIComponent(params.text);
+
+    let result = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent', {
+        method: 'POST',
+        headers: {
+            'x-goog-api-key': Deno.env.get('GEMINI_API_KEY'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'model': 'models/gemini-embedding-001',
+            'taskType': 'CLUSTERING',
+            'outputDimensionality': 768,
+            'content': {
+                'parts': [{text}]
+            }
+        })
+    }).then(r => r.json()).catch(e => null);
+
+    let vector = result?.embedding?.values;
+
+    console.dir({text, vector})
+
+    return response(JSON.stringify(vector));
+}
+
 export async function handleIndex(req: Request) {
     const { pathname } = new URL(req.url);
     if (pathname === "/") {

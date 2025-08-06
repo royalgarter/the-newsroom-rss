@@ -101,6 +101,7 @@ function alpineRSS() { return {
 			{"name": "Health", "desc": "Articles about health, medicine, and wellness."},
 		],
 
+		embedding: VERSION + '_embedding_',
 		viewed: VERSION + '_viewed_',
 		tasks: VERSION + '_tasks_',
 		feeds: VERSION + '_feeds_',
@@ -910,44 +911,53 @@ function alpineRSS() { return {
 			}
 
 			feed.postProcessItems = (is_load_more) => {
-                // console.log('viewed_0.1', feed.items.length, limit)
+				// console.log('viewed_0.1', feed.items.length, limit)
 
-                feed.items.forEach((item, idx) => {
-                    item.read_more = false;
-                    item.prefetching = false;
-                    item.read_later = false;
-                    item.anchor = anchorling(item?.link);
+				feed.items.forEach((item, idx) => {
+					item.read_more = false;
+					item.prefetching = false;
+					item.read_later = false;
+					item.anchor = anchorling(item?.link);
 
-                    this.linkToItemMap.set(item.link, item);
-                    item.viewed = this.storageGet(this.K.viewed + item.link);
+					this.linkToItemMap.set(item.link, item);
+					item.viewed = this.storageGet(this.K.viewed + item.link);
 
-                    if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
-                        item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
-                    }
+					if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
+						item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
+					}
 
-                    item.description = item.description
-                        ?.replace(/<\/?\[^>]*\>/g, '\n\n')
-                        .replace(/\n\n+/g, '\n\n')
-                        .replace(/\s+/g, ' ')
-                        .substr(0, 400)
-                        .trim()
-                    || '';
+					item.description = item.description
+						?.replace(/<\/?\[^>]*\>/g, '\n\n')
+						.replace(/\n\n+/g, '\n\n')
+						.replace(/\s+/g, ' ')
+						.substr(0, 400)
+						.trim()
+					|| '';
 
-                    let img0 = item.images?.[0];
+					let img0 = item.images?.[0];
 
-                    item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
-                        ? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
-                        : img0;
+					item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
+						? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
+						: img0;
 
-                    item.published_formatted = (this.timeSince(new Date(item.published)) + ' ago')
-                                            || new Date(item.published).toString().split(' GMT').shift()
-                                            || (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim();
-                    item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
-                    item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
-                    item.author_formatted = item.author?.toString().substr(0, 20).trim();
+					item.published_formatted = (this.timeSince(new Date(item.published)) + ' ago')
+											|| new Date(item.published).toString().split(' GMT').shift()
+											|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim();
+					item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
+					item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
+					item.author_formatted = item.author?.toString().substr(0, 20).trim();
 
-                    item.toggleReadmore = (force_flag) => {
-                        item.read_more = force_flag || (!item.read_more);
+					item.vector = this.storageGet(this.K.embedding + item.link);
+					if (!item.vector) {
+						embeddingText(`${item.title} - ${item.description}`).then(vector => {
+							if (!vector) return;
+							item.vector = vector;
+							this.storageSet(this.K.embedding + item.link, vector);
+						});
+					}
+
+					item.toggleReadmore = (force_flag) => {
+						item.read_more = force_flag || (!item.read_more);
 
 						if (item.read_more) {
 							feed.read_more_item = item;
@@ -1151,6 +1161,26 @@ function alpineRSS() { return {
 			this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 		}, 0.5e3);
 
+		setTimeout(() => {
+			if (this.cluster) return;
+
+			this.cluster = true;
+
+			let arrays = [], links = [];
+			this.feeds.forEach(feed => feed.items.forEach(item => {
+				arrays.push(item.vector);
+				links.push(item.link);
+			}));
+
+			this.cluster = hclust(arrays, 'cosine');
+
+			let last = this.cluster.pop();
+			let i1 = last.elements[0];
+			let i2 = last.elements[1];
+
+			console.dir(this.cluster);
+			console.log(links[i1], links[i2])
+		}, 5e3);
 
 		if (!this.loading && this.params.a) {
 			toast('Go to: ' + this.params.a);
