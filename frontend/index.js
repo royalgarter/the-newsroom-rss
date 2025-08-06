@@ -1482,7 +1482,7 @@ function alpineRSS() { return {
 			if (!share_url && this.params.text.includes('http')) share_url = decodeURIComponent(this.params.text);
 			if (!share_url && this.params.title.includes('http')) share_url = decodeURIComponent(this.params.title);
 
-			share_url = share_url?.split(/\s/)?.[0]?.filter(x => x).find(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+\//)) || share_url;
+			share_url = share_url?.split(/\s/)?.[0]?.filter?.(x => x)?.find?.(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+\//)) || share_url;
 
 			const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 			const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
