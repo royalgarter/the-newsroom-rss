@@ -676,7 +676,7 @@ function alpineRSS() { return {
 						// console.log('last_published', last_published, item.url)
 
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
-							console.log('>> load.feed.item.retry', item?.url, last_published, tryCount);
+							// console.log('>> load.feed.item.retry', item?.url, last_published, tryCount);
 
 							toast('Refresh up-to-date feeds');
 
@@ -684,7 +684,7 @@ function alpineRSS() { return {
 								this.loading = true;
 								fetch(fetch_url, fetch_opts)
 									.then(resp => resp.json())
-									.then(json => fetchReceiveJSON(json, tryCount > 3, tryCount++))
+									.then(json => fetchReceiveJSON(json, tryCount > 2, tryCount++))
 									.catch(null)
 									.finally(_ => this.loading = false);
 							}, 10e3);
@@ -798,7 +798,7 @@ function alpineRSS() { return {
 				links.push(item.link);
 			}));
 
-			if (arrays.length) {
+			if (!this.loading && arrays.length) {
 				this.cluster = hclust(arrays, 'cosine');
 				let last = this.cluster.pop();
 				let i1 = last.elements[0];
