@@ -3,6 +3,38 @@ import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import CACHE from './cache.ts';
 import KV from './kv.ts';
 
+const APIKEYS = Deno.env.get('GEMINI_API_KEY').split(',').filter(x => x);
+const EMBEDDED = new Map();
+
+async function embedding(text) {
+    let vector = EMBEDDED.get(text);
+
+    if (vector) return vector;
+
+    let apikey = APIKEYS[Math.floor(Math.random() * APIKEYS.length)];
+    let result = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent', {
+        method: 'POST',
+        headers: {
+            'x-goog-api-key': apikey,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'model': 'models/gemini-embedding-001',
+            'taskType': 'CLUSTERING',
+            'outputDimensionality': 768,
+            'content': {
+                'parts': [{text}]
+            }
+        })
+    }).then(r => r.json()).catch(e => null);
+
+    vector = result?.embedding?.values || null;
+
+    if (vector) EMBEDDED.set(text, vector);
+
+    return vector;
+}
+
 async function parseRSS(url: string, content: string, pioneer: Boolean) {
 	try {
 		if (!url) return {rss_url: url};
@@ -123,7 +155,7 @@ async function processRssItem(item, head, pioneer) {
 
         // console.log('processRssItem', link, images);
 
-        return {
+        let processed = {
             link,
             title: item?.title?.value,
             author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a, b) => b.length - a.length)[0],
@@ -136,6 +168,10 @@ async function processRssItem(item, head, pioneer) {
             source: item?.source?.url,
             statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
         };
+
+        processed.embedding = await embedding([processed.title, processed.description].join('-')).catch(e => null);
+
+        return processed;
     } catch (ex) {
         console.error(ex);
         return null;

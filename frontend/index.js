@@ -947,14 +947,14 @@ function alpineRSS() { return {
 					item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
 					item.author_formatted = item.author?.toString().substr(0, 20).trim();
 
-					item.vector = this.storageGet(this.K.embedding + item.link);
+					/*item.vector = this.storageGet(this.K.embedding + item.link);
 					if (!item.vector) {
 						embeddingText(`${item.title} - ${item.description}`).then(vector => {
 							if (!vector) return;
 							item.vector = vector;
 							this.storageSet(this.K.embedding + item.link, vector);
 						});
-					}
+					}*/
 
 					item.toggleReadmore = (force_flag) => {
 						item.read_more = force_flag || (!item.read_more);
@@ -1151,6 +1151,21 @@ function alpineRSS() { return {
 			count = Math.max(count, Math.abs(len_full - len_filter));
 		});
 
+		console.log('...clustering')
+		let arrays = [], links = [];
+		this.feeds.forEach(feed => feed.items.forEach(item => {
+			if (!item.embedding) return;
+
+			arrays.push(item.embedding);
+			links.push(item.link);
+		}));
+		this.cluster = hclust(arrays, 'cosine');
+		let last = this.cluster.pop();
+		let i1 = last.elements[0];
+		let i2 = last.elements[1];
+		console.dir({cluster: this.cluster});
+		console.log('last cluster', links[i1], links[i2])
+
 		setTimeout(() => {
 			let hrefs = [...document.querySelectorAll('a.rss-thumb,a.rss-title')]
 				.filter(x => this.isElementInViewport(x))
@@ -1160,27 +1175,6 @@ function alpineRSS() { return {
 
 			this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
 		}, 0.5e3);
-
-		setTimeout(() => {
-			if (this.cluster) return;
-
-			this.cluster = true;
-
-			let arrays = [], links = [];
-			this.feeds.forEach(feed => feed.items.forEach(item => {
-				arrays.push(item.vector);
-				links.push(item.link);
-			}));
-
-			this.cluster = hclust(arrays, 'cosine');
-
-			let last = this.cluster.pop();
-			let i1 = last.elements[0];
-			let i2 = last.elements[1];
-
-			console.dir(this.cluster);
-			console.log(links[i1], links[i2])
-		}, 5e3);
 
 		if (!this.loading && this.params.a) {
 			toast('Go to: ' + this.params.a);

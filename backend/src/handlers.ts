@@ -290,6 +290,7 @@ export async function handleStatic(req: Request) {
     return null;
 }
 
+const APIKEYS = Deno.env.get('GEMINI_API_KEY').split(',').filter(x => x);
 export async function handleEmbedding(req: Request) {
     const { searchParams } = new URL(req.url);
     let params = Object.fromEntries(searchParams);
@@ -298,7 +299,7 @@ export async function handleEmbedding(req: Request) {
     let result = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent', {
         method: 'POST',
         headers: {
-            'x-goog-api-key': Deno.env.get('GEMINI_API_KEY'),
+            'x-goog-api-key': APIKEYS[Math.floor(Math.random() * APIKEYS.length)],
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -311,9 +312,7 @@ export async function handleEmbedding(req: Request) {
         })
     }).then(r => r.json()).catch(e => null);
 
-    let vector = result?.embedding?.values;
-
-    console.dir({text, vector})
+    let vector = result?.embedding?.values || null;
 
     return response(JSON.stringify(vector));
 }
