@@ -1032,6 +1032,7 @@ function alpineRSS() { return {
 
 						if (!auto_fetch_content || item.article?.content || item.prefetching) return;
 						item.prefetching = true;
+						feed.prefetching = true;
 
 						let resp = null;
 						let opts = {redirect: 'follow'};
@@ -1067,6 +1068,14 @@ function alpineRSS() { return {
 						let content = item.article?.content;
 						if (content?.length) {
 							item.article.content = cleanContent(content);
+						}
+
+						if (feed.items.filter(item => item.prefetching && item.article).length == feed.items.length) {
+							let feedNext = this.feeds[feedIdx + 1];
+
+							if (feedNext && !feedNext.prefetching) {
+								feedNext.items.forEach(item => item?.prefetchContent?.());
+							}
 						}
 					};
 
