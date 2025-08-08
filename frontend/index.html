@@ -66,6 +66,9 @@
 		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
 		<script async defer src="//accounts.google.com/gsi/client"></script>
 
+		<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
+		<script async defer src="//cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+
 		<!-- <link rel="preload" as="script" href="//cdn.ampproject.org/v0.js" /> -->
 		<!-- <script async defer src="//cdn.ampproject.org/v0.js"></script> -->
 
@@ -268,7 +271,7 @@
 
 										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
-												x-html="item.description_formatted"
+												x-html="item.description_formatted || item.description"
 											>
 											</p>
 										</template>
@@ -463,6 +466,24 @@
 						class="grid text-sm text-slate-600 dark:text-slate-300 overflow-hidden w-full transition-all duration-300 ease-in-out"
 						:class="expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] hidden'"
 						>
+						<a id="anchor_bookmarks_note" href="#bookmarks_note" name="bookmarks_note" class="scroll-smooth"></a>
+						<div x-data="{ expanded: location.hash.includes('#bookmarks_note') }" class="m-auto p-4 sm:px-8 md:px-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800">
+							<h4 class="text-lg font-semibold text-slate-600 dark:text-slate-300">
+								<button @click="expanded = !expanded; if (expanded) location.hash = '#bookmarks_note'; noteTitle = noteTitle || ('note_at_' + new Date().toLocaleString().replace(/\W+/g, '-'));" class="flex items-center justify-between w-full text-left cursor-pointer">
+									<span>Quick Note</span>
+									<!-- <svg x-cloak class="fill-indigo-500 dark:fill-indigo-300 shrink-0 ml-8" width="16" height="16" :class="{'!rotate-180': expanded}">
+										<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" />
+										<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" />
+									</svg> -->
+								</button>
+							</h4>
+							<div x-show="expanded" class="mt-2">
+								<input type="text" x-model="noteTitle" placeholder="Add a quick note" class="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+								<textarea id="noteContent" x-model="noteContent" placeholder="with supported Markdown syntax" class="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="8"></textarea>
+								<button @click="addNoteMarkdown()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md cursor-pointer">Markdown</button>
+								<button @click="addNote()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md cursor-pointer">Save</button>
+							</div>
+						</div>
 						<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
 							<!-- readlater item -->
 							<template x-for="(item, itemIndex) in readlater.items" :key="itemIndex">
@@ -471,7 +492,7 @@
 								>
 									
 									<!-- readlater thumbnail -->
-									<template x-if="style()?.img && item.image_thumb">
+									<template x-if="!item.is_note && style()?.img && item.image_thumb">
 										<div class="rss-meta relative min-h-36"
 											@click="location.hash = '#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
 										>
@@ -518,7 +539,7 @@
 											rel="external"
 										>
 										</a>
-										<a :href="item.link" target="_blank" class="text-blue-400 dark:text-blue-300 visited:text-purple-600">
+										<a :href="item.link" target="_blank" class="text-blue-400 dark:text-blue-300 visited:text-purple-600" x-show="!item.is_note">
 											<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
 												class="rss-open-link w-4 h-4 cursor-pointer inline mb-1.5 opacity-75 hover:opacity-100"
 											>
@@ -527,7 +548,7 @@
 										</a>
 										<template x-if="style()?.desc">
 											<p class="rss-desc pt-3 text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words"
-												x-html="item.description_formatted"
+												x-html="item.description_formatted || item.description"
 											>
 											</p>
 										</template>
@@ -535,15 +556,25 @@
 									<!-- readlater article -->
 									<div :id="'rss-item-readlater-article-' + itemIndex">
 										<div class="cursor-pointer px-4 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
-											<span @click="item.read_more = !item.read_more" :class="item.article ? 'visible' : 'invisible'" :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
-												<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-												  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
-												</svg>
-												<svg x-cloak x-show="item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
-												</svg>
-												<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Content'"></span>
-											</span>
+											<template x-if="item.is_note">
+												<span @click="editNote(item)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-teal-600 dark:text-teal-400">
+													<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+														<path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+													</svg>
+													<span class="ml-1">Edit</span>
+												</span>
+											</template>
+											<template x-if="!item.is_note">
+												<span @click="item.read_more = !item.read_more" :class="item.article ? 'visible' : 'invisible'" :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'" class="py-1 text-xs font-regular flex flex-row items-center">
+													<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
+													</svg>
+													<svg x-cloak x-show="item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
+													</svg>
+													<span class="ml-1" x-text="item.read_more ? 'Collapse' : 'Content'"></span>
+												</span>
+											</template>
 											<span @click="saveReadLater(item, true)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
 												<svg 
 													x-cloak 
@@ -575,6 +606,18 @@
 									</div>
 								</div>
 							</template>
+						</div>
+						<div x-show="editingNote" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+							<div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-5/6">
+								<h4 class="text-lg font-semibold mb-4 text-slate-600 dark:text-slate-300">Edit Note</h4>
+								<input type="text" x-model="editedTitle" placeholder="Note Title" class="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+								<textarea id="editedContent" x-model="editedContent" placeholder="Note Content" class="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="20"></textarea>
+								<div class="flex justify-end space-x-2 mt-4">
+									<button @click="updateNoteMarkdown()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md cursor-pointer">Markdown</button>
+									<button @click="updateNote()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md cursor-pointer">Save</button>
+									<button @click="editingNote = null" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md cursor-pointer">Cancel</button>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -926,7 +969,7 @@
 							_alBody.loading = true;
 
 							setTimeout(() => {
-								_alRead.expanded = _alBody.is_hide_feeds = (location.hash == '#bookmarks');
+								_alRead.expanded = _alBody.is_hide_feeds = location.hash.includes('#bookmarks');
 
 								const _alDecl = Alpine.$data(document.querySelector('#expander_declarations'));
 								if (_alDecl) _alDecl.expanded = (location.hash == '#declarations');

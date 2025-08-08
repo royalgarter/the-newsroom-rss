@@ -38,6 +38,104 @@ function alpineRSS() { return {
 	drag: null,
 	drop: null,
 
+	noteTitle: '',
+	noteContent: '',
+	editingNote: null,
+	editedTitle: '',
+	editedContent: '',
+	easyMDE: null,
+
+	addNote() {
+		let description = this.easyMDE?.value() || this?.noteContent || document.getElementById('noteContent')?.value || '';
+
+		if (!this.noteTitle.trim() || !description.trim()) {
+			toast('Please enter a title and content for the note.');
+			return;
+		}
+
+		const newNote = {
+			link: `/#note_${Date.now()}`,
+			title: this.noteTitle.trim(),
+			description: description.trim(),
+			published: new Date().toISOString(),
+			saved_at: new Date().toISOString(),
+			read_later: true,
+			is_note: true, // Flag to identify it as a note
+			title_formatted: this.decodeHTML(this.noteTitle.trim()).substr(0, 150),
+			published_formatted: this.timeSince(new Date()),
+		};
+
+		let readLaterItems = this.storageGet(this.K.readlater) || [];
+		readLaterItems.unshift(newNote); // Add to the beginning of the list
+
+		this.readlater = { items: readLaterItems };
+		this.storageSet(this.K.readlater, readLaterItems);
+
+		this.noteTitle = '';
+		this.noteContent = '';
+
+		this.easyMDE?.toTextArea?.();
+		easyMDE = null;
+
+		toast('Note saved successfully.');
+	},
+
+	addNoteMarkdown() {
+		this.easyMDE = this.easyMDE || new EasyMDE({
+			element: document.getElementById('noteContent'),
+			lineNumbers: true,
+			unorderedListStyle: "-",
+			spellChecker: false,
+			nativeSpellcheck: false,
+		});
+	},
+
+	editNote(note, is_markdown) {
+		this.editingNote = note;
+		this.editedTitle = note.title;
+		this.editedContent = note.description;
+	},
+
+	updateNote() {
+		let description = this.easyMDE?.value() || this?.editedContent || document.getElementById('editedContent')?.value || '';
+
+		if (!this.editedTitle.trim() || !description.trim()) {
+			toast('Please enter a title and content for the note.');
+			return;
+		}
+
+		let readLaterItems = this.storageGet(this.K.readlater) || [];
+		const index = readLaterItems.findIndex(item => item.link === this.editingNote.link);
+
+		if (index !== -1) {
+			readLaterItems[index].title = this.editedTitle.trim();
+			readLaterItems[index].description = description.trim();
+			readLaterItems[index].title_formatted = this.decodeHTML(this.editedTitle.trim()).substr(0, 150);
+
+			this.readlater = { items: readLaterItems };
+			this.storageSet(this.K.readlater, readLaterItems);
+		}
+
+		this.editingNote = null;
+		this.editedTitle = '';
+		this.editedContent = '';
+
+		this.easyMDE?.toTextArea?.();
+		this.easyMDE = null;
+
+		toast('Note updated successfully.');
+	},
+
+	updateNoteMarkdown() {
+		this.easyMDE = this.easyMDE || new EasyMDE({
+			element: document.getElementById('editedContent'),
+			lineNumbers: true,
+			unorderedListStyle: "-",
+			spellChecker: false,
+			nativeSpellcheck: false,
+		});
+	},
+
 	is_noimg: false,
 
 	review_feed: null,
