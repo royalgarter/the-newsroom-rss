@@ -678,11 +678,15 @@ function alpineRSS() { return {
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
 							console.log('>> load.feed.item.retry', item?.url, last_published, tryCount);
 
+							toast('Refresh up-to-date feeds');
+
 							setTimeout(() => {
+								this.loading = true;
 								fetch(fetch_url, fetch_opts)
-								.then(resp => resp.json())
-								.then(json => fetchReceiveJSON(json, tryCount > 3, tryCount++))
-								.catch(null)
+									.then(resp => resp.json())
+									.then(json => fetchReceiveJSON(json, tryCount > 3, tryCount++))
+									.catch(null)
+									.finally(_ => this.loading = false);
 							}, 10e3);
 						}
 
@@ -784,6 +788,24 @@ function alpineRSS() { return {
 			// console.timeEnd('>> load.feeds.postprocess')
 
 			// console.log(this.tasks);
+
+			console.log('...clustering')
+			let arrays = [], links = [];
+			this.feeds.forEach(feed => feed.items.forEach(item => {
+				if (!item.embedding) return;
+
+				arrays.push(item.embedding);
+				links.push(item.link);
+			}));
+
+			if (arrays.length) {
+				this.cluster = hclust(arrays, 'cosine');
+				let last = this.cluster.pop();
+				let i1 = last.elements[0];
+				let i2 = last.elements[1];
+				console.dir({cluster: this.cluster});
+				console.log('cluster:', last.distance, links[i1], links[i2])
+			}
 		} catch (error) {
 			console.error("Error fetching feeds:", error);
 			this.debug = "Failed to load feeds. Please check the server logs for more details";
@@ -1150,21 +1172,6 @@ function alpineRSS() { return {
 			// console.dir({len_full, len_filter, limit})
 			count = Math.max(count, Math.abs(len_full - len_filter));
 		});
-
-		console.log('...clustering')
-		let arrays = [], links = [];
-		this.feeds.forEach(feed => feed.items.forEach(item => {
-			if (!item.embedding) return;
-
-			arrays.push(item.embedding);
-			links.push(item.link);
-		}));
-		this.cluster = hclust(arrays, 'cosine');
-		let last = this.cluster.pop();
-		let i1 = last.elements[0];
-		let i2 = last.elements[1];
-		console.dir({cluster: this.cluster});
-		console.log('last cluster', links[i1], links[i2])
 
 		setTimeout(() => {
 			let hrefs = [...document.querySelectorAll('a.rss-thumb,a.rss-title')]
