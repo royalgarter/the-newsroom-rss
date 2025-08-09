@@ -1552,6 +1552,8 @@ function alpineRSS() { return {
 				let language = locale.language.toUpperCase();
 				let name = locale.name.toUpperCase();
 
+				// /*DEBUG*/country = 'CA';
+
 				let found = feedsByCountry.find(x => country && (country == x.country))
 					|| feedsByCountry.find(x => region == x.country)
 					|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country))

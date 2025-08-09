@@ -64,6 +64,7 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 							resolve(text);
 						})
 						.catch(ex => {
+                            console.log('>> parseRSS.catch' + url + ': ' + ex)
 							reject(null);
 						});
 				}),
