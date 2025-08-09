@@ -40,7 +40,8 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 		if (!url) return {rss_url: url};
 
 		if (!content) {
-			url = url.replaceAll(' ', '+');
+			url = url.replaceAll(' ', '+').replaceAll('http://', 'https://');
+
 			if (!url.includes('http')) url = 'https://' + url;
 
 			let key_rss = 'RSS:' + url;

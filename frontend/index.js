@@ -1546,20 +1546,17 @@ function alpineRSS() { return {
 				let locale = new Intl.Locale(navigator.language);
 				locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
 
-				// console.dir({country, locale});
+				console.dir({feedsByCountry, country, locale});
 
 				let region = locale.region.toUpperCase();
 				let language = locale.language.toUpperCase();
 				let name = locale.name.toUpperCase();
 
-				let found = feedsByCountry.find(x => {
-					return (country && (country == x.country))
-						|| (region == x.country)
-						|| (language == x.country)
-						|| navigator.language.includes(x.country)
-						|| stringSimilarity(name, x.name) >= 0.8
-						|| stringSimilarity(name, x.country) >= 0.5
-				});
+				let found = feedsByCountry.find(x => country && (country == x.country))
+					|| feedsByCountry.find(x => region == x.country)
+					|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country))
+					|| feedsByCountry.find(x => stringSimilarity(name, x.name) >= 0.8 || stringSimilarity(name, x.country) >= 0.5)
+				;
 
 				if (found?.feeds?.length) {
 					this.K.DEFAULTS = found.feeds.slice(0, 10);
