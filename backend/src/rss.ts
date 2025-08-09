@@ -215,7 +215,7 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
                 order,
             };
 
-            const SPLIT = /[\:\,\.\/\|\~]/;
+            const SPLIT = /[\:\,\.\|\~]/;
             head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
             head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
 
