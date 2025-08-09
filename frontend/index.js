@@ -1082,7 +1082,7 @@ function alpineRSS() { return {
 						});
 					}*/
 
-					item.toggleReadmore = (force_flag) => item.prefetchContent().then(_ =>{
+					item.toggleReadmore = (force_flag) => item.prefetchContent().then(_ => {
 						item.read_more = force_flag || (!item.read_more);
 
 						if (item.read_more) {
@@ -1127,7 +1127,7 @@ function alpineRSS() { return {
 								ia.scrollIntoView(true)
 							}, 0.1e3)
 						}
-					});
+					}).catch(_ => null);
 
 					item.prefetchContent = async () => {
 						if (!this.style()?.preview) return;
