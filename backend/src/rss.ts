@@ -215,8 +215,8 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
                 order,
             };
 
-            const SPLIT = /[\:\,\.\|\~]/;
-            head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
+            const SPLIT = /[\:\,\.\/\|\~]/;
+            head.short = head.title.substr(0, 100).trim();
             head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
 
             const rss_items = await Promise.allSettled(items.map(item => processRssItem(item, head, pioneer)));
