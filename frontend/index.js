@@ -389,21 +389,21 @@ function alpineRSS() { return {
 	},
 
 	initializeIntersectionObservers() {
-		const feedObserver = new IntersectionObserver((entries, observer) => {
-			entries.forEach(entry => {
-				if (entry.isIntersecting) {
-					const feedIndex = parseInt(entry.target.dataset.feedIndex, 10);
-					const feed = this.feeds[feedIndex];
-					if (feed) {
-						feed.items.forEach(item => item.prefetchContent?.());
-						if (this.feeds[feedIndex + 1]) {
-							this.feeds[feedIndex + 1].items.forEach(item => item.prefetchContent?.());
-						}
-					}
-					observer.unobserve(entry.target);
-				}
-			});
-		}, { threshold: 0.1 });
+		// const feedObserver = new IntersectionObserver((entries, observer) => {
+		// 	entries.forEach(entry => {
+		// 		if (entry.isIntersecting) {
+		// 			const feedIndex = parseInt(entry.target.dataset.feedIndex, 10);
+		// 			const feed = this.feeds[feedIndex];
+		// 			if (feed) {
+		// 				feed.items.forEach(item => item.prefetchContent?.());
+		// 				if (this.feeds[feedIndex + 1]) {
+		// 					this.feeds[feedIndex + 1].items.forEach(item => item.prefetchContent?.());
+		// 				}
+		// 			}
+		// 			observer.unobserve(entry.target);
+		// 		}
+		// 	});
+		// }, { threshold: 0.1 });
 
 		const itemObserver = new IntersectionObserver((entries) => {
 			entries.forEach(entry => {
@@ -422,10 +422,10 @@ function alpineRSS() { return {
 
 		this.$watch('feeds', () => {
 			this.$nextTick(() => {
-				document.querySelectorAll('.rss-feed').forEach((el, index) => {
-					el.dataset.feedIndex = index;
-					feedObserver.observe(el);
-				});
+				// document.querySelectorAll('.rss-feed').forEach((el, index) => {
+				// 	el.dataset.feedIndex = index;
+				// 	feedObserver.observe(el);
+				// });
 				document.querySelectorAll('.rss-item').forEach(el => {
 					const link = el.querySelector('a.rss-title')?.href;
 					if (link) {
@@ -1082,7 +1082,7 @@ function alpineRSS() { return {
 						});
 					}*/
 
-					item.toggleReadmore = (force_flag) => {
+					item.toggleReadmore = (force_flag) => item.prefetchContent().then(_ =>{
 						item.read_more = force_flag || (!item.read_more);
 
 						if (item.read_more) {
@@ -1127,7 +1127,7 @@ function alpineRSS() { return {
 								ia.scrollIntoView(true)
 							}, 0.1e3)
 						}
-					};
+					});
 
 					item.prefetchContent = async () => {
 						if (!this.style()?.preview) return;
@@ -1174,13 +1174,13 @@ function alpineRSS() { return {
 							item.article.content = cleanContent(content);
 						}
 
-						if (feed.items.filter(item => item.prefetching && item.article).length == feed.items.length) {
-							let feedNext = this.feeds[feedIdx + 1];
+						// if (feed.items.filter(item => item.prefetching && item.article).length == feed.items.length) {
+						// 	let feedNext = this.feeds[feedIdx + 1];
 
-							if (feedNext && !feedNext.prefetching) {
-								feedNext.items.forEach(item => item?.prefetchContent?.());
-							}
-						}
+						// 	if (feedNext && !feedNext.prefetching) {
+						// 		feedNext.items.forEach(item => item?.prefetchContent?.());
+						// 	}
+						// }
 					};
 
 					if (feedIdx <= 1) {
@@ -1273,7 +1273,7 @@ function alpineRSS() { return {
 
 					feed.items = new_items;
 					feed.postProcessItems(true);
-					feed.items.forEach(x => x.prefetchContent?.());
+					// feed.items.forEach(x => x.prefetchContent?.());
 				})
 				.catch(null)
 				.finally(_ => {this.loading = false});
@@ -1286,15 +1286,15 @@ function alpineRSS() { return {
 			count = Math.max(count, Math.abs(len_full - len_filter));
 		});
 
-		setTimeout(() => {
-			let hrefs = [...document.querySelectorAll('a.rss-thumb,a.rss-title')]
-				.filter(x => this.isElementInViewport(x))
-				.map(a => a.href)
-				.filter(x => x);
-			// console.log('hrefs', hrefs);
+		// setTimeout(() => {
+		// 	let hrefs = [...document.querySelectorAll('a.rss-thumb,a.rss-title')]
+		// 		.filter(x => this.isElementInViewport(x))
+		// 		.map(a => a.href)
+		// 		.filter(x => x);
+		// 	// console.log('hrefs', hrefs);
 
-			this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
-		}, 0.5e3);
+		// 	this.feeds?.forEach?.(feed => feed.items?.filter?.(x => hrefs.includes(x.link)).forEach(x => x.prefetchContent?.()));
+		// }, 0.5e3);
 
 		if (!this.loading && this.params.a) {
 			toast('Go to: ' + this.params.a);

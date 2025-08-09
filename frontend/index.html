@@ -83,8 +83,8 @@
 			gtag('config', 'G-SF3W5SZ5PM');
 		</script>
 
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.7">
-		<script src="index.js?v=1.7"></script>
+		<link rel="stylesheet" type="text/css" href="index.css?v=1.8">
+		<script src="index.js?v=1.8"></script>
 		<script type="module" src="./js/module.mjs"></script>
 
 		<script type="module">
@@ -282,7 +282,8 @@
 											<div class="cursor-pointer px-4 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
 												<span class="py-1 text-xs font-regular flex flex-row items-center"
 													@click="item.toggleReadmore()" 
-													:class="[(item.article ? 'visible' : 'invisible'), (item.read_more ? 'text-fuchsia-600' : 'text-teal-600')].join(' ')" 
+													@mouseover="item.prefetchContent()"
+													:class="[(item.article ? 'visible' : 'disable__invisible'), (item.read_more ? 'text-fuchsia-600' : 'text-teal-600')].join(' ')"
 												>
 													<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
 													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
