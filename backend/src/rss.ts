@@ -3,7 +3,7 @@ import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import CACHE from './cache.ts';
 import KV from './kv.ts';
 
-const APIKEYS = Deno.env.get('GEMINI_API_KEY').split(',').filter(x => x);
+const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);
 const EMBEDDED = new Map();
 
 async function embedding(text) {
@@ -20,7 +20,7 @@ async function embedding(text) {
         },
         body: JSON.stringify({
             'model': 'models/gemini-embedding-001',
-            'taskType': 'CLUSTERING',
+            // 'taskType': 'CLUSTERING',
             'outputDimensionality': 768,
             'content': {
                 'parts': [{text}]

@@ -290,7 +290,7 @@ export async function handleStatic(req: Request) {
     return null;
 }
 
-const APIKEYS = Deno.env.get('GEMINI_API_KEY').split(',').filter(x => x);
+const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);
 export async function handleEmbedding(req: Request) {
     const { searchParams } = new URL(req.url);
     let params = Object.fromEntries(searchParams);

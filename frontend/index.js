@@ -896,7 +896,7 @@ function alpineRSS() { return {
 				links.push(item.link);
 			}));
 
-			if (!this.loading && arrays.length) {
+			if (!this.loading && arrays.length && arrays?.[0]?.length) {
 				this.cluster = hclust(arrays, 'cosine');
 				let last = this.cluster.pop();
 				let i1 = last.elements[0];
@@ -1574,7 +1574,7 @@ function alpineRSS() { return {
 		this.ready = true;
 		this.loading = true;
 
-		if (this.params.f == 'bookmarks' || location.hash?.includes('#bookmark')) this.is_hide_feeds = true;
+		if (this.params.f == 'bookmarks' || location.hash?.includes('#bookmark') || location.hash?.includes('#note_')) this.is_hide_feeds = true;
 
 		// Web Share API: GET
 		if (this.params.url || this.params.text || this.params.title) {
@@ -1685,6 +1685,17 @@ function alpineRSS() { return {
 
 
 			this.loading = false;
+			return;
+		}
+
+
+		if (location.hash?.includes('#note_')) {
+			await this.loadReadLaterItems();
+
+			let note = this.readlater.items.find(x => x.link.includes(location.hash));
+
+			if (note) this.editNote(note);
+
 			return;
 		}
 

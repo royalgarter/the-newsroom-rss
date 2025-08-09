@@ -51,7 +51,6 @@
 		<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4" /> -->
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
 		<!-- <link rel="stylesheet" href="https://cdn.tailwind-lite.com/2.0.1.css" /> -->
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.4">
 
 		<!-- <link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" /> -->
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
@@ -84,8 +83,8 @@
 			gtag('config', 'G-SF3W5SZ5PM');
 		</script>
 
-
-		<script src="index.js?v=1.4"></script>
+		<link rel="stylesheet" type="text/css" href="index.css?v=1.5">
+		<script src="index.js?v=1.5"></script>
 		<script type="module" src="./js/module.mjs"></script>
 
 		<script type="module">
@@ -263,7 +262,7 @@
 												:href="item.link" target="_blank"
 												:title="item.title"
 												x-html="item.title_formatted + (
-															style()?.img ? '' : (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + item.published_formatted + '</sup>')
+															style()?.img ? '' : (item.published_formatted ? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + item.published_formatted + '</sup>') : '')
 														)"
 												rel="external"
 											></a>
@@ -429,7 +428,7 @@
 			<div class="divide-y divide-slate-200 dark:divide-gray-700">
 
 				<!-- readlater -->
-				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds) }" class="py-2">
+				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds || !!~location.hash.search(/\#.*note/)) }" class="py-2">
 					<a id="anchor_bookmarks" href="#bookmarks" name="bookmarks" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
@@ -442,6 +441,7 @@
 								expanded = !expanded;
 								Alpine.$data(document.querySelector('body')).is_hide_feeds = expanded;
 								if (!expanded) {
+									toast('Home feeds loading...');
 									Alpine.$data(document.querySelector('body')).loadFeedsWithContent({limit:6});
 									if (location.hash?.length) location.hash = '';
 								}
@@ -467,10 +467,24 @@
 						:class="expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] hidden'"
 						>
 						<a id="anchor_bookmarks_note" href="#bookmarks_note" name="bookmarks_note" class="scroll-smooth"></a>
-						<div x-data="{ expanded: location.hash.includes('#bookmarks_note') }" class="m-auto p-4 sm:px-8 md:px-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800">
-							<h4 class="text-lg font-semibold text-slate-600 dark:text-slate-300">
-								<button @click="expanded = !expanded; if (expanded) location.hash = '#bookmarks_note'; noteTitle = noteTitle || ('note_at_' + new Date().toLocaleString().replace(/\W+/g, '-'));" class="flex items-center justify-between w-full text-left cursor-pointer">
-									<span>Quick Note</span>
+						<div x-data="{ expanded: !!~location.hash.search(/\#.*note/) }" class="m-auto p-4 sm:px-8 md:px-10 max-w-auto w-full rounded-md bg-gray-100 dark:bg-gray-800">
+							<h4 class="text-lg font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
+								<button class="flex items-center justify-between w-full text-left cursor-pointer"
+									@click="
+										expanded = !expanded;
+										if (expanded) {
+											location.hash = '#bookmarks_note';
+
+											Alpine.$data(document.querySelector('#expander_settings')).expanded = false;
+
+											const url = new URL(location);
+											url.searchParams.delete('a');
+											history.pushState({}, '', url.toString());
+										};
+										noteTitle = noteTitle || ('note_at_' + new Date().toLocaleString().replace(/\W+/g, '-'));
+									"
+								>
+									<span>🖉 Quick Note</span>
 									<!-- <svg x-cloak class="fill-indigo-500 dark:fill-indigo-300 shrink-0 ml-8" width="16" height="16" :class="{'!rotate-180': expanded}">
 										<rect y="7" width="16" height="2" rx="1" class="transform origin-center transition duration-200 ease-out" />
 										<rect y="7" width="16" height="2" rx="1" class="transform origin-center rotate-90 transition duration-200 ease-out" />
@@ -532,7 +546,7 @@
 											:href="item.link" target="_blank"
 											:title="item.title"
 											x-html="item.title_formatted + (
-														style()?.title
+														(style()?.title && item.published_formatted)
 															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + item.published_formatted + ']</sup>')
 															: ''
 													)"
@@ -608,10 +622,10 @@
 							</template>
 						</div>
 						<div x-show="editingNote" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-							<div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-5/6">
+							<div class="bg-white dark:bg-gray-800 p-6 rounded-lg w-11/12">
 								<h4 class="text-lg font-semibold mb-4 text-slate-600 dark:text-slate-300">Edit Note</h4>
 								<input type="text" x-model="editedTitle" placeholder="Note Title" class="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-								<textarea id="editedContent" x-model="editedContent" placeholder="Note Content" class="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="20"></textarea>
+								<textarea id="editedContent" x-model="editedContent" placeholder="Note Content" class="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="25"></textarea>
 								<div class="flex justify-end space-x-2 mt-4">
 									<button @click="updateNoteMarkdown()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md cursor-pointer">Markdown</button>
 									<button @click="updateNote()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md cursor-pointer">Save</button>
@@ -624,6 +638,7 @@
 
 				<!-- settings -->
 				<div id="expander_settings" x-data="{ expanded: !tasks?.length }" class="py-2">
+					<a id="anchor_settings" href="#settings" name="settings" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
 							id="collapse-title-01"
@@ -638,7 +653,7 @@
 									<path stroke-linecap="round" stroke-linejoin="round" d="M12.75 19.5v-.75a7.5 7.5 0 0 0-7.5-7.5H4.5m0-6.75h.75c7.87 0 14.25 6.38 14.25 14.25v.75M6 18.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
 								</svg>
 
-								<span x-html="'Your RSS Feeds' + (tasks?.length ? ' [' + tasks.length + ']' : '') + (loading ? ' is loading' : '')" class="inline"></span>
+								<span x-html="'RSS Feeds Settings' + (tasks?.length ? ' [' + tasks.length + ']' : '') + (loading ? ' is loading' : '')" class="inline"></span>
 							</div>
 
 							<svg x-cloak class="fill-indigo-500 dark:fill-indigo-300 shrink-0 ml-8" width="16" height="16">
@@ -647,7 +662,6 @@
 							</svg>
 						</button>
 					</h3>
-
 
 					<div
 						id="collapse-01"
@@ -954,6 +968,8 @@
 					{href: '#home', text: '# [Home]'},
 					...this.anchors,
 					{href: '#bookmarks', text: '# [Bookmarks]'},
+					{href: '#bookmarks_note', text: '# [Notes]'},
+					{href: '#settings', text: '# [Settings]'},
 					{href: '#declarations', text: '# [About]'},
 				];
 			} }" 
