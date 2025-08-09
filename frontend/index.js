@@ -766,12 +766,15 @@ function alpineRSS() { return {
 					let fetchReceiveJSON = async (json, skipCheck, tryCount=0) => {
 						// console.timeEnd('>> load.feed.item.' + item?.url);
 						// console.log('json', json.feeds[0]);
+						if (this.skipCheckOldPublished) return json;
 
 						let newfeed = json?.feeds?.[0];
 
 						let last_published = newfeed.items?.filter(x => x.published)?.map(x => x.published)?.sort()?.pop();
 
 						// console.log('last_published', last_published, item.url)
+
+						if (skipCheck) this.skipCheckOldPublished = true;
 
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
 							// console.log('>> load.feed.item.retry', item?.url, last_published, tryCount);
