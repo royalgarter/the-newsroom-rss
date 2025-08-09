@@ -787,7 +787,10 @@ function alpineRSS() { return {
 									.then(resp => resp.json())
 									.then(json => fetchReceiveJSON(json, tryCount > 2, tryCount++))
 									.catch(null)
-									.finally(_ => this.loading = false);
+									.finally(_ => {
+										this.loading = false;
+										this.skipCheckOldPublished = true;
+									});
 							}, 10e3);
 						}
 
