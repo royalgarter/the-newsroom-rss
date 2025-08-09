@@ -1183,10 +1183,10 @@ function alpineRSS() { return {
 						// }
 					};
 
-					if (feedIdx <= 1) {
-						item.prefetchContent();
-						this.triggerIntersect('full', item.link);
-					}
+					// if (feedIdx <= 1) {
+					// 	item.prefetchContent();
+					// 	this.triggerIntersect('full', item.link);
+					// }
 
 					item.updatePersona = async () => {
 						item.vector = item.vector || await this.embedSentence(item.title);
