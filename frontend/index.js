@@ -1179,11 +1179,11 @@ function alpineRSS() { return {
 
 						feed.loading = false;
 
-						if (!resp || resp?.status >= 400) return /*console.log(item.link, resp)*/;
+						if (!resp || resp?.status >= 400) return (item.no_article = true);/*console.log(item.link, resp)*/;
 
 						let html = await resp?.text?.().catch(null);
 
-						if (!html) return;
+						if (!html) return (item.no_article = true);
 
 						let doc = new DOMParser().parseFromString(html, "text/html");
 						item.article = new Readability(doc).parse();

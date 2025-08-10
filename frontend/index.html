@@ -291,7 +291,7 @@
 													<svg x-cloak x-show="item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
 														<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
 													</svg>
-													<span class="ml-1" x-text="item.read_more ? 'Collapse' : (item.prefetching && !item.article?.content ? 'Preview loading' : 'Preview')"></span>
+													<span class="ml-1" x-text="item.read_more ? 'Collapse' : (item.prefetching && !item.no_article && !item.article?.content ? 'Preview loading' : 'Preview')"></span>
 												</span>
 
 												<span class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto mr-3"
