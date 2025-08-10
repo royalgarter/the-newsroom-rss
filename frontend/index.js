@@ -1267,11 +1267,12 @@ function alpineRSS() { return {
 				})
 				.then(resp => resp.json())
 				.then(resp => {
-					let new_items = resp?.feeds?.[0]?.items;
+					let new_items = resp?.feeds?.[0]?.items
+						?.filter(x => !feed.items.find(item => item.url == x.url));
 
 					if (!new_items?.length) return;
 
-					feed.items = new_items;
+					feed.items = [...feed.items, ...new_items];
 					feed.postProcessItems(true);
 					// feed.items.forEach(x => x.prefetchContent?.());
 				})
