@@ -94,12 +94,14 @@ export async function handleFeeds(req: Request) {
                 feeds = await fetchRSSLinks(query_feeds);
                 saveFeedCache({ limit, feeds, key_feeds, key_feeds_permanent })
             } else {
+                console.log('CACHED_PERMANENT:', key_feeds);
                 feeds = feeds_permanent;
                 fetchRSSLinks(query_feeds)
                     .then(fs => saveFeedCache({ limit, feeds: fs, key_feeds, key_feeds_permanent }))
                     .catch(e => console.dir({ query_feeds, e }))
             }
         } else {
+            console.log('CACHED:', key_feeds);
             fetchRSSLinks(query_feeds)
                 .then(fs => saveFeedCache({ limit, feeds: fs, key_feeds, key_feeds_permanent }))
                 .catch(e => console.dir({ query_feeds, e }))

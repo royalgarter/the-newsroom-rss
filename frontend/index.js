@@ -519,7 +519,7 @@ function alpineRSS() { return {
 					}
 				}
 
-				obj.published_formatted = this.timeSince(new Date(obj.published));
+				obj.published_formatted = this.timeSince(new Date(obj.published || undefined));
 				obj.title_formatted = this.decodeHTML(obj.title).substr(0, 150);
 				obj.description_formatted = obj.description ? this.decodeHTML(obj.description) : '';
 				obj.author_formatted_short = obj.author?.toString().substr(0, 12).trim();
@@ -614,7 +614,7 @@ function alpineRSS() { return {
 
 		readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 		readLaterItems.forEach(item => {
-			item.published_formatted = this.timeSince(new Date(item.published));
+			if (item.published) item.published_formatted = this.timeSince(new Date(item.published));
 			item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
 			item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
 			item.author_formatted_short = item.author?.toString().substr(0, 12).trim();
@@ -954,6 +954,8 @@ function alpineRSS() { return {
 	},
 
 	timeSince(date) {
+		if (!date) return '';
+
 		date = Math.min(Date.now() - 60e3, date);
 
 		let seconds = Math.floor((new Date() - date) / 1000);
@@ -1680,7 +1682,11 @@ function alpineRSS() { return {
 			let item0 = this.feeds[0].items[0];
 
 			await item0.prefetchContent?.();
+			let tried = 10;
 			let prefetched = setInterval(() => {
+				if (tried <= 0) clearInterval(prefetched);
+				tried--;
+
 				if (!item0.article.content) return;
 
 				item0.title = item0.article.title || item0.title;
