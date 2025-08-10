@@ -770,6 +770,8 @@ function alpineRSS() { return {
 
 						let newfeed = json?.feeds?.[0];
 
+						let found = newfeed && this.feeds.find(f => f.rss_url == newfeed?.rss_url);
+
 						let last_published = newfeed.items?.filter(x => x.published)?.map(x => x.published)?.sort()?.pop();
 
 						// console.log('last_published', last_published, item.url)
@@ -779,22 +781,22 @@ function alpineRSS() { return {
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
 							// console.log('>> load.feed.item.retry', item?.url, last_published, tryCount);
 
-							toast('Refresh up-to-date feeds');
+							// toast('Refresh up-to-date feeds');
 
 							setTimeout(() => {
-								this.loading = true;
+								if (found) found.loading = true;
+								// this.loading = true;
 								fetch(fetch_url, fetch_opts)
 									.then(resp => resp.json())
 									.then(json => fetchReceiveJSON(json, tryCount > 2, tryCount++))
 									.catch(null)
 									.finally(_ => {
-										this.loading = false;
+										if (found) found.loading = false;
+										// this.loading = false;
 										this.skipCheckOldPublished = true;
 									});
 							}, 10e3);
 						}
-
-						let found = newfeed && this.feeds.find(f => f.rss_url == newfeed?.rss_url);
 
 						if (found) {
 							found.items = newfeed.items;
@@ -1102,6 +1104,8 @@ function alpineRSS() { return {
 							setTimeout(() => {
 								let fa = document.querySelector('#rss-feed-article-' + feedIdx);
 
+								if (!fa) return;
+
 								if (window.getComputedStyle(fa).display == 'none') return;
 
 								fa.scrollIntoView(true)
@@ -1139,7 +1143,7 @@ function alpineRSS() { return {
 
 						if (!auto_fetch_content || item.article?.content || item.prefetching) return;
 						item.prefetching = true;
-						feed.prefetching = true;
+						feed.loading = true;
 
 						let resp = null;
 						let opts = {redirect: 'follow'};
@@ -1162,6 +1166,8 @@ function alpineRSS() { return {
 						// console.timeEnd('>> fetch.html.' + item.link);
 
 						// item.prefetching = false;
+
+						feed.loading = false;
 
 						if (!resp || resp?.status >= 400) return /*console.log(item.link, resp)*/;
 
@@ -1262,6 +1268,7 @@ function alpineRSS() { return {
 				feed.items.forEach(x => x.disable = false);
 
 				this.loading = true;
+				feed.loading = true;
 				fetch(`/api/feeds?l=${feed.items.length*2}&x=${this.params.x || ''}&cachy=no_cache`, {
 					method: 'POST',
 					headers: {"content-type": "application/json"},
@@ -1280,7 +1287,10 @@ function alpineRSS() { return {
 					// feed.items.forEach(x => x.prefetchContent?.());
 				})
 				.catch(null)
-				.finally(_ => {this.loading = false});
+				.finally(_ => {
+					this.loading = false;
+					feed.loading = false;
+				});
 			};
 
 			feed.postProcessItems();
