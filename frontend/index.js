@@ -46,9 +46,9 @@ function alpineRSS() { return {
 	easyMDE: null,
 
 	addNote() {
-		let description = this.easyMDE?.value() || this?.noteContent || document.getElementById('noteContent')?.value || '';
+		let description = (this.easyMDE?.value() || this?.noteContent || document.getElementById('noteContent')?.value || '').trim();
 
-		if (!this.noteTitle.trim() || !description.trim()) {
+		if (!this.noteTitle.trim() || !description) {
 			toast('Please enter a title and content for the note.');
 			return;
 		}
@@ -56,13 +56,16 @@ function alpineRSS() { return {
 		const newNote = {
 			link: `/#note_${Date.now()}`,
 			title: this.noteTitle.trim(),
-			description: description.trim(),
+			description: description.substr(0, 200),
 			published: new Date().toISOString(),
 			saved_at: new Date().toISOString(),
 			read_later: true,
 			is_note: true, // Flag to identify it as a note
 			title_formatted: this.decodeHTML(this.noteTitle.trim()).substr(0, 150),
 			published_formatted: this.timeSince(new Date()),
+			article: {
+				content: description.substr(0, 16e3),
+			}
 		};
 
 		let readLaterItems = this.storageGet(this.K.readlater) || [];
@@ -70,6 +73,8 @@ function alpineRSS() { return {
 
 		this.readlater = { items: readLaterItems };
 		this.storageSet(this.K.readlater, readLaterItems);
+
+		this.saveReadLater(newNote).then(_ => this.loadReadLaterItems());
 
 		this.noteTitle = '';
 		this.noteContent = '';
@@ -97,9 +102,9 @@ function alpineRSS() { return {
 	},
 
 	updateNote() {
-		let description = this.easyMDE?.value() || this?.editedContent || document.getElementById('editedContent')?.value || '';
+		let description = (this.easyMDE?.value() || this?.editedContent || document.getElementById('editedContent')?.value || '').trim();
 
-		if (!this.editedTitle.trim() || !description.trim()) {
+		if (!this.editedTitle.trim() || !description) {
 			toast('Please enter a title and content for the note.');
 			return;
 		}
@@ -109,11 +114,16 @@ function alpineRSS() { return {
 
 		if (index !== -1) {
 			readLaterItems[index].title = this.editedTitle.trim();
-			readLaterItems[index].description = description.trim();
+			readLaterItems[index].description = description.substr(0, 200);
 			readLaterItems[index].title_formatted = this.decodeHTML(this.editedTitle.trim()).substr(0, 150);
+			readLaterItems[index].article = {
+				content: description.substr(0, 16e3)
+			}
 
 			this.readlater = { items: readLaterItems };
 			this.storageSet(this.K.readlater, readLaterItems);
+
+			this.saveReadLater(readLaterItems[index]).then(_ => this.loadReadLaterItems());
 		}
 
 		this.editingNote = null;
@@ -616,7 +626,7 @@ function alpineRSS() { return {
 		readLaterItems.forEach(item => {
 			if (item.published) item.published_formatted = this.timeSince(new Date(item.published));
 			item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
-			item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
+			item.description_formatted = (item.description ? this.decodeHTML(item.description) : '').substr(0, 1000);
 			item.author_formatted_short = item.author?.toString().substr(0, 12).trim();
 		});
 		this.readlater = {items: readLaterItems};
