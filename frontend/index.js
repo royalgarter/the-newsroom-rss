@@ -893,23 +893,24 @@ function alpineRSS() { return {
 
 			// console.log(this.tasks);
 
-			console.log('...clustering')
-			let arrays = [], links = [];
-			this.feeds.forEach(feed => feed.items.forEach(item => {
-				if (!item.embedding) return;
+			// console.log('...clustering')
+			// let arrays = [], links = [];
+			// this.feeds.forEach(feed => feed.items.forEach(item => {
+			// 	if (!item.embedding) return;
 
-				arrays.push(item.embedding);
-				links.push(item.link);
-			}));
+			// 	arrays.push(item.embedding);
+			// 	links.push(item.link);
+			// }));
 
-			if (!this.loading && arrays.length && arrays?.[0]?.length) {
-				this.cluster = hclust(arrays, 'cosine');
-				let last = this.cluster.pop();
-				let i1 = last.elements[0];
-				let i2 = last.elements[1];
-				console.dir({cluster: this.cluster});
-				console.log('cluster:', last.distance, links[i1], links[i2])
-			}
+			// if (!this.loading && arrays.length && arrays?.[0]?.length) {
+			// 	this.cluster = hclust(arrays, 'cosine');
+			// 	let last = this.cluster.pop();
+			// 	let i1 = last.elements[0];
+			// 	let i2 = last.elements[1];
+			// 	console.dir({cluster: this.cluster});
+			// 	console.log('cluster:', last.distance, links[i1], links[i2])
+			// }
+
 		} catch (error) {
 			console.error("Error fetching feeds:", error);
 			this.debug = "Failed to load feeds. Please check the server logs for more details";

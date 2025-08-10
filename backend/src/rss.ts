@@ -171,7 +171,7 @@ async function processRssItem(item, head, pioneer) {
             statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
         };
 
-        processed.embedding = await embedding([processed.title, processed.description].join('-')).catch(e => null);
+        // processed.embedding = await embedding([processed.title, processed.description].join('-')).catch(e => null);
 
         return processed;
     } catch (ex) {
