@@ -63,9 +63,7 @@ function alpineRSS() { return {
 			is_note: true, // Flag to identify it as a note
 			title_formatted: this.decodeHTML(this.noteTitle.trim()).substr(0, 150),
 			published_formatted: this.timeSince(new Date()),
-			article: {
-				content: description.substr(0, 16e3),
-			}
+			article: {content: description}
 		};
 
 		let readLaterItems = this.storageGet(this.K.readlater) || [];
@@ -97,7 +95,7 @@ function alpineRSS() { return {
 
 	editNote(note, is_markdown) {
 		note.loading = true;
-		fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${note.link}`)
+		fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${encodeURIComponent(note.link)}`)
 			.then(r => r.json())
 			.then(article => {
 				note.loading = false;
@@ -128,9 +126,7 @@ function alpineRSS() { return {
 			readLaterItems[index].title = this.editedTitle.trim();
 			readLaterItems[index].description = description.substr(0, 200);
 			readLaterItems[index].title_formatted = this.decodeHTML(this.editedTitle.trim()).substr(0, 150);
-			readLaterItems[index].article = {
-				content: description.substr(0, 16e3)
-			}
+			readLaterItems[index].article = {content: description}
 
 			this.readlater = { items: readLaterItems };
 			this.storageSet(this.K.readlater, readLaterItems);
@@ -656,7 +652,7 @@ function alpineRSS() { return {
 				if (found.loading) return;
 
 				found.loading = true;
-				fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${found.link}`)
+				fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${encodeURIComponent(found.link)}`)
 					.then(r => r.json())
 					.then(article => {
 						found.loading = false;

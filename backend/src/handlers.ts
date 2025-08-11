@@ -152,7 +152,7 @@ export async function handleReadLater(req: Request) {
 
     if (req.method === 'GET') {
         if (link) {
-            const article = await getBookmarkArticle([pathname, hash], link).catch(e => null);
+            const article = await getBookmarkArticle([pathname, hash], decodeURIComponent(link)).catch(e => null);
 
             return response(JSON.stringify(article), {
                 headers: { ...cors, ...head_json },
@@ -352,8 +352,12 @@ function upsertBookmark(items, newItem) {
 
 async function saveBookmarks(kvkeys, updatedItems) {
 	let items = updatedItems.map(x => ({...x, article: undefined, skip_article: undefined}));
-	let articles = updatedItems.filter(x => (!x?.skip_article) && x?.article?.content)
-								.map(x => ({link: x.link, article: x.article}));
+	let articles = updatedItems
+        .filter(x => (!x?.skip_article) && x?.article?.content)
+		.map(x => {
+            x.article.content = x.article.content.substr(0, 48e3); // Deno KV: Values have a maximum length of 64 KiB (65,536 bytes)
+            return {link: x.link, article: x.article};
+        });
 
 	await KV.set(kvkeys, items);
 
