@@ -584,7 +584,7 @@
 												<span class="py-1 text-xs font-regular flex flex-row items-center"
 													:class="item.article ? 'visible' : 'disable__invisible'" :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'"
 													@mouseover="item.loadArticle?.()"
-													@click="item.loadArticle?.(true)"
+													@click="item.loadArticle?.(true);item.read_more = !item.read_more;"
 												>
 													<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
 													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
@@ -615,7 +615,6 @@
 										<!-- <template x-if="item.read_more"> -->
 											<div :class="item.read_more ? 'block' : 'hidden'"
 												class="px-4 py-2 flex flex-row items-center bg-amber-50 dark:bg-stone-800 transition-all transition-discrete"
-												x-show="item.read_more && item.article?.content"
 												x-intersect:leave="false && (item.read_more = false)"
 											>
 												<span class="py-1 text-xs font-regular text-gray-600 dark:text-gray-300 flex flex-row items-center">
