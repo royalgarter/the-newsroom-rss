@@ -96,9 +96,20 @@ function alpineRSS() { return {
 	},
 
 	editNote(note, is_markdown) {
-		this.editingNote = note;
-		this.editedTitle = note.title;
-		this.editedContent = note.description;
+		note.loading = true;
+		fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${note.link}`)
+			.then(r => r.json())
+			.then(article => {
+				note.loading = false;
+				note.article = article;
+
+				note.description = note.article.content;
+
+				this.editingNote = note;
+				this.editedTitle = note.title;
+				this.editedContent = note.description;
+			})
+			.catch(e => note.loading = false)
 	},
 
 	updateNote() {
