@@ -631,24 +631,24 @@ function alpineRSS() { return {
 			item.description_formatted = (item.description ? this.decodeHTML(item.description) : '').substr(0, 1000);
 			item.author_formatted_short = item.author?.toString().substr(0, 12).trim();
 
-			item.loadArticle = async (is_toggle) => {
+			item.loadArticle = (is_toggle) => {
 				if (item.article?.content) {
 					item.loading = false;
+					if (is_toggle) item.read_more = !item.read_more;
 					return;
 				}
 
 				if (item.loading) return;
 
 				item.loading = true;
-				await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${item.link}`)
+				fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${item.link}`)
 					.then(r => r.json())
 					.then(article => {
-						item.article = article;
-					})
-					.catch(e => null)
-					.finally(_ => {
 						item.loading = false;
+						item.article = article;
+						if (is_toggle) item.read_more = !item.read_more;
 					})
+					.catch(e => item.loading = false)
 			}
 		});
 		this.readlater = {items: readLaterItems};
