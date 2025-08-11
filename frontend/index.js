@@ -46,6 +46,10 @@ function alpineRSS() { return {
 	easyMDE: null,
 
 	addNote() {
+		if (!this.noteTitle.trim()) {
+			this.noteTitle = 'note_at_' + new Date().toLocaleString().replace(/\W+/g, '-');
+		}
+
 		let description = (this.easyMDE?.value() || this?.noteContent || document.getElementById('noteContent')?.value || '').trim();
 
 		if (!this.noteTitle.trim() || !description) {
