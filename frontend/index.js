@@ -634,6 +634,7 @@ function alpineRSS() { return {
 			item.loadArticle = (is_toggle) => {
 				if (item.article?.content) {
 					item.loading = false;
+					if (is_toggle) item.read_more = !item.read_more;
 					return;
 				}
 
@@ -648,13 +649,7 @@ function alpineRSS() { return {
 					.catch(e => null)
 					.finally(_ => {
 						item.loading = false;
-
-						if (is_toggle) {
-							$nextTick(() => {
-								item.read_more = !item.read_more;
-								item.read_more = !item.read_more;
-							});
-						}
+						if (is_toggle) item.read_more = !item.read_more;
 					})
 			}
 		});

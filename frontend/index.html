@@ -584,7 +584,7 @@
 												<span class="py-1 text-xs font-regular flex flex-row items-center"
 													:class="item.article ? 'visible' : 'disable__invisible'" :class="item.read_more ? 'text-fuchsia-600' : 'text-teal-600'"
 													@mouseover="item.loadArticle?.()"
-													@click="item.loadArticle?.(true); item.read_more = !item.read_more;"
+													@click="item.loadArticle?.(true);"
 												>
 													<svg x-cloak x-show="!item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
 													  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
@@ -592,7 +592,7 @@
 													<svg x-cloak x-show="item.read_more" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
 														<path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
 													</svg>
-													<span class="ml-1" x-text="item.read_more ? 'Collapse' : (item.loading && !item.article?.content ? 'Loading' : 'Content')"></span>
+													<span class="ml-1" x-text="item.read_more ? 'Collapse' : ((item.loading && !item.article?.content) ? 'Loading' : 'Content')"></span>
 												</span>
 											</template>
 											<span @click="saveReadLater(item, true)" class="py-1 text-xs font-regular flex items-center cursor-pointer text-amber-600 dark:text-amber-400 ml-auto">
