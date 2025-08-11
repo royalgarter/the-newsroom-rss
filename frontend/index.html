@@ -643,7 +643,7 @@
 				</div>
 
 				<!-- settings -->
-				<div id="expander_settings" x-data="{ expanded: !tasks?.length && !location.hash?.includes?.(note) }" class="py-2">
+				<div id="expander_settings" x-data="{ expanded: !tasks?.length && !location.hash?.includes?.('note') }" class="py-2">
 					<a id="anchor_settings" href="#settings" name="settings" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
