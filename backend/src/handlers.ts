@@ -203,11 +203,28 @@ export async function handleReadLater(req: Request) {
         }
     } else if (req.method === 'DELETE') {
         try {
+            const { link } = data;
             const existingItems = (await getBookmarks([pathname, hash]))?.value || [];
-            const updatedItems = data.link ?
-                existingItems.filter(item => item.link !== data.link) :
+            const updatedItems = link ?
+                existingItems.filter(item => item.link !== link) :
                 existingItems;
-            await KV.delete([pathname, hash, data.link]);
+
+            // First, get the article to see if it has chunks
+            const article = (await KV.get([pathname, hash, link]))?.value;
+            if (article?.chunks) {
+                let currentChunkKey = article.chunks;
+                while (currentChunkKey) {
+                    const chunk = (await KV.get(currentChunkKey))?.value;
+                    await KV.delete(currentChunkKey);
+                    if (chunk) {
+                        currentChunkKey = chunk.next;
+                    } else {
+                        currentChunkKey = null;
+                    }
+                }
+            }
+            await KV.delete([pathname, hash, link]);
+
             updatedItems.forEach(x => { x.skip_article = true });
             await saveBookmarks([pathname, hash], updatedItems);
             return response(JSON.stringify({ success: true, items: updatedItems }), {
@@ -351,20 +368,47 @@ function upsertBookmark(items, newItem) {
 }
 
 async function saveBookmarks(kvkeys, updatedItems) {
-	let items = updatedItems.map(x => ({...x, article: undefined, skip_article: undefined}));
-	let articles = updatedItems
+    const MAX_CONTENT_LENGTH = 60 * 1024 / 4; // UTF8 4 bytes
+
+    let items = updatedItems.map(x => ({ ...x, article: undefined, skip_article: undefined }));
+    let articles = updatedItems
         .filter(x => (!x?.skip_article) && x?.article?.content)
-		.map(x => {
-            x.article.content = x.article.content.substr(0, 16e3); // Deno KV: Values have a maximum length of 64 KiB (65,536 bytes)
-            return {link: x.link, article: x.article};
-        });
+        .map(x => ({ link: x.link, article: x.article }));
 
-	await KV.set(kvkeys, items);
+    await KV.set(kvkeys, items);
 
-	for (let a of articles) {
-		delete a.article.title;
-		KV.set([...kvkeys, a.link], a.article).then().catch(e => console.log('saveBookmarks', e));
-	}
+    for (let a of articles) {
+        delete a.article.title;
+        const content = a.article.content;
+        if (content.length > MAX_CONTENT_LENGTH) {
+            const numChunks = Math.ceil(content.length / MAX_CONTENT_LENGTH);
+            let currentChunk = 1;
+            let remainingContent = content;
+            let nextChunkKey = null;
+
+            while (remainingContent.length > 0) {
+                const chunkContent = remainingContent.substring(0, MAX_CONTENT_LENGTH);
+                remainingContent = remainingContent.substring(MAX_CONTENT_LENGTH);
+
+                const chunkKey = [...kvkeys, a.link, `chunk_${currentChunk}`];
+                const chunkData = {
+                    content: chunkContent,
+                    next: remainingContent.length > 0 ? [...kvkeys, a.link, `chunk_${currentChunk + 1}`] : null
+                };
+
+                if (currentChunk === 1) {
+                    a.article.content = null;
+                    a.article.chunks = chunkKey;
+                    await KV.set([...kvkeys, a.link], a.article);
+                }
+
+                await KV.set(chunkKey, chunkData);
+                currentChunk++;
+            }
+        } else {
+            await KV.set([...kvkeys, a.link], a.article);
+        }
+    }
 }
 
 async function getBookmarks(kvkeys) {
@@ -380,7 +424,22 @@ async function getBookmarks(kvkeys) {
 }
 
 async function getBookmarkArticle(kvkeys, link) {
-    let article = (await KV.get([...kvkeys, link])).value;
+    let article = (await KV.get([...kvkeys, link]))?.value;
+
+    if (article?.chunks) {
+        let content = '';
+        let currentChunkKey = article.chunks;
+        while (currentChunkKey) {
+            const chunk = (await KV.get(currentChunkKey))?.value;
+            if (chunk) {
+                content += chunk.content;
+                currentChunkKey = chunk.next;
+            } else {
+                currentChunkKey = null;
+            }
+        }
+        article.content = content;
+    }
 
     return article;
 }
