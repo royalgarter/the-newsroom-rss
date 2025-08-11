@@ -634,6 +634,8 @@ function alpineRSS() { return {
 			item.loadArticle = async () => {
 				if (item.article?.content) return (item.loading = false);
 
+				if (item.loading) return;
+
 				item.loading = true;
 				item.article = await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${item.link}`).then(r => r.json()).catch(e => null);
 				item.loading = false;
