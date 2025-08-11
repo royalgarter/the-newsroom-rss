@@ -261,7 +261,7 @@
 														) ? 'pointer-events-none' : ''"
 												:href="item.link" target="_blank"
 												:title="item.title"
-												x-html="item.title_formatted + (
+												x-html="(item.title_formatted || item.title) + (
 															style()?.img ? '' : (item.published_formatted ? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + item.published_formatted + '</sup>') : '')
 														)"
 												rel="external"
@@ -547,7 +547,7 @@
 													) ? 'pointer-events-none' : ''"
 											:href="item.link" target="_blank"
 											:title="item.title"
-											x-html="item.title_formatted + (
+											x-html="(item.title_formatted || item.title) + (
 														(style()?.title && item.published_formatted)
 															? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>[' + item.published_formatted + ']</sup>')
 															: ''
