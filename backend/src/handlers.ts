@@ -359,7 +359,7 @@ async function saveBookmarks(kvkeys, updatedItems) {
 
 	for (let a of articles) {
 		delete a.article.title;
-		KV.set([...kvkeys, a.link], a.article).then();
+		KV.set([...kvkeys, a.link], a.article).then().catch(e => console.log('saveBookmarks', e));
 	}
 }
 
