@@ -646,8 +646,10 @@ function alpineRSS() { return {
 						item.article = article;
 
 						if (is_toggle) {
-							item.read_more = !item.read_more;
-							item.read_more = !item.read_more;
+							let found = this.readlater.items.find(x => x.link == item.link);
+
+							found.read_more = !found.read_more;
+							found.read_more = !found.read_more;
 						}
 					})
 					.catch(e => null)
