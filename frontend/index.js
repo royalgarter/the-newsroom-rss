@@ -59,7 +59,7 @@ function alpineRSS() { return {
 			description: description.substr(0, 200),
 			published: new Date().toISOString(),
 			saved_at: new Date().toISOString(),
-			read_later: true,
+			read_later: false,
 			is_note: true, // Flag to identify it as a note
 			title_formatted: this.decodeHTML(this.noteTitle.trim()).substr(0, 150),
 			published_formatted: this.timeSince(new Date()),
@@ -113,6 +113,7 @@ function alpineRSS() { return {
 		const index = readLaterItems.findIndex(item => item.link === this.editingNote.link);
 
 		if (index !== -1) {
+			readLaterItems[index].read_later = false;
 			readLaterItems[index].title = this.editedTitle.trim();
 			readLaterItems[index].description = description.substr(0, 200);
 			readLaterItems[index].title_formatted = this.decodeHTML(this.editedTitle.trim()).substr(0, 150);
@@ -636,7 +637,7 @@ function alpineRSS() { return {
 			feed.items.forEach(item => {
 				item.read_later = readLaterItems.some(savedItem => savedItem.link === item.link);
 
-				if (item?.article?.content?.search?.(/\{.*error.*E404.*\}/) >= 0) item.article = null;
+				if (item?.article?.content?.search?.(/\{.*error.*E40.*\}/) >= 0) item.article = null;
 			});
 		});
 
