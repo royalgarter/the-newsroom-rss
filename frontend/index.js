@@ -644,17 +644,17 @@ function alpineRSS() { return {
 					.then(r => r.json())
 					.then(article => {
 						item.article = article;
-
-						if (is_toggle) {
-							let found = this.readlater.items.find(x => x.link == item.link);
-
-							found.read_more = !found.read_more;
-							found.read_more = !found.read_more;
-						}
 					})
 					.catch(e => null)
 					.finally(_ => {
 						item.loading = false;
+
+						if (is_toggle) {
+							$nextTick(() => {
+								item.read_more = !item.read_more;
+								item.read_more = !item.read_more;
+							});
+						}
 					})
 			}
 		});
