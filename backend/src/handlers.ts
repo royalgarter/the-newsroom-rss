@@ -355,7 +355,7 @@ async function saveBookmarks(kvkeys, updatedItems) {
 	let articles = updatedItems
         .filter(x => (!x?.skip_article) && x?.article?.content)
 		.map(x => {
-            x.article.content = x.article.content.substr(0, 48e3); // Deno KV: Values have a maximum length of 64 KiB (65,536 bytes)
+            x.article.content = x.article.content.substr(0, 16e3); // Deno KV: Values have a maximum length of 64 KiB (65,536 bytes)
             return {link: x.link, article: x.article};
         });
 
