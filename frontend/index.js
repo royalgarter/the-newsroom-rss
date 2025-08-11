@@ -524,6 +524,7 @@ function alpineRSS() { return {
 					feed_title: this.feeds.find(f => f.items.includes(item))?.title || '',
 					saved_at: new Date().toISOString(),
 					read_later: item.read_later,
+					is_note: item.is_note,
 					article: {
 						title: item.article?.title,
 						content: item.article?.content,
