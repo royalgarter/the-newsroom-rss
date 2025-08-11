@@ -630,6 +630,14 @@ function alpineRSS() { return {
 			item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
 			item.description_formatted = (item.description ? this.decodeHTML(item.description) : '').substr(0, 1000);
 			item.author_formatted_short = item.author?.toString().substr(0, 12).trim();
+
+			item.loadArticle = async () => {
+				if (item.article?.content) return (item.loading = false);
+
+				item.loading = true;
+				item.article = await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${item.link}`).then(r => r.json()).catch(e => null);
+				item.loading = false;
+			}
 		});
 		this.readlater = {items: readLaterItems};
 

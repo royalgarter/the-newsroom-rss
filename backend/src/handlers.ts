@@ -131,7 +131,7 @@ export async function handleFeeds(req: Request) {
 export async function handleReadLater(req: Request) {
     const { searchParams } = new URL(req.url);
     let params = Object.fromEntries(searchParams);
-    let { x: hash, sig } = params;
+    let { x: hash, sig, link } = params;
 
     let data = {};
     try { data = (req.method != 'GET') ? await req.json?.() : {}; } catch { };
@@ -151,10 +151,18 @@ export async function handleReadLater(req: Request) {
     const pathname = "/api/readlater";
 
     if (req.method === 'GET') {
-        const items = await getBookmarks([pathname, hash]);
-        return response(JSON.stringify(items?.value || []), {
-            headers: { ...cors, ...head_json },
-        });
+        if (link) {
+            const article = await getBookmarkArticle([pathname, hash], link);
+
+            return response(JSON.stringify(article), {
+                headers: { ...cors, ...head_json },
+            });
+        } else {
+            const items = await getBookmarks([pathname, hash]);
+            return response(JSON.stringify(items?.value || []), {
+                headers: { ...cors, ...head_json },
+            });
+        }
     } else if (req.method === 'POST') {
         try {
             const { item } = data || {};
@@ -358,11 +366,17 @@ async function saveBookmarks(kvkeys, updatedItems) {
 async function getBookmarks(kvkeys) {
 	let items = (await KV.get(kvkeys)) || {value: []};
 
-	await Promise.allSettled(
-		Object.keys(items?.value || {}).map(i =>
-			KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a?.value})
-		)
-	)
+	// await Promise.allSettled(
+	// 	Object.keys(items?.value || {}).map(i =>
+	// 		KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a?.value})
+	// 	)
+	// )
 	
 	return items;
+}
+
+async function getBookmarkArticle(kvkeys, link) {
+    let article = (await KV.get([...kvkeys, link])).value;
+
+    return article;
 }
