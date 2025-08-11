@@ -632,23 +632,27 @@ function alpineRSS() { return {
 			item.author_formatted_short = item.author?.toString().substr(0, 12).trim();
 
 			item.loadArticle = (is_toggle) => {
-				if (item.article?.content) {
-					item.loading = false;
-					// if (is_toggle) item.read_more = !item.read_more;
+				let found = this.readlater.items.find(x => x.link == item.link);
+
+				if (!found) return;
+
+				if (found.article?.content) {
+					found.loading = false;
+					// if (is_toggle) found.read_more = !found.read_more;
 					return;
 				}
 
-				if (item.loading) return;
+				if (found.loading) return;
 
-				item.loading = true;
-				fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${item.link}`)
+				found.loading = true;
+				fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}&link=${found.link}`)
 					.then(r => r.json())
 					.then(article => {
-						item.loading = false;
-						item.article = article;
-						// if (is_toggle) item.read_more = !item.read_more;
+						found.loading = false;
+						found.article = article;
+						// if (is_toggle) found.read_more = !found.read_more;
 					})
-					.catch(e => item.loading = false)
+					.catch(e => found.loading = false)
 			}
 		});
 		this.readlater = {items: readLaterItems};
