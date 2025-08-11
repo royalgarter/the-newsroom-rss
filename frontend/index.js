@@ -631,7 +631,7 @@ function alpineRSS() { return {
 			item.description_formatted = (item.description ? this.decodeHTML(item.description) : '').substr(0, 1000);
 			item.author_formatted_short = item.author?.toString().substr(0, 12).trim();
 
-			item.loadArticle = () => {
+			item.loadArticle = (is_toggle) => {
 				if (item.article?.content) {
 					item.loading = false;
 					return;
@@ -644,6 +644,11 @@ function alpineRSS() { return {
 					.then(r => r.json())
 					.then(article => {
 						item.article = article;
+
+						if (is_toggle) {
+							item.read_more = !item.read_more;
+							item.read_more = !item.read_more;
+						}
 					})
 					.catch(e => null)
 					.finally(_ => {
