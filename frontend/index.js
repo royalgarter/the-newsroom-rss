@@ -476,7 +476,7 @@ function alpineRSS() { return {
 				if (!this.loading && window.innerWidth <= 640 && item) {
 					const url = new URL(location.href);
 					url.searchParams.set('a', item.anchor || item.link);
-					history.pushState(null, '', url.toString());
+					history.replaceState(null, '', url.toString());
 				}
 			break;
 			case 'leave':
@@ -905,7 +905,7 @@ function alpineRSS() { return {
 				const url = new URL(location);
 				url.searchParams.delete("u");
 				url.searchParams.set("x", hash_server);
-				history.pushState({}, "", url);
+				history.replaceState({}, "", url);
 				this.params.x = hash_server;
 				this.storageSet(this.K.hash, this.params.x);
 			}
@@ -1474,7 +1474,7 @@ function alpineRSS() { return {
 			url.searchParams.set(k, v);
 		});
 		console.log('url:', url.toString());
-		history.pushState({}, "", url.toString());
+		history.replaceState({}, "", url.toString());
 
 		this.loading = noReload ? false : true;
 		this.storageDel(this.K.feeds);
@@ -1570,7 +1570,7 @@ function alpineRSS() { return {
 		this.$watch('params.s', value => {
 			const url = new URL(location.href);
 			url.searchParams.set('s', this.params.s);
-			history.pushState(null, '', url.toString());
+			history.replaceState(null, '', url.toString());
 		});
 
 		this.$watch('loading', value => {
@@ -1708,7 +1708,7 @@ function alpineRSS() { return {
 			url.searchParams.delete("url");
 			url.searchParams.delete("text");
 			url.searchParams.delete("title");
-			history.pushState({}, "", url);
+			history.replaceState({}, "", url);
 
 			Alpine.$data(document.querySelector('#expander_settings')).expanded = false;
 			Alpine.$data(document.querySelector('#expander_declarations')).expanded = false;
@@ -1850,7 +1850,7 @@ function alpineRSS() { return {
 
 			const url = new URL(location);
 			url.searchParams.set("x", x);
-			history.pushState({}, "", url);
+			history.replaceState({}, "", url);
 
 			if (document.querySelector('#img-profile').src != detail.profile?.picture) {
 				document.querySelector('#img-profile').src = detail.profile?.picture;
