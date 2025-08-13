@@ -153,7 +153,7 @@
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
-					:class="style()?.shadow ? 'shadow' : ''"
+					:class="[style()?.shadow ? 'shadow' : '', (loading || feed.loading) ? 'cursor-wait': ''].join(' ')"
 					x-cloak
 					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
 				>
@@ -196,6 +196,7 @@
 										style()?.shadow ? 'shadow' : '',
 										style()?.preview ? 'pb-8' : '',
 										'single_view' == params?.f ? 'col-span-full' : '',
+										item.prefetching && !item.no_article && !item.article?.content ? 'cursor-wait' : '',
 									].join(' ')
 									"
 								>
