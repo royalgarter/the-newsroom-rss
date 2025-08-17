@@ -576,7 +576,7 @@ function alpineRSS() { return {
 			} else {
 				// Remove from local storage
 				let THIS = this;
-				THIS.modalShow('Confirm', `[Irreversible Action] Remove saved bookmark?!\n> ${item.link}`, null, null, (e) => {
+				THIS.modalShow('Confirm', `[Irreversible Action] Remove bookmark:  ${item.link}`, null, null, (e) => {
 					if (!e) return;
 
 					readLaterItems = readLaterItems.filter(i => i.link !== item.link);
