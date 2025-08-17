@@ -644,7 +644,7 @@
 				</div>
 
 				<!-- settings -->
-				<div id="expander_settings" x-data="{ expanded: !tasks?.length && !location.hash?.includes?.('note') }" class="py-2">
+				<div id="expander_settings" x-data="{ expanded: false }" class="py-2">
 					<a id="anchor_settings" href="#settings" name="settings" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
@@ -962,6 +962,7 @@
 		<div id="anchor_jump" x-data="{
 			_alBody: Alpine.$data(document.querySelector('body')),
 			_alRead: Alpine.$data(document.querySelector('#expander_readlater')),
+			_alSettings: Alpine.$data(document.querySelector('#expander_settings')),
 
 			is_open: false,
 			anchors: [],
@@ -993,6 +994,7 @@
 
 							setTimeout(() => {
 								_alRead.expanded = _alBody.is_hide_feeds = location.hash.includes('#bookmarks');
+								_alSettings.expanded = _alSettings.expanded && !location.hash.includes('#bookmark');
 
 								const _alDecl = Alpine.$data(document.querySelector('#expander_declarations'));
 								if (_alDecl) _alDecl.expanded = (location.hash == '#declarations');

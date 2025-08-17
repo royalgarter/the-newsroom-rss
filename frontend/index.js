@@ -575,26 +575,30 @@ function alpineRSS() { return {
 				}
 			} else {
 				// Remove from local storage
+				let THIS = this;
+				THIS.modalShow('Confirm', `[Irreversible Action] Remove saved bookmark?!\n> ${item.link}`, null, null, (e) => {
+					if (!e) return;
 
-				readLaterItems = readLaterItems.filter(i => i.link !== item.link);
-				readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
-				readLaterItems.forEach(x => x.read_later = true);
+					readLaterItems = readLaterItems.filter(i => i.link !== item.link);
+					readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
+					readLaterItems.forEach(x => x.read_later = true);
 
-				this.readlater = {items: readLaterItems};
-				this.storageSet(this.K.readlater, readLaterItems);
+					THIS.readlater = {items: readLaterItems};
+					THIS.storageSet(THIS.K.readlater, readLaterItems);
 
-				// Remove from Deno KV
-				if (this.params.x) {
-					await fetch('/api/readlater', {
-						method: 'DELETE',
-						headers: {"content-type": "application/json"},
-						body: JSON.stringify({
-							x: this.params.x,
-							sig: this?.profile?.signature || '',
-							link: item.link
-						})
-					}).catch(err => console.error('Failed to remove from KV:', err));
-				}
+					// Remove from Deno KV
+					if (THIS.params.x) {
+						await fetch('/api/readlater', {
+							method: 'DELETE',
+							headers: {"content-type": "application/json"},
+							body: JSON.stringify({
+								x: THIS.params.x,
+								sig: THIS?.profile?.signature || '',
+								link: item.link
+							})
+						}).catch(err => console.error('Failed to remove from KV:', err));
+					}
+				});
 			}
 		} catch (error) {
 			console.error("Error saving read later item:", error);
@@ -1782,6 +1786,10 @@ function alpineRSS() { return {
 		// console.log('inited tasks', this.tasks.length)
 
 		if (!this.is_hide_feeds) {
+			Alpine.$data(document.querySelector('#expander_settings')).expanded = !this.tasks?.length && !location.hash?.includes?.('note');
+
+			!tasks?.length && !location.hash?.includes?.('note')
+
 			this.feeds = this.storageGet(this.K.feeds) || [];
 			// console.log('inited feeds_0', this.feeds.length, this.params.x, this.storageGet(this.K.feeds + this.params.x))
 
