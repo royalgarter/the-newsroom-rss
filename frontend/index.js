@@ -588,7 +588,7 @@ function alpineRSS() { return {
 
 					// Remove from Deno KV
 					if (THIS.params.x) {
-						await fetch('/api/readlater', {
+						fetch('/api/readlater', {
 							method: 'DELETE',
 							headers: {"content-type": "application/json"},
 							body: JSON.stringify({
@@ -596,7 +596,7 @@ function alpineRSS() { return {
 								sig: THIS?.profile?.signature || '',
 								link: item.link
 							})
-						}).catch(err => console.error('Failed to remove from KV:', err));
+						}).then().catch(err => console.error('Failed to remove from KV:', err));
 					}
 				});
 			}
