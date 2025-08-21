@@ -263,7 +263,7 @@
 												:href="item.link" target="_blank"
 												:title="item.title"
 												x-html="(item.title_formatted || item.title) + (
-															style()?.img ? '' : (item.published_formatted ? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + item.published_formatted + '</sup>') : '')
+															style()?.img ? '' : (item.published_formatted && !item.published_formatted.includes('NaN') ? (' <sup class=&quot;text-xs text-gray-400 dark:text-gray-300 font-light&quot;>' + item.published_formatted + '</sup>') : '')
 														)"
 												rel="external"
 											></a>
@@ -552,7 +552,7 @@
 											:href="item.link" target="_blank"
 											:title="item.title"
 											x-html="(item.title_formatted || item.title) + (
-														(style()?.title && item.published_formatted)
+														(style()?.title && item.published_formatted && !item.published_formatted.includes('NaN'))
 															? (' <sup class=&quot;text-xs text-gray-500 dark:text-gray-200 font-light&quot;>[' + item.published_formatted + ']</sup>')
 															: ''
 													)"
