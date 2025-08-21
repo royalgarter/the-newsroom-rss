@@ -1788,7 +1788,7 @@ function alpineRSS() { return {
 		if (!this.is_hide_feeds) {
 			Alpine.$data(document.querySelector('#expander_settings')).expanded = !this.tasks?.length && !location.hash?.includes?.('note');
 
-			!tasks?.length && !location.hash?.includes?.('note')
+			!this.tasks?.length && !location.hash?.includes?.('note')
 
 			this.feeds = this.storageGet(this.K.feeds) || [];
 			// console.log('inited feeds_0', this.feeds.length, this.params.x, this.storageGet(this.K.feeds + this.params.x))
