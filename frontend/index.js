@@ -14,6 +14,9 @@ function alpineRSS() { return {
 	ready: false,
 	pioneer: false,
 
+	burger_open: false,
+	burger_sub_cat_open: false,
+
 	readlater: {},
 
 	feeds: [],
@@ -1604,8 +1607,11 @@ function alpineRSS() { return {
 		this.$watch('feeds', (value, oldValue) => {
 			// console.log('$watch.feeds', oldValue?.length, value?.length)
 
-			if (oldValue.length != value.length)
+			if (oldValue.length != value.length) {
 				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
+				Alpine.$data(document.querySelector('#menu_burger'))?.refresh?.();
+			}
+
 		})
 
 		try {

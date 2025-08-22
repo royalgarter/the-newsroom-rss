@@ -48,10 +48,6 @@
 
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
-		<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4" /> -->
-		<!-- <script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
-		<!-- <link rel="stylesheet" href="https://cdn.tailwind-lite.com/2.0.1.css" /> -->
-
 		<!-- <link rel="preload" as="script" href="//unpkg.com/alpinejs-component@latest/dist/component.min.js" /> -->
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" />
@@ -83,7 +79,12 @@
 			gtag('config', 'G-SF3W5SZ5PM');
 		</script>
 
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.14">
+
+		<!-- <link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4" /> -->
+		<script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		<!-- <link rel="stylesheet" href="https://cdn.tailwind-lite.com/2.0.1.css" /> -->
+
+		<!-- <link rel="stylesheet" type="text/css" href="index.css?v=1.14"> -->
 		<script id="version" src="index.js?v=1.14"></script>
 		<script type="module" src="./js/module.mjs"></script>
 
@@ -98,15 +99,68 @@
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col overflow-x-hidden">
 		<template id="tpl_header" x-if="ready">
-			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-between max-w-auto">
-				<img width="32" height="32"
-					id="img-profile"
-					@click="clickedProfile()"
-					:src="profile?.picture || '/default-profile-64x64.png'"
-					:alt="profile?.picture ? 'Back to Anonymous' : 'Sync with Google'"
-					:title="profile?.picture ? 'Back to Anonymous' : 'Sync with Google'"
-					class="self-center w-8 h-8 pb-1 rounded-full cursor-pointer"
-					onerror="this.src = '/default-profile-64x64.png';">
+			<header class="bg-blue-600 dark:bg-blue-800 p-4 text-stone-100 text-center flex items-center justify-start max-w-auto">
+				<!-- Hamburger Menu -->
+				<div class="relative"
+					id="menu_burger"
+					x-data="{
+						categories: [
+							{href: '/?x=world', text: 'World'},
+							{href: '/?x=business', text: 'Business'},
+							{href: '/?x=technology', text: 'Technology'},
+							{href: '/?x=entertainment', text: 'Entertainment'},
+							{href: '/?x=sports', text: 'Sports'},
+							{href: '/?x=science', text: 'Science'},
+							{href: '/?x=health', text: 'Health'},
+						],
+						anchors: [],
+						refresh: function() {
+							this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
+								href: '#' + a.name,
+								text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
+							}));
+						}
+					}"
+					x-init="refresh()"
+				>
+					<button @click="burger_open = !burger_open" class="rounded-md focus:outline-none focus:shadow-outline-purple cursor-pointer">
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+						</svg>
+					</button>
+					<!-- 2-level Menu -->
+					<div x-show="burger_open" @click.away="burger_open = false" class="absolute left-0 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-100">
+						<ul class="py-1">
+							<li>
+								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Bookmarks</a>
+							</li>
+							<li>
+								<a href="#bookmarks_note" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Notes</a>
+							</li>
+							<li>
+								<a href="#" @click.prevent="burger_sub_cat_open = !burger_sub_cat_open" class="flex items-center px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+									<span>Categories</span>
+									<svg class="w-4 h-4 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" :class="{'transform rotate-180': burger_sub_cat_open}">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+									</svg>
+								</a>
+								<ul x-show="burger_sub_cat_open" class="pl-4">
+									<template x-for="(cat, index) in categories" :key="index">
+										<li>
+											<a class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+												:href="cat.href" x-text="cat.text"
+												@click=""
+											></a>
+										</li>
+									</template>
+									<!-- <li><a href="#" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">SubMenu 1</a></li>
+									<li><a href="#" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">SubMenu 2</a></li> -->
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</div>
+
 				<a id="anchor_home" href="#home" name="home" class="scroll-smooth"></a>
 				<h1 class="mx-auto text-center text-2xl font-bold"
 					:class="loading ? 'animate-pulse italic' : 'cursor-pointer'"
@@ -129,18 +183,28 @@
 					"
 				></h1>
 
-				<button class="rounded-md focus:outline-none focus:shadow-outline-purple cursor-pointe" 
-					@click="toggleDarkMode()" 
-					aria-label="Toggle Dark Mode">
-					<svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-						:class="{'hidden': dark}">
-						<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-					</svg>
-					<svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-						:class="{'hidden': !dark}">
-						<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
-					</svg>
-				</button>
+				<div class="flex items-center space-x-4">
+					<button class="rounded-md focus:outline-none focus:shadow-outline-purple cursor-pointe"
+						@click="toggleDarkMode()"
+						aria-label="Toggle Dark Mode">
+						<svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+							:class="{'hidden': dark}">
+							<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+						</svg>
+						<svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+							:class="{'hidden': !dark}">
+							<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+						</svg>
+					</button>
+					<img width="32" height="32"
+						id="img-profile"
+						@click="clickedProfile()"
+						:src="profile?.picture || '/default-profile-64x64.png'"
+						:alt="profile?.picture ? 'Back to Anonymous' : 'Sync with Google'"
+						:title="profile?.picture ? 'Back to Anonymous' : 'Sync with Google'"
+						class="self-center w-8 h-8 pb-1 rounded-full cursor-pointer"
+						onerror="this.src = '/default-profile-64x64.png';">
+				</div>
 
 			</header>
 		</template>
