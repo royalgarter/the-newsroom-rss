@@ -411,6 +411,8 @@ function alpineRSS() { return {
 	},
 
 	initializeIntersectionObservers() {
+		return console.log('initializeIntersectionObservers.disabled');
+
 		// const feedObserver = new IntersectionObserver((entries, observer) => {
 		// 	entries.forEach(entry => {
 		// 		if (entry.isIntersecting) {
