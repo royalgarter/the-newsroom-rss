@@ -1427,7 +1427,7 @@ function alpineRSS() { return {
 			this.input = '';
 			this.review_feed = null;
 
-			saveTasks(true);
+			this.saveTasks(true);
 		} catch (ex) {
 			console.error(ex.message);
 		}
@@ -1490,6 +1490,7 @@ function alpineRSS() { return {
 		this.loading = noReload ? false : true;
 		this.storageDel(this.K.feeds);
 		this.storageSet(this.K.tasks, this.tasks);
+
 		if (this.params.x) {
 			this.storageSet(this.K.tasks + this.params.x, this.tasks);
 			this.storageDel(this.K.tasks);
@@ -1499,7 +1500,7 @@ function alpineRSS() { return {
 
 		this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
 			.then(done => {
-				if (noReload) return;
+				if (noReload) return toast('RSS Feeds saved');
 
 				console.log('saveTasks done');
 				this.loading = false;

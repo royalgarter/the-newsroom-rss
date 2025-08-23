@@ -67,11 +67,11 @@ export async function handleFeeds(req: Request) {
         v = (~~v) + 1;
         let save_obj = saved.map((x, order) => ({ order, ...x }));
 
-        KV.set(['/api/feeds', hash], save_obj);
-        KV.set(['/api/feeds', hash, v], save_obj);
-        KV.set(['/api/feeds', hash, 'version'], v);
-
-        console.log('saved', saved.length, '/api/feeds', hash, v, save_obj);
+        Promise.allSettled([
+            KV.set(['/api/feeds', hash], save_obj),
+            KV.set(['/api/feeds', hash, v], save_obj),
+            KV.set(['/api/feeds', hash, 'version'], v),
+        ]).then(r => console.log('saved', saved.length, '/api/feeds', hash, v, save_obj, r)).catch(console.error);
 
         CACHE.del(key_feeds);
         CACHE.del(key_feeds_permanent);
