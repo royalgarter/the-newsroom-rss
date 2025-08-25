@@ -15,7 +15,7 @@ function alpineRSS() { return {
 	pioneer: false,
 
 	burger_open: false,
-	burger_sub_cat_open: false,
+	burger_sub_cat_open: true,
 
 	readlater: {},
 
