@@ -84,8 +84,8 @@
 		<!-- <script src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
 		<!-- <link rel="stylesheet" href="https://cdn.tailwind-lite.com/2.0.1.css" /> -->
 
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.15">
-		<script id="version" src="index.js?v=1.15"></script>
+		<link rel="stylesheet" type="text/css" href="index.css?v=1.16">
+		<script id="version" src="index.js?v=1.16"></script>
 		<script type="module" src="./js/module.mjs"></script>
 
 		<script type="module">
@@ -407,8 +407,8 @@
 												<div :class="item.read_more ? 'block' : 'hidden'"
 													class="block sm:hidden px-4 py-2 flex flex-row items-center bg-amber-50 dark:bg-stone-800 transition-all transition-discrete"
 												>
-													<span class="py-1 text-xs font-regular text-gray-600 dark:text-gray-300 flex flex-row items-center">
-														<p class="rss-article-content text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
+													<span class="max-w-full py-1 text-xs font-regular text-gray-600 dark:text-gray-300 flex flex-row items-center">
+														<p class="rss-article-content max-w-full text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
 														</p>
 													</span>
 												</div>
@@ -474,8 +474,8 @@
 										</span>
 									</div>
 									<div class="px-4 py-2 flex flex-row items-center">
-										<span class="py-1 text-sm font-regular flex flex-row items-center">
-											<p class="rss-article-content text-gray-500 dark:text-gray-400 whitespace-pre-line break-words" x-html="feed.article?.content || ''">
+										<span class="max-w-full py-1 text-sm font-regular flex flex-row items-center">
+											<p class="rss-article-content max-w-full text-gray-500 dark:text-gray-400 whitespace-pre-line break-words" x-html="feed.article?.content || ''">
 											</p>
 										</span>
 									</div>
@@ -685,8 +685,8 @@
 												class="px-4 py-2 flex flex-row items-center bg-amber-50 dark:bg-stone-800 transition-all transition-discrete"
 												x-intersect:leave="false && (item.read_more = false)"
 											>
-												<span class="py-1 text-xs font-regular text-gray-600 dark:text-gray-300 flex flex-row items-center">
-													<p class="rss-article-content text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
+												<span class="max-w-full py-1 text-xs font-regular text-gray-600 dark:text-gray-300 flex flex-row items-center">
+													<p class="rss-article-content max-w-full  text-gray-500 dark:text-gray-400 text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
 													</p>
 												</span>
 											</div>
