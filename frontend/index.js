@@ -936,9 +936,7 @@ function alpineRSS() { return {
 				await this.loadFeedsWithContent({limit, limit_adjust: count});
 			}
 
-			this.tasks = (!data?.length)
-				? this.feeds.map((x, i) => ({url: x.rss_url, order: i, checked: false}))
-				: data.map((x, i) => ({url: x.url, order: i, checked: false}));
+			this.tasks = data.map((x, i) => ({url: x.url, order: i, checked: false}));
 
 			if (this.params.x) {
 				this.storageSet(this.K.tasks + this.params.x, this.tasks);
