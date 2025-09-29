@@ -167,11 +167,11 @@ function alpineRSS() { return {
 
 	style() { return {...this.style_flags[this.params?.s || 'full'], s: this.params?.s}; },
 	style_flags: {
+		full: {title: 1, desc: 1, img: 1, preview: 1},
 		tiny: {title: 1, desc: 0, img: 0, preview: 0},
 		title: {title: 1, desc: 0, img: 1, preview: 0},
 		noimg: {title: 1, desc: 1, img: 0, preview: 1},
 		nopreview: {title: 1, desc: 1, img: 1, preview: 0},
-		full: {title: 1, desc: 1, img: 1, preview: 1},
 	},
 
 	google: null,
@@ -834,10 +834,10 @@ function alpineRSS() { return {
 
 						if (skipCheck) this.skipCheckOldPublished = true;
 
-						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
-							// console.log('>> load.feed.item.retry', item?.url, last_published, tryCount);
+						console.log('>> load.feed.item.stale_check', skipCheck, last_published, (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)));
 
-							// toast('Refresh up-to-date feeds');
+						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
+							toast('Stale detected, refresh up-to-date feeds');
 
 							setTimeout(() => {
 								if (found) found.loading = true;
