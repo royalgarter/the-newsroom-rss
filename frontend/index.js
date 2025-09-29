@@ -694,6 +694,8 @@ function alpineRSS() { return {
 	},
 
 	async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
+		return loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
+
 		if (this.is_hide_feeds) return;
 
 		if (this.loading && !force_update) return;
@@ -975,6 +977,195 @@ function alpineRSS() { return {
 		} finally {
 			toast('Feeds loaded');
 			console.log('loadFeedsWithContent.done');
+			Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
+		}
+	},
+
+	/**
+	 * This is an optimized version of loadFeedsWithContent, designed to be a drop-in replacement.
+	 *
+	 * Key Improvements:
+	 * 1.  **Robust State Management:** Fixes a critical bug where task metadata (like tags) was overwritten on every refresh. The new version safely merges new data, preserving user customizations.
+	 * 2.  **Optimized Network Requests:** In the individual-feed fetch strategy, the request body is now minimal and correct, sending only the necessary data for each feed instead of the entire feed list in every call.
+	 * 3.  **Simplified and Predictable Loading:** The complex client-side pre-fetch and recursive loading logic have been removed. This results in a more linear, predictable, and maintainable code flow.
+	 * 4.  **Cleaner Asynchronous Code:** The logic for handling stale feeds is integrated more cleanly into the Promise-based flow for each feed request.
+	 */
+	async loadFeedsWithContentV2({limit = this.K.LIMIT, limit_adjust = 0, init_urls, force_update}) {
+		// 1. Guard clauses
+		if (this.is_hide_feeds) return;
+		if (this.loading && !force_update) return;
+		this.loading = true;
+		this.loadingPercent = 0;
+		console.log('loadFeedsWithContentV2', {limit, limit_adjust, force_update});
+
+		try {
+			// 2. Determine URLs to fetch (from tasks api or local state)
+			let urls = init_urls || this.tasks?.map(x => x.url);
+			if (!urls?.length) {
+				 const sig = this?.profile?.signature || '';
+				 const resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
+					method: 'GET',
+					headers: {"content-type": "application/json"},
+					signal: AbortSignal.timeout(20e3),
+				 }).then(r => r.json()).catch(null);
+				 if (resp_tasks?.feeds?.length) {
+					 this.tasks = resp_tasks.feeds;
+					 urls = this.tasks.map(x => x.url);
+				 } else {
+					 urls = this.K.DEFAULTS;
+				 }
+			}
+			this.loadingPercent = 0.1;
+			toast('RSS list loaded');
+
+			// 3. Individual Fetch Loop
+			const sig = this?.profile?.signature || '';
+			const limit_adjusted = parseInt(limit) + parseInt(limit_adjust || this.K.LIMIT);
+			const step = 0.8 / (urls?.length || 1);
+
+			const parallel = await Promise.allSettled(
+				urls.map(url => new Promise((resolve, reject) => {
+					const fetch_url = `/api/feeds?type=keys&sig=${sig}&l=${limit_adjusted}&x=${this.params.x || ''}`;
+					const fetch_opts = {
+						method: 'POST',
+						headers: {"content-type": "application/json"},
+						signal: AbortSignal.timeout(60e3),
+						body: JSON.stringify({ keys: [{url}] }), // OPTIMIZED: only send the key we're fetching
+					};
+
+					const handleStaleCheckAndResolve = (json) => {
+						if (this.skipCheckOldPublished) {
+							this.loadingPercent += step;
+							return resolve(json);
+						}
+
+						const newfeed = json?.feeds?.[0];
+						if (!newfeed) {
+							this.loadingPercent += step;
+							return resolve(json);
+						}
+
+						const last_published = newfeed.items?.filter(x => x.published)?.map(x => x.published)?.sort()?.pop();
+						const isStale = last_published && (new Date(last_published).getTime() < (Date.now() - 60e3 * 60 * 8));
+
+						if (isStale) {
+							toast(`Stale feed detected: ${new URL(url).hostname}. Refreshing...`);
+							// Fire-and-forget a refresh, but don't let it block the initial render
+							setTimeout(() => {
+								fetch(fetch_url, { ...fetch_opts, body: JSON.stringify({ keys: [{url}], update: true }) })
+									.then(r => r.json())
+									.then(refreshedJson => {
+										const refreshedFeed = refreshedJson?.feeds?.[0];
+										if (!refreshedFeed) return;
+
+										const index = this.feeds.findIndex(f => f.rss_url === refreshedFeed.rss_url);
+										if (index !== -1) {
+											this.feeds[index] = refreshedFeed;
+											this.feeds[index].postProcessItems?.();
+											toast(`Feed ${new URL(url).hostname} updated.`);
+										}
+									})
+									.catch(e => console.error('Stale refresh failed for', url, e));
+							}, 3e3); // 3s delay
+						}
+
+						this.loadingPercent += step;
+						resolve(json);
+					};
+
+					fetch(fetch_url, fetch_opts)
+						.then(resp => {
+							if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+							return resp.json();
+						})
+						.then(handleStaleCheckAndResolve)
+						.catch(err => {
+							console.error('Feed fetch failed for', url, err);
+							this.loadingPercent += step;
+							reject(err); // Reject the promise for this feed
+						});
+				}))
+			);
+
+			// 4. Process the response
+			const respFeeds = parallel.filter(p => p.status === 'fulfilled' && p.value)
+								.map(p => p.value.feeds || [])
+								.flat()
+								.filter(x => x);
+
+			if (!respFeeds.length && !this.feeds.length) {
+				 console.log("EEMPTYRESPFEEDS - No feeds returned and no existing feeds.");
+				 this.loading = false;
+				 this.loadingPercent = 1;
+				 return;
+			}
+
+			// Merge new data into existing feeds to preserve state (like read articles)
+			respFeeds.forEach(feed => {
+				const curFeed = this.feeds?.find?.(f => f.rss_url == feed.rss_url);
+				if (!curFeed) return;
+
+				feed.items.forEach(item => {
+					const curItem = curFeed.items?.find?.(x => x.link == item.link);
+					if (curItem?.article) {
+						item.article = curItem.article;
+					}
+					if (curItem?.viewed) {
+						item.viewed = curItem.viewed;
+					}
+				});
+			});
+
+			this.feeds = respFeeds;
+			this.linkToItemMap.clear();
+
+			// Update user hash if provided by server
+			let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
+			if (hash_server) {
+				const url = new URL(location);
+				url.searchParams.delete("u");
+				url.searchParams.set("x", hash_server);
+				history.replaceState({}, "", url);
+				this.params.x = hash_server;
+				this.storageSet(this.K.hash, this.params.x);
+			}
+
+			if (!this.feeds.length) {
+				console.log("EEMPTYFEEDS - No feeds to display.");
+				this.loading = false;
+				this.loadingPercent = 1;
+				return;
+			}
+
+			// 5. Post-process and save
+			this.postProcessFeeds({ limit, auto_fetch_content: true });
+			this.pioneer = false;
+
+			// Save feeds and tasks to local storage
+			const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
+			this.storageSet(storageKey, this.feeds);
+			if (this.params.x) this.storageDel(this.K.feeds);
+
+			// Update tasks state without losing metadata
+			const taskUrls = new Set(this.tasks.map(t => t.url));
+			urls.forEach((url, i) => {
+				if (!taskUrls.has(url)) {
+					this.tasks.push({ url, order: this.tasks.length, checked: false });
+				}
+			});
+			const tasksStorageKey = this.params.x ? this.K.tasks + this.params.x : this.K.tasks;
+			this.storageSet(tasksStorageKey, this.tasks);
+			if (this.params.x) this.storageDel(this.K.tasks);
+
+			this.loadingPercent = 1;
+
+		} catch (error) {
+			console.error("Error in loadFeedsWithContentV2:", error);
+			this.debug = "Failed to load feeds. Please check the console for more details.";
+		} finally {
+			this.loading = false;
+			toast('Feeds loaded');
+			console.log('loadFeedsWithContentV2.done');
 			Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 		}
 	},
