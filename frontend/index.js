@@ -621,8 +621,10 @@ function alpineRSS() { return {
 		let readLaterItems = this.storageGet(this.K?.readlater) || this.readlater?.items || [];
 
 		// If user is identified, try to load from Deno KV
-		if (this.params.x) {
-			try {
+		try {
+			let hamburger_cates = [...new Set([...document.querySelectorAll('#menu_burger ul li a')].map(x => new URL(x.href).searchParams.get('x')))] || [];
+
+			if (this.params.x && !hamburger_cates.includes(this.params.x)) {
 				const response = await fetch(`/api/readlater?x=${this.params.x}&sig=${this?.profile?.signature || ''}`);
 				if (response.ok) {
 					const kvItems = await response.json();
@@ -638,10 +640,10 @@ function alpineRSS() { return {
 				} else {
 					this.loadingBookmarks = false;
 				}
-			} catch (error) {
-				console.error("Error loading read later items from KV:", error);
-				this.loadingBookmarks = false;
 			}
+		} catch (error) {
+			console.error("Error loading read later items from KV:", error);
+			this.loadingBookmarks = false;
 		}
 
 		readLaterItems.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
@@ -694,7 +696,7 @@ function alpineRSS() { return {
 	},
 
 	async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
-		return this.loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
+		// return this.loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
 
 		if (this.is_hide_feeds) return;
 
