@@ -222,6 +222,8 @@ function alpineRSS() { return {
 			{"name": "Sports", "desc": "Coverage of various sports, including scores, highlights, and analysis."},
 			{"name": "Science", "desc": "News and discoveries in the world of science."},
 			{"name": "Health", "desc": "Articles about health, medicine, and wellness."},
+			{"name": "Crypto", "desc": "Breaking news about Bitcoin, Blockchain, Crypto Currency, Tokens, DeFi."},
+			{"name": "AI", "desc": "Latest artificial intelligence news and insights. Explore industry trends from the frontline of AI."},
 		],
 
 		embedding: VERSION + '_embedding_',
@@ -779,7 +781,7 @@ function alpineRSS() { return {
 			if (!this.params?.x && data.length) {
 				let hash_local = await this.digest(JSON.stringify(data) + Date.now());
 				this.params.x = hash_local.slice(0, 6);
-				this.storageSet(this.K.hash, this.params.x);
+				if (!this.params.origin_cate) this.storageSet(this.K.hash, this.params.x);
 			}
 
 			// console.log('datas:', data.length);
@@ -914,7 +916,7 @@ function alpineRSS() { return {
 			this.loadingPercent = 1;
 
 			let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
-			if (hash_server) {
+			if (hash_server && !this.params.origin_cate) {
 				const url = new URL(location);
 				url.searchParams.delete("u");
 				url.searchParams.set("x", hash_server);
@@ -1123,7 +1125,7 @@ function alpineRSS() { return {
 
 			// Update user hash if provided by server
 			let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
-			if (hash_server) {
+			if (hash_server && !this.params.origin_cate) {
 				const url = new URL(location);
 				url.searchParams.delete("u");
 				url.searchParams.set("x", hash_server);
@@ -1838,6 +1840,8 @@ function alpineRSS() { return {
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = this.params.s || this.storageGet(this.K.style);
 
+
+
 		if (!savedHash || !this.params?.x || (savedHash !== this.params.x)) this.pioneer = true;
 
 		let limit = this.params.l || this.K.LIMIT;
@@ -2053,7 +2057,7 @@ function alpineRSS() { return {
 			let is_reload = THIS.params.x && (x != THIS.params.x)
 
 			THIS.params.x = x;
-			THIS.storageSet(THIS.K.hash, THIS.params.x);
+			if (!this.params.origin_cate) THIS.storageSet(THIS.K.hash, THIS.params.x);
 
 			THIS.profile = detail.profile;
 			THIS.storageSet(THIS.K.profile, THIS.profile);

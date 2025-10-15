@@ -113,6 +113,7 @@
 							{href: '/?x=science', text: 'Science'},
 							{href: '/?x=health', text: 'Health'},
 							{href: '/?x=crypto', text: 'Crypto'},
+							{href: '/?x=ai', text: 'AI'},
 						],
 						anchors: [],
 						refresh: function() {
@@ -133,6 +134,9 @@
 					<div x-show="burger_open" @click.away="burger_open = false" class="absolute left-0 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-100">
 						<ul class="py-1">
 							<li>
+								<a id="burger_newsfeed" href="/" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">News Feed</a>
+							</li>
+							<li>
 								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Bookmarks</a>
 							</li>
 							<li>
@@ -149,7 +153,7 @@
 									<template x-for="(cat, index) in categories" :key="index">
 										<li>
 											<a class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-												:href="cat.href" x-text="cat.text"
+												:href="cat.href + '&origin_cate=true'" x-text="cat.text"
 												@click=""
 											></a>
 										</li>
