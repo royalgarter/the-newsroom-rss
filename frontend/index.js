@@ -1005,19 +1005,19 @@ function alpineRSS() { return {
 		try {
 			// 2. Determine URLs to fetch (from tasks api or local state)
 			let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
-			if (!urls?.length) {
-				 const sig = this?.profile?.signature || '';
-				 const resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
+			if (force_update || !urls?.length) {
+				const sig = this?.profile?.signature || '';
+				const resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
 					signal: AbortSignal.timeout(20e3),
-				 }).then(r => r.json()).catch(null);
-				 if (resp_tasks?.feeds?.length) {
-					 this.tasks = resp_tasks.feeds;
-					 urls = this.tasks.map(x => x.url);
-				 } else {
-					 urls = this.K.DEFAULTS;
-				 }
+				}).then(r => r.json()).catch(null);
+				if (resp_tasks?.feeds?.length) {
+					this.tasks = resp_tasks.feeds;
+					urls = this.tasks.map(x => x.url);
+				} else if (!urls?.length) {
+					urls = this.K.DEFAULTS;
+				}
 			}
 			this.loadingPercent = 0.1;
 			toast('RSS list loaded');
@@ -1696,15 +1696,22 @@ function alpineRSS() { return {
 
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 
-		this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
-			.then(done => {
-				if (noReload) return toast('RSS Feeds saved');
-
-				console.log('saveTasks done');
-				this.loading = false;
-				this.loadingPercent = 1;
-				window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
+		(async () => {
+			await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=savetasks`, {
+				method: 'POST',
+				headers: {"content-type": "application/json"},
+				body: JSON.stringify({batch: this.tasks, update: true}),
 			});
+
+			await this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
+			
+			if (noReload) return toast('RSS Feeds saved');
+
+			console.log('saveTasks done');
+			this.loading = false;
+			this.loadingPercent = 1;
+			window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
+		})();
 	},
 
 	async embedSentence(text) {
