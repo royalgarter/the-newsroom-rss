@@ -843,18 +843,18 @@ function alpineRSS() { return {
 						console.log('>> load.feed.item.stale_check', skipCheck, last_published, (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)));
 
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
-							toast('Stale detected, refresh up-to-date feeds');
+							toast('Stale detected, refresh up-to-date feeds', 10e3);
 
 							setTimeout(() => {
 								if (found) found.loading = true;
-								// this.loading = true;
+								this.loading = true;
 								fetch(fetch_url, fetch_opts)
 									.then(resp => resp.json())
 									.then(json => fetchReceiveJSON(json, tryCount > 2, tryCount++))
 									.catch(null)
 									.finally(_ => {
 										if (found) found.loading = false;
-										// this.loading = false;
+										this.loading = false;
 										this.skipCheckOldPublished = true;
 									});
 							}, 10e3);
