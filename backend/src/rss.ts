@@ -3,12 +3,45 @@ import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import CACHE from './cache.ts';
 import KV from './kv.ts';
 
+const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);
+const EMBEDDED = new Map();
+
+async function embedding(text) {
+    let vector = EMBEDDED.get(text);
+
+    if (vector) return vector;
+
+    let apikey = APIKEYS[Math.floor(Math.random() * APIKEYS.length)];
+    let result = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent', {
+        method: 'POST',
+        headers: {
+            'x-goog-api-key': apikey,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'model': 'models/gemini-embedding-001',
+            // 'taskType': 'CLUSTERING',
+            'outputDimensionality': 768,
+            'content': {
+                'parts': [{text}]
+            }
+        })
+    }).then(r => r.json()).catch(e => null);
+
+    vector = result?.embedding?.values || null;
+
+    if (vector) EMBEDDED.set(text, vector);
+
+    return vector;
+}
+
 async function parseRSS(url: string, content: string, pioneer: Boolean) {
 	try {
 		if (!url) return {rss_url: url};
 
 		if (!content) {
-			url = url.replaceAll(' ', '+');
+			url = url.replaceAll(' ', '+').replaceAll('http://', 'https://');
+
 			if (!url.includes('http')) url = 'https://' + url;
 
 			let key_rss = 'RSS:' + url;
@@ -31,6 +64,7 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 							resolve(text);
 						})
 						.catch(ex => {
+                            console.log('>> parseRSS.catch' + url + ': ' + ex)
 							reject(null);
 						});
 				}),
@@ -97,14 +131,13 @@ async function processRssItem(item, head, pioneer) {
                 let key_html = 'HTML:' + link;
                 let key_image = 'HTML_IMAGE:' + link;
 
-                let html = CACHE.get(key_html);
                 let image_og = CACHE.get(key_image);
 
                 if (!image_og) {
-                    html = html || (await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
+                    let html = CACHE.get(key_html) || (await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
                         .then(resp => resp.text()).catch(_ => null));
 
-                    const REGEX_IMAGE = /<meta[^>]*property=[\"']\\w+:image[\"'][^>]*content=[\"']([^\"']*)["'][^>]*>/i;
+                    const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/;
                     image_og = (html || '')?.match(REGEX_IMAGE)?.[1];
 
                     if (html) CACHE.set(key_html, html);
@@ -122,7 +155,9 @@ async function processRssItem(item, head, pioneer) {
             images.push(head.image);
         }
 
-        return {
+        // console.log('processRssItem', link, images);
+
+        let processed = {
             link,
             title: item?.title?.value,
             author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a, b) => b.length - a.length)[0],
@@ -135,6 +170,10 @@ async function processRssItem(item, head, pioneer) {
             source: item?.source?.url,
             statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
         };
+
+        // processed.embedding = await embedding([processed.title, processed.description].join('-')).catch(e => null);
+
+        return processed;
     } catch (ex) {
         console.error(ex);
         return null;
@@ -166,7 +205,7 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
     let render = Array(feeds.length).fill(null);
     await Promise.allSettled(feeds.map((data, order) => new Promise(resolveFeed => {
         (async () => {
-            console.time('>> postParseRSS.' + data.rss_url);
+            // console.time('>> postParseRSS.' + data.rss_url);
 
             const items = data.entries?.slice(0, limit) || [];
 
@@ -178,8 +217,8 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
                 order,
             };
 
-            const SPLIT = /[\:\,\.\-\_\/\|\~]/;
-            head.short = head.title.split(SPLIT)[0].substr(0, 100).trim();
+            const SPLIT = /[\:\,\.\/\|\~]/;
+            head.short = head.title.substr(0, 100).trim();
             head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
 
             const rss_items = await Promise.allSettled(items.map(item => processRssItem(item, head, pioneer)));
@@ -195,7 +234,7 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 
             render[order] = result;
 
-            console.timeEnd('>> postParseRSS.' + data.rss_url);
+            // console.timeEnd('>> postParseRSS.' + data.rss_url);
         })().catch(console.error).finally(resolveFeed);
     })));
 
@@ -203,8 +242,10 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
     return render;
 }
 
-export async function saveFeedCache({feeds, key_feeds, key_feeds_permanent}) {
+export async function saveFeedCache({limit=6, feeds, key_feeds, key_feeds_permanent}) {
 	if (!feeds?.length) return;
+
+    limit = Math.min(Math.max(limit || 6, 6), 24);
 
 	feeds = feeds.filter(x => x?.items?.length);
 
@@ -221,7 +262,7 @@ export async function saveFeedCache({feeds, key_feeds, key_feeds_permanent}) {
 	/* LAYER: 2 */
 	feeds.forEach(f => {
 		f.cache = 'CACHE_KV';
-		f.items = f.items.slice(0, 6);
+		f.items = f.items.slice(0, limit);
 	});
 	KV.set([key_feeds_permanent], feeds).catch(() => {});
 }

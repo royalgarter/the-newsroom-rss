@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] { display: none !important; }
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+img.rss-favicon {
+	width: 24px;
+	height: 24px;
+}
+
+img.rss-thumb {
+	object-fit: cover;
+	height: 14rem;
+}
+
+p [id*="readability-page"] svg {
+	display: none;
+}
+
+p [id*="readability-page"] img {
+	padding: 1rem 3rem;
+	place-self: center;
+}
+
+p.rss-article-content * {
+	text-wrap: wrap;
+	text-overflow: ellipsis;
+	overflow-wrap: anywhere;
+	max-width: 100%;
+	word-break: normal;
+}
+
+p.rss-article-content p {
+	padding: 0.5rem 0rem;
+}
+
+p.rss-article-content img {
+	padding: 1rem;
+	place-self: center;
+	margin: 0 auto;
+}

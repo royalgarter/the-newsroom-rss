@@ -56,24 +56,56 @@ export async function handleFeeds(req: Request) {
     hash = hash || crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 8);
     let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
+    limit = Math.min(Math.max(limit || 6, 6), 100);
+
+    let query_feeds = { urls: keys, limit, pioneer };
+    let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
+    let key_feeds_permanent = 'PERMANENT_' + key_feeds;
+
     if (update && saved) {
         let v = (await KV.get(['/api/feeds', hash, 'version']))?.value || '0';
         v = (~~v) + 1;
         let save_obj = saved.map((x, order) => ({ order, ...x }));
-        KV.set(['/api/feeds', hash], save_obj);
-        KV.set(['/api/feeds', hash, v], save_obj);
-        KV.set(['/api/feeds', hash, 'version'], v);
-        console.log('saved', saved.length, '/api/feeds', hash, v, save_obj);
+
+        Promise.allSettled([
+            KV.set(['/api/feeds', hash], save_obj),
+            KV.set(['/api/feeds', hash, v], save_obj),
+            KV.set(['/api/feeds', hash, 'version'], v),
+        ]).then(r => console.log('saved', saved.length, '/api/feeds', hash, v, save_obj, r)).catch(console.error);
+
+        CACHE.del(key_feeds);
+        CACHE.del(key_feeds_permanent);
+        KV.delete([key_feeds_permanent]).then().catch();
     }
 
     if (params.is_tasks) {
         feeds = saved.map((x, order) => ({ order, ...x }));
     } else {
-        let query_feeds = { urls: keys, limit, pioneer };
-        let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
-        let key_feeds_permanent = 'PERMANENT_' + key_feeds;
         let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
         feeds = CACHE.get(key_feeds);
+
+        // console.dir({cachy, query_feeds, key_feeds, key_feeds_permanent})
+
+        if (cachy == 'no_cache') {
+            feeds = (await fetchRSSLinks(query_feeds)) || feeds || feeds_permanent;
+            saveFeedCache({ limit, feeds, key_feeds, key_feeds_permanent });
+        } else if (!feeds?.length) {
+            if (!feeds_permanent?.length) {
+                feeds = await fetchRSSLinks(query_feeds);
+                saveFeedCache({ limit, feeds, key_feeds, key_feeds_permanent })
+            } else {
+                console.log('CACHED_PERMANENT:', key_feeds);
+                feeds = feeds_permanent;
+                fetchRSSLinks(query_feeds)
+                    .then(fs => saveFeedCache({ limit, feeds: fs, key_feeds, key_feeds_permanent }))
+                    .catch(e => console.dir({ query_feeds, e }))
+            }
+        } else {
+            console.log('CACHED:', key_feeds);
+            fetchRSSLinks(query_feeds)
+                .then(fs => saveFeedCache({ limit, feeds: fs, key_feeds, key_feeds_permanent }))
+                .catch(e => console.dir({ query_feeds, e }))
+        }
 
         if (!FETCH_INTERVAL[key_feeds]) {
             FETCH_INTERVAL[key_feeds] = setInterval(query_feeds => {
@@ -85,24 +117,6 @@ export async function handleFeeds(req: Request) {
                     CACHE.set(key_feeds_permanent, feeds, 60 * 60 * 24 * 7);
                 }).catch(console.log);
             }, 15 * 60e3, query_feeds);
-        }
-
-        if (cachy == 'no_cache') {
-            feeds = (await fetchRSSLinks(query_feeds)) || feeds || feeds_permanent;
-        } else if (!feeds?.length) {
-            if (!feeds_permanent?.length) {
-                feeds = await fetchRSSLinks(query_feeds);
-                saveFeedCache({ feeds, key_feeds, key_feeds_permanent })
-            } else {
-                feeds = feeds_permanent;
-                fetchRSSLinks(query_feeds)
-                    .then(fs => saveFeedCache({ feeds: fs, key_feeds, key_feeds_permanent }))
-                    .catch(e => console.dir({ query_feeds, e }))
-            }
-        } else {
-            fetchRSSLinks(query_feeds)
-                .then(fs => saveFeedCache({ feeds: fs, key_feeds, key_feeds_permanent }))
-                .catch(e => console.dir({ query_feeds, e }))
         }
     }
 
@@ -117,7 +131,7 @@ export async function handleFeeds(req: Request) {
 export async function handleReadLater(req: Request) {
     const { searchParams } = new URL(req.url);
     let params = Object.fromEntries(searchParams);
-    let { x: hash, sig } = params;
+    let { x: hash, sig, link } = params;
 
     let data = {};
     try { data = (req.method != 'GET') ? await req.json?.() : {}; } catch { };
@@ -137,10 +151,18 @@ export async function handleReadLater(req: Request) {
     const pathname = "/api/readlater";
 
     if (req.method === 'GET') {
-        const items = await getBookmarks([pathname, hash]);
-        return response(JSON.stringify(items?.value || []), {
-            headers: { ...cors, ...head_json },
-        });
+        if (link) {
+            const article = await getBookmarkArticle([pathname, hash], decodeURIComponent(link)).catch(e => null);
+
+            return response(JSON.stringify(article), {
+                headers: { ...cors, ...head_json },
+            });
+        } else {
+            const items = await getBookmarks([pathname, hash]);
+            return response(JSON.stringify(items?.value || []), {
+                headers: { ...cors, ...head_json },
+            });
+        }
     } else if (req.method === 'POST') {
         try {
             const { item } = data || {};
@@ -181,11 +203,28 @@ export async function handleReadLater(req: Request) {
         }
     } else if (req.method === 'DELETE') {
         try {
+            const { link } = data;
             const existingItems = (await getBookmarks([pathname, hash]))?.value || [];
-            const updatedItems = data.link ?
-                existingItems.filter(item => item.link !== data.link) :
+            const updatedItems = link ?
+                existingItems.filter(item => item.link !== link) :
                 existingItems;
-            await KV.delete([pathname, hash, data.link]);
+
+            // First, get the article to see if it has chunks
+            const article = (await KV.get([pathname, hash, link]))?.value;
+            if (article?.chunks) {
+                let currentChunkKey = article.chunks;
+                while (currentChunkKey) {
+                    const chunk = (await KV.get(currentChunkKey))?.value;
+                    await KV.delete(currentChunkKey);
+                    if (chunk) {
+                        currentChunkKey = chunk.next;
+                    } else {
+                        currentChunkKey = null;
+                    }
+                }
+            }
+            await KV.delete([pathname, hash, link]);
+
             updatedItems.forEach(x => { x.skip_article = true });
             await saveBookmarks([pathname, hash], updatedItems);
             return response(JSON.stringify({ success: true, items: updatedItems }), {
@@ -253,14 +292,56 @@ export async function handleStatic(req: Request) {
     const localpath = `./frontend${pathname}`;
 
     if (await exists(localpath)) {
+		const mimetypes = {
+			'.js': 'text/javascript',
+			'.mjs': 'text/javascript',
+			'.html': 'text/html',
+			'.css': 'text/css',
+			'.json': 'application/json',
+			'.png': 'image/png',
+			'.jpg': 'image/jpeg',
+			'.jpeg': 'image/jpeg',
+			'.gif': 'image/gif',
+			'.svg': 'image/svg+xml',
+			'.ico': 'image/x-icon',
+		};
+		const ext = extname(localpath);
+
         return response(await Deno.readFile(localpath), {
             headers: {
-                "Content-Type": `${extname(localpath) ?? "text/plain"}; charset=utf-8`,
+                "Content-Type": `${mimetypes[ext] ?? "text/plain"}; charset=utf-8`,
                 "Cache-Control": "public, max-age=604800",
             }
         })
     }
     return null;
+}
+
+const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);
+export async function handleEmbedding(req: Request) {
+    const { searchParams } = new URL(req.url);
+    let params = Object.fromEntries(searchParams);
+    let text = decodeURIComponent(params.text);
+
+    let result = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent', {
+        method: 'POST',
+        headers: {
+            'x-goog-api-key': APIKEYS[Math.floor(Math.random() * APIKEYS.length)],
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'model': 'models/gemini-embedding-001',
+            'taskType': 'CLUSTERING',
+            'outputDimensionality': 768,
+            'content': {
+                'parts': [{text}]
+            }
+        })
+    }).then(r => r.json()).catch(e => null);
+
+    let vector = result?.embedding?.values || null;
+
+    return response(JSON.stringify(vector));
 }
 
 export async function handleIndex(req: Request) {
@@ -287,26 +368,78 @@ function upsertBookmark(items, newItem) {
 }
 
 async function saveBookmarks(kvkeys, updatedItems) {
-	let items = updatedItems.map(x => ({...x, article: undefined, skip_article: undefined}));
-	let articles = updatedItems.filter(x => (!x?.skip_article) && x?.article?.content)
-								.map(x => ({link: x.link, article: x.article}));
+    const MAX_CONTENT_LENGTH = 60 * 1024 / 4; // UTF8 4 bytes
 
-	await KV.set(kvkeys, items);
+    let items = updatedItems.map(x => ({ ...x, article: undefined, skip_article: undefined }));
+    let articles = updatedItems
+        .filter(x => (!x?.skip_article) && x?.article?.content)
+        .map(x => ({ link: x.link, article: x.article }));
 
-	for (let a of articles) {
-		delete a.article.title;
-		KV.set([...kvkeys, a.link], a.article).then();
-	}
+    await KV.set(kvkeys, items);
+
+    for (let a of articles) {
+        delete a.article.title;
+        const content = a.article.content;
+        if (content.length > MAX_CONTENT_LENGTH) {
+            const numChunks = Math.ceil(content.length / MAX_CONTENT_LENGTH);
+            let currentChunk = 1;
+            let remainingContent = content;
+            let nextChunkKey = null;
+
+            while (remainingContent.length > 0) {
+                const chunkContent = remainingContent.substring(0, MAX_CONTENT_LENGTH);
+                remainingContent = remainingContent.substring(MAX_CONTENT_LENGTH);
+
+                const chunkKey = [...kvkeys, a.link, `chunk_${currentChunk}`];
+                const chunkData = {
+                    content: chunkContent,
+                    next: remainingContent.length > 0 ? [...kvkeys, a.link, `chunk_${currentChunk + 1}`] : null
+                };
+
+                if (currentChunk === 1) {
+                    a.article.content = null;
+                    a.article.chunks = chunkKey;
+                    await KV.set([...kvkeys, a.link], a.article);
+                }
+
+                await KV.set(chunkKey, chunkData);
+                currentChunk++;
+            }
+        } else {
+            await KV.set([...kvkeys, a.link], a.article);
+        }
+    }
 }
 
 async function getBookmarks(kvkeys) {
 	let items = (await KV.get(kvkeys)) || {value: []};
 
-	await Promise.allSettled(
-		Object.keys(items?.value || {}).map(i =>
-			KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a?.value})
-		)
-	)
+	// await Promise.allSettled(
+	// 	Object.keys(items?.value || {}).map(i =>
+	// 		KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a?.value})
+	// 	)
+	// )
 	
 	return items;
+}
+
+async function getBookmarkArticle(kvkeys, link) {
+    let article = (await KV.get([...kvkeys, link]))?.value;
+
+    if (article?.chunks) {
+        let content = '';
+        let currentChunkKey = article.chunks;
+        while (currentChunkKey) {
+            const chunk = (await KV.get(currentChunkKey))?.value;
+            if (chunk) {
+                content += chunk.content;
+                currentChunkKey = chunk.next;
+            } else {
+                currentChunkKey = null;
+            }
+        }
+        article.content = content;
+    }
+
+    return article;
 }
