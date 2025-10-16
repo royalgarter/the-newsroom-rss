@@ -698,7 +698,7 @@ function alpineRSS() { return {
 	},
 
 	async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
-		// return this.loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
+		return this.loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
 
 		if (this.is_hide_feeds) return;
 
@@ -1004,7 +1004,7 @@ function alpineRSS() { return {
 
 		try {
 			// 2. Determine URLs to fetch (from tasks api or local state)
-			let urls = init_urls || this.tasks?.map(x => x.url);
+			let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
 			if (!urls?.length) {
 				 const sig = this?.profile?.signature || '';
 				 const resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
@@ -1142,7 +1142,7 @@ function alpineRSS() { return {
 			}
 
 			// 5. Post-process and save
-			this.postProcessFeeds({ limit, auto_fetch_content: true });
+			const {count} = this.postProcessFeeds({ limit, auto_fetch_content: true }) || {};
 			this.pioneer = false;
 
 			// Save feeds and tasks to local storage
@@ -1160,6 +1160,11 @@ function alpineRSS() { return {
 			const tasksStorageKey = this.params.x ? this.K.tasks + this.params.x : this.K.tasks;
 			this.storageSet(tasksStorageKey, this.tasks);
 			if (this.params.x) this.storageDel(this.K.tasks);
+
+			if (limit_adjust == 0 && count > 0) {
+				await this.loadFeedsWithContentV2({limit, limit_adjust: count});
+				return;
+			}
 
 			this.loadingPercent = 1;
 
