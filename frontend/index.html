@@ -105,15 +105,15 @@
 					id="menu_burger"
 					x-data="{
 						categories: [
-							{href: '/?x=world', text: 'World'},
-							{href: '/?x=business', text: 'Business'},
-							{href: '/?x=technology', text: 'Technology'},
-							{href: '/?x=entertainment', text: 'Entertainment'},
-							{href: '/?x=sports', text: 'Sports'},
-							{href: '/?x=science', text: 'Science'},
-							{href: '/?x=health', text: 'Health'},
-							{href: '/?x=crypto', text: 'Crypto'},
-							{href: '/?x=ai', text: 'AI'},
+							{href: '/?topic=world', text: '🌐 Global World'},
+							{href: '/?topic=business', text: '💼 Business'},
+							{href: '/?topic=technology', text: '💻 Technology'},
+							{href: '/?topic=entertainment', text: '📺 Entertainment'},
+							{href: '/?topic=sports', text: '⚽ Sports'},
+							{href: '/?topic=science', text: '🔬 Science'},
+							{href: '/?topic=health', text: '💪 Health'},
+							{href: '/?topic=crypto', text: '💱 Crypto'},
+							{href: '/?topic=ai', text: '🎓 AI'},
 						],
 						anchors: [],
 						refresh: function() {
@@ -134,17 +134,17 @@
 					<div x-show="burger_open" @click.away="burger_open = false" class="absolute left-0 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-100">
 						<ul class="py-1">
 							<li>
-								<a id="burger_newsfeed" href="/" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">News Feed</a>
+								<a id="burger_newsfeed" href="/" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">📰 News Feed</a>
 							</li>
 							<li>
-								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Bookmarks</a>
+								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">🔖 Bookmarks</a>
 							</li>
 							<li>
-								<a href="#bookmarks_note" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Notes</a>
+								<a href="#bookmarks_note" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">🗒 Notes</a>
 							</li>
 							<li>
 								<a href="#" @click.prevent="burger_sub_cat_open = !burger_sub_cat_open" class="flex items-center px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-									<span>Categories</span>
+									<span>📚 Topics</span>
 									<svg class="w-4 h-4 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" :class="{'transform rotate-180': burger_sub_cat_open}">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
 									</svg>
@@ -153,7 +153,7 @@
 									<template x-for="(cat, index) in categories" :key="index">
 										<li>
 											<a class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-												:href="cat.href + '&origin_cate=true'" x-text="cat.text"
+												:href="cat.href" x-text="cat.text"
 												@click=""
 											></a>
 										</li>

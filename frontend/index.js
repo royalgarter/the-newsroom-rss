@@ -781,7 +781,7 @@ function alpineRSS() { return {
 			if (!this.params?.x && data.length) {
 				let hash_local = await this.digest(JSON.stringify(data) + Date.now());
 				this.params.x = hash_local.slice(0, 6);
-				if (!this.params.origin_cate) this.storageSet(this.K.hash, this.params.x);
+				this.storageSet(this.K.hash, this.params.x);
 			}
 
 			// console.log('datas:', data.length);
@@ -916,7 +916,7 @@ function alpineRSS() { return {
 			this.loadingPercent = 1;
 
 			let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
-			if (hash_server && !this.params.origin_cate) {
+			if (hash_server && !this.params.topic) {
 				const url = new URL(location);
 				url.searchParams.delete("u");
 				url.searchParams.set("x", hash_server);
@@ -1002,12 +1002,14 @@ function alpineRSS() { return {
 		this.loadingPercent = 0;
 		console.log('loadFeedsWithContentV2', {limit, limit_adjust, force_update});
 
+		let hash = this.params.topic || this.params.x || '';
 		try {
 			// 2. Determine URLs to fetch (from tasks api or local state)
-			let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
+			let urls = this.params.topic ? [] : (init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url)));
+
 			if (force_update || !urls?.length) {
 				const sig = this?.profile?.signature || '';
-				const resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
+				const resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${hash}&log=gettasks&sig=${sig}`, {
 					method: 'GET',
 					headers: {"content-type": "application/json"},
 					signal: AbortSignal.timeout(20e3),
@@ -1029,7 +1031,7 @@ function alpineRSS() { return {
 
 			const parallel = await Promise.allSettled(
 				urls.map(url => new Promise((resolve, reject) => {
-					const fetch_url = `/api/feeds?type=keys&sig=${sig}&l=${limit_adjusted}&x=${this.params.x || ''}`;
+					const fetch_url = `/api/feeds?type=keys&sig=${sig}&l=${limit_adjusted}&x=${hash}`;
 					const fetch_opts = {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
@@ -1125,7 +1127,7 @@ function alpineRSS() { return {
 
 			// Update user hash if provided by server
 			let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
-			if (hash_server && !this.params.origin_cate) {
+			if (hash_server && !this.params.topic) {
 				const url = new URL(location);
 				url.searchParams.delete("u");
 				url.searchParams.set("x", hash_server);
@@ -1144,6 +1146,8 @@ function alpineRSS() { return {
 			// 5. Post-process and save
 			const {count} = this.postProcessFeeds({ limit, auto_fetch_content: true }) || {};
 			this.pioneer = false;
+
+			if (this.params.topic) return;
 
 			// Save feeds and tasks to local storage
 			const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
@@ -1852,8 +1856,6 @@ function alpineRSS() { return {
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = this.params.s || this.storageGet(this.K.style);
 
-
-
 		if (!savedHash || !this.params?.x || (savedHash !== this.params.x)) this.pioneer = true;
 
 		let limit = this.params.l || this.K.LIMIT;
@@ -2069,7 +2071,7 @@ function alpineRSS() { return {
 			let is_reload = THIS.params.x && (x != THIS.params.x)
 
 			THIS.params.x = x;
-			if (!this.params.origin_cate) THIS.storageSet(THIS.K.hash, THIS.params.x);
+			THIS.storageSet(THIS.K.hash, THIS.params.x);
 
 			THIS.profile = detail.profile;
 			THIS.storageSet(THIS.K.profile, THIS.profile);
