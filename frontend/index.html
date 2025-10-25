@@ -134,7 +134,7 @@
 					<div x-show="burger_open" @click.away="burger_open = false" class="absolute left-0 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-100">
 						<ul class="py-1">
 							<li>
-								<a id="burger_newsfeed" href="/" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">📰 News Feed</a>
+								<a id="burger_newsfeed" href="/#home" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">📰 News Feed</a>
 							</li>
 							<li>
 								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">🔖 Bookmarks</a>
@@ -161,6 +161,12 @@
 									<!-- <li><a href="#" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">SubMenu 1</a></li>
 									<li><a href="#" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">SubMenu 2</a></li> -->
 								</ul>
+							</li>
+							<li>
+								<a href="#settings" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">⚙ Settings</a>
+							</li>
+							<li>
+								<a href="#declarations" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" x-text="'ℹ About v' + new URL(document.getElementById('version').src).searchParams.get('v')">About</a>
 							</li>
 						</ul>
 					</div>
@@ -234,7 +240,8 @@
 					<!-- feed title -->
 					<a target="_blank" class="rss-feed-anchor scroll-smooth"
 						:title="feed.short_title"
-						:name="feed.anchor" :href="('#' + feed.anchor) || feed.link || feed.rss_url"
+						:name="feed.anchor"
+						:href="('#' + feed.anchor) || feed.link || feed.rss_url"
 					>
 						<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-3 sm:px-8 md:px-10">
 							<!-- <a :href="feed.rss_url" target="_blank" class="inline-block"> -->
@@ -1039,18 +1046,12 @@
 			is_open: false,
 			anchors: [],
 			refresh: function() {
-				this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
-					href: '#' + a.name,
-					text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
-				}));
-
 				this.anchors = [
 					{href: '#home', text: '# [Home]'},
-					...this.anchors,
-					{href: '#bookmarks', text: '# [Bookmarks]'},
-					{href: '#bookmarks_note', text: '# [Notes]'},
-					{href: '#settings', text: '# [Settings]'},
-					{href: '#declarations', text: '# [About v' + new URL(document.getElementById('version').src).searchParams.get('v') + ']'},
+					...[...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
+						href: '#' + a.name,
+						text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
+					})),
 				];
 			} }" 
 			x-init="refresh()"

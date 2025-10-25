@@ -104,18 +104,20 @@ async function processRssItem(item, head, pioneer) {
                 link = gn_link;
                 images = [];
             } else {
-                let ggnews = await fetch(`https://feed.newsrss.org/api/feeds/decode-ggnews`
-                    + `?url=${encodeURIComponent(link)}`
-                    + `&source=${encodeURIComponent(item?.source?.url)}`
-                    + `&title=${encodeURIComponent(item?.title?.value)}`, {
-                    headers: { "Content-Type": "application/json; charset=utf-8" }, redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 5e3 : 10e3)
-                }).then(res => res.json()).catch(null);
+                try {
+                    let ggnews = await fetch(`https://feed.newsrss.org/api/feeds/decode-ggnews`
+                        + `?url=${encodeURIComponent(link)}`
+                        + `&source=${encodeURIComponent(item?.source?.url)}`
+                        + `&title=${encodeURIComponent(item?.title?.value)}`, {
+                        headers: { "Content-Type": "application/json; charset=utf-8" }, redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 5e3 : 10e3)
+                    }).then(res => res.json()).catch(null);
 
-                if (ggnews?.data?.originUrl) {
-                    link = ggnews.data.originUrl;
-                    images = [];
-                    CACHE.set(key_gnews, link);
-                }
+                    if (ggnews?.data?.originUrl) {
+                        link = ggnews.data.originUrl;
+                        images = [];
+                        CACHE.set(key_gnews, link);
+                    }
+                } catch (ex) {}
             }
         }
 
