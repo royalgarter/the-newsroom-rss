@@ -698,7 +698,7 @@ function alpineRSS() { return {
 	},
 
 	async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
-		return this.loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
+		// return this.loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
 
 		if (this.is_hide_feeds) return;
 
