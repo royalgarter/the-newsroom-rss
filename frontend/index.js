@@ -843,7 +843,7 @@ function alpineRSS() { return {
 						console.log('>> load.feed.item.stale_check', skipCheck, last_published, (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)));
 
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
-							toast('Stale detected, refresh up-to-date feeds', 10e3);
+							toast(`Stale ${newfeed.rss_url} ${last_published}` , 10e3);
 
 							setTimeout(() => {
 								if (found) found.loading = true;
@@ -2219,7 +2219,7 @@ function stringSimilarity(s1, s2) {
 }
 
 function toast(message, timeout=3e3) {
-	// console.log('> TOAST:', message);
+	console.log('> TOAST:', message);
 
 	const toastBox = document.getElementById('toast');
 	const toastMsg = document.getElementById('toast-message');
