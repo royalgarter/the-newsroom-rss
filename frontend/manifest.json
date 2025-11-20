@@ -4,7 +4,7 @@
   "short_name": "Newsroom",
   "theme_color": "#3498DB",
   "background_color": "#F5F5F5",
-  "display" : "standalone",
+  "display": "minimal-ui",
   "dir" : "ltr",
   "lang" : "en",
   "scope" : "/",
