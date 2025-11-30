@@ -712,12 +712,13 @@ function alpineRSS() { return {
 			this.loadingPercent = 0;
 			let step = 0;
 
-			let urls = init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url));
+			let hash = this.params.topic || this.params.x || '';
+			let urls = this.params.topic ? [] : (init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url)));
 
 			let sig = this?.profile?.signature || '';
 
 			// console.time('>> load.tasks')
-			let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=gettasks&sig=${sig}`, {
+			let resp_tasks = force_update ? null : await fetch(`/api/feeds?is_tasks=true&x=${hash}&log=gettasks&sig=${sig}`, {
 				method: 'GET',
 				headers: {"content-type": "application/json"},
 				signal: AbortSignal.timeout(20e3),
@@ -796,7 +797,7 @@ function alpineRSS() { return {
 						`/api/feeds?type=batch`,
 						`&sig=${sig}`,
 						`&l=${limit_adjusted}`,
-						`&x=${this.params.x || ''}`,
+						`&x=${hash}`,
 					].join(''), {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
@@ -814,7 +815,7 @@ function alpineRSS() { return {
 						`/api/feeds?type=keys`,
 						`&sig=${sig}`,
 						`&l=${limit_adjusted}`,
-						`&x=${this.params.x || ''}`,
+						`&x=${hash}`,
 						`&pioneer=${this.pioneer || ''}`,
 					].join('');
 
@@ -2001,7 +2002,7 @@ function alpineRSS() { return {
 		this.tasks = this.storageGet(this.K.tasks) || [];
 		// console.log('inited tasks_0', this.tasks.length)
 
-		if (this.params.x)
+		if (this.params.x && !this.params.topic)
 			this.tasks = this.storageGet(this.K.tasks + this.params.x) || this.tasks;
 		// console.log('inited tasks', this.tasks.length)
 
@@ -2013,7 +2014,7 @@ function alpineRSS() { return {
 			this.feeds = this.storageGet(this.K.feeds) || [];
 			// console.log('inited feeds_0', this.feeds.length, this.params.x, this.storageGet(this.K.feeds + this.params.x))
 
-			if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
+			if (this.params.x && !this.params.topic && this.storageGet(this.K.feeds + this.params.x))
 				this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
 
 			this.loadReadLaterItems();
