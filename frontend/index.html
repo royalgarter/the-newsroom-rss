@@ -286,6 +286,7 @@
 												:href="'#' + item.anchor" 
 												:name="item.anchor"
 											>
+
 												<!-- <link rel="prefetch" as="image" :href="item.image_thumb" /> -->
 												<img width="320" height="320"
 													class="rss-thumb w-full min-h-36 max-h-80"
@@ -293,8 +294,8 @@
 													:fetchpriority="(index <= 1) ? 'high' : 'low'"
 													:alt="item.title"
 													:domain="new URL(feed.link).hostname"
-													:src="item?.image_thumb || 'https://picsum.photos/seed/' + encodeURIComponent(item.title) + '/400/200'"
-													onerror="this.src = 'https://picsum.photos/400/200' || 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
+													:src="item?.image_thumb || 'https://static.photos/640x360/' + encodeURIComponent(item.title)"
+													onerror="this.src = 'https://static.photos/640x360' || 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
 												/>
 												<div
 													class="absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
