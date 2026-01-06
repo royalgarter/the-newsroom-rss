@@ -932,11 +932,13 @@ function alpineRSS() { return {
 			this.loading = false;
 			this.pioneer = false;
 
-			if (this.params.x) {
-				this.storageSet(this.K.feeds + this.params.x, this.feeds);
-				this.storageDel(this.K.feeds);
-			} else {
-				this.storageSet(this.K.feeds, this.feeds);
+			if (!this.params.topic) {
+				if (this.params.x) {
+					this.storageSet(this.K.feeds + this.params.x, this.feeds);
+					this.storageDel(this.K.feeds);
+				} else {
+					this.storageSet(this.K.feeds, this.feeds);
+				}
 			}
 
 			if (limit_adjust == 0 && count > 0) {
@@ -945,11 +947,13 @@ function alpineRSS() { return {
 
 			this.tasks = data.map((x, i) => ({url: x.url, order: i, checked: false}));
 
-			if (this.params.x) {
-				this.storageSet(this.K.tasks + this.params.x, this.tasks);
-				this.storageDel(this.K.tasks);
-			} else {
-				this.storageSet(this.K.tasks, this.tasks);
+			if (!this.params.topic) {
+				if (this.params.x) {
+					this.storageSet(this.K.tasks + this.params.x, this.tasks);
+					this.storageDel(this.K.tasks);
+				} else {
+					this.storageSet(this.K.tasks, this.tasks);
+				}
 			}
 
 			// console.timeEnd('>> load.feeds.postprocess')
@@ -1610,6 +1614,8 @@ function alpineRSS() { return {
 	},
 
 	saveTasks(noReload) {
+		if (this.params.topic) return toast('Settings are read-only in topic view');
+
 		let encodedUrls = this.tasks?.map?.(x => encodeURIComponent(x.url)).join(',');
 
 		let limit = ~~(this.params?.l || this.K.LIMIT);
@@ -1654,6 +1660,8 @@ function alpineRSS() { return {
 	},
 
 	addNewTask() {
+		if (this.params.topic) return toast('Settings are read-only in topic view');
+
 		try {
 			this.input?.split(',').forEach(x => {
 				let url = new URL(x.trim()).toString();
@@ -1681,6 +1689,8 @@ function alpineRSS() { return {
 	},
 
 	importDefaults() {
+		if (this.params.topic) return toast('Settings are read-only in topic view');
+
 		try {
 			this.tasks.push(...this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false})));
 
@@ -1695,6 +1705,8 @@ function alpineRSS() { return {
 	},
 
 	clearAllTasks() {
+		if (this.params.topic) return toast('Settings are read-only in topic view');
+
 		this.input = '';
 		this.tasks = [];
 		this.storageDel(this.K.tasks, '');
