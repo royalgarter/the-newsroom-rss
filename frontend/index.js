@@ -2011,11 +2011,15 @@ function alpineRSS() { return {
 		this.storageSet(this.K.style, this.params.s);
 		// console.log('inited params', this.params)
 
-		this.tasks = this.storageGet(this.K.tasks) || [];
-		// console.log('inited tasks_0', this.tasks.length)
+		if (this.params.topic) {
+			this.tasks = [];
+		} else {
+			this.tasks = this.storageGet(this.K.tasks) || [];
+			// console.log('inited tasks_0', this.tasks.length)
 
-		if (this.params.x && !this.params.topic)
-			this.tasks = this.storageGet(this.K.tasks + this.params.x) || this.tasks;
+			if (this.params.x)
+				this.tasks = this.storageGet(this.K.tasks + this.params.x) || this.tasks;
+		}
 		// console.log('inited tasks', this.tasks.length)
 
 		if (!this.is_hide_feeds) {
