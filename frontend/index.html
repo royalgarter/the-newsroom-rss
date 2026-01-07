@@ -228,7 +228,7 @@
 			:class="(loadingPercent > 0 && loadingPercent < 0.99) ? ('visible w-' + loadingFraction) : 'invisible'"
 		></div>
 
-		<main id="main" class="w-full mx-auto p-2 flex-1">
+		<main id="main" class="w-full mx-auto p-4 flex-1">
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative bg-white dark:bg-gray-800 rounded mb-4"
@@ -487,7 +487,7 @@
 								"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore?.()"
 							>
-								<div class="rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="style()?.shadow ? 'shadow' : ''">
+								<div class="container max-w-md mx-auto p-2 rounded overflow-hidden bg-amber-50 dark:bg-stone-800" :class="style()?.shadow ? 'shadow' : ''">
 									<div class="px-4 py-2 flex flex-row items-center">
 										<span class="py-1 text-xl font-bold flex flex-row items-center">
 											<p class="rss-article-title text-gray-600 dark:text-gray-300 whitespace-pre-line break-words" x-html="feed.article?.title || ''">

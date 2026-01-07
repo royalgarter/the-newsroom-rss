@@ -48,4 +48,7 @@ p.rss-article-content img {
 	padding: 1rem;
 	place-self: center;
 	margin: 0 auto;
+	height: auto;
+	width: min-content;
+	max-width: 90%;
 }
