@@ -1,4 +1,5 @@
-{
+
+const candidates = {
   "world": [
     "https://news.google.com/rss?hl=en-US",
     "https://feeds.bbci.co.uk/news/rss.xml",
@@ -8,13 +9,16 @@
     "https://www.cnbc.com/id/100003114/device/rss/rss.html",
     "https://time.com/feed/",
     "https://nypost.com/news/feed/",
+    "https://www.dailymail.co.uk/news/index.rss",
+    "https://www.telegraph.co.uk/news/rss",
     "https://www.aljazeera.com/xml/rss/all.xml",
     "https://www.theguardian.com/world/rss",
     "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
-    "https://rss.cnn.com/rss/edition_world.rss",
+    "http://rss.cnn.com/rss/edition_world.rss",
     "https://rss.dw.com/rdf/rss-en-all",
     "https://www.france24.com/en/rss",
     "https://feeds.npr.org/1004/rss.xml",
+    "https://feeds.washingtonpost.com/rss/world",
     "https://www.independent.co.uk/news/world/rss",
     "https://www.thestar.com/search/?f=rss&t=article&l=100&s=start_time&sd=desc&c[]=news/world*"
   ],
@@ -24,10 +28,12 @@
     "https://moxie.foxbusiness.com/google-publisher/latest.xml",
     "https://finance.yahoo.com/news/rssindex",
     "https://www.business-live.co.uk/?service=rss",
+    "https://www.ibtimes.com.au/rss",
     "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
-    "https://rss.cnn.com/rss/money_latest.rss",
+    "http://rss.cnn.com/rss/money_latest.rss",
     "https://www.ft.com/?format=rss",
     "https://www.economist.com/business/rss.xml",
+    "https://feeds.hbr.org/hbr/external-blog",
     "https://www.inc.com/rss",
     "https://www.entrepreneur.com/latest.rss",
     "https://www.fastcompany.com/latest/rss",
@@ -35,6 +41,7 @@
     "https://feeds.content.dowjones.io/public/rss/mw_topstories",
     "https://www.kiplinger.com/rss/index.php",
     "https://fortune.com/feed/",
+    "https://www.bloomberg.com/feed/businessweek",
     "https://www.cnbc.com/id/10001147/device/rss/rss.html"
   ],
   "technology": [
@@ -50,25 +57,32 @@
     "https://news.mit.edu/rss/topic/artificial-intelligence2",
     "https://www.theverge.com/rss/index.xml",
     "https://www.engadget.com/rss.xml",
+    "https://gizmodo.com/rss",
     "https://mashable.com/feeds/rss/all",
     "https://www.cnet.com/rss/news/",
+    "https://www.pcmag.com/rss/news",
     "https://thenextweb.com/feed",
     "https://readwrite.com/feed/",
     "https://venturebeat.com/feed/",
     "https://spectrum.ieee.org/rss/fulltext"
   ],
   "entertainment": [
+    "https://www.dailymail.co.uk/news/index.rss",
     "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed",
     "https://www.usmagazine.com/feed/",
     "https://www.indiewire.com/feed/",
     "https://www.etonline.com/news/rss",
     "https://www.buzzfeed.com/index.xml",
+    "https://screenrant.com/feed/",
     "https://www.dailyentertainmentworld.com/blog-feed.xml",
     "https://variety.com/feed/",
     "https://deadline.com/feed/",
     "https://www.rollingstone.com/feed/",
     "https://www.billboard.com/feed/",
     "https://www.tmz.com/rss.xml",
+    "https://people.com/feed",
+    "https://ew.com/feed/",
+    "https://www.vulture.com/rss/index.xml",
     "https://pitchfork.com/rss/news/",
     "https://feeds.feedburner.com/ign/all",
     "https://www.gamespot.com/feeds/news/",
@@ -81,9 +95,20 @@
     "https://api.foxsports.com/v2/content/optimized-rss?partnerKey=MB0Wehpmuj2lUhuRhQaafhBjAJqaPU244mlTDK1i&size=30",
     "https://feeds.bbci.co.uk/sport/rss.xml",
     "https://www.skysports.com/rss/12040",
+    "https://bleacherreport.com/articles/feed",
+    "https://www.cbssports.com/rss/external/headlines",
+    "https://www.nbcsports.com/feed",
+    "https://www.si.com/.rss/full/",
     "https://www.fifa.com/news/rss.xml",
+    "https://www.nba.com/rss/nba_rss.xml",
+    "https://www.mlb.com/feeds/news/all.xml",
+    "https://www.nhl.com/rss/news.xml",
+    "https://www.eurosport.com/rss.xml",
     "https://rssfeeds.usatoday.com/usatoday-SportsTopStories",
-    "https://www.talksport.com/feed/"
+    "https://www.talksport.com/feed/",
+    "https://www.goal.com/en/feeds/news",
+    "https://www.sportingnews.com/rss",
+    "https://www.thescore.com/news.rss"
   ],
   "science": [
     "https://feeds.wired.com/wired/index",
@@ -99,8 +124,12 @@
     "https://www.space.com/feeds/all",
     "https://phys.org/rss-feed/",
     "https://www.sciencenews.org/feed",
+    "https://www.newscientist.com/feed/",
+    "https://www.eurekalert.org/rss.xml",
     "https://www.realclearscience.com/index.xml",
+    "https://cosmosmagazine.com/feed/",
     "https://www.chemistryworld.com/65.rss",
+    "https://www.scientificamerican.com/rss/index.cfm",
     "https://www.quantamagazine.org/feed/"
   ],
   "health": [
@@ -111,11 +140,17 @@
     "https://www.iarc.who.int/feed/?post_type=news-events",
     "https://www.emro.who.int/index.php?option=com_mediarss&feed_id=2&format=raw&utm_source=rss&utm_medium=rssfeeds&utm_campaign=emronews",
     "https://www.mayoclinic.org/rss/all-health-information-topics",
+    "https://rssfeeds.webmd.com/rss/rss.aspx?RSSSource=RSS_PUBLIC",
+    "https://www.health.harvard.edu/blog/feed",
+    "https://rss.medicalnewstoday.com/medicalnewstoday.xml",
+    "https://www.healthline.com/feed",
     "https://www.statnews.com/feed/",
     "https://www.everydayhealth.com/rss/",
     "https://www.psychologytoday.com/us/front/feed",
     "https://www.nih.gov/news-events/news-releases?format=rss",
     "https://tools.cdc.gov/api/v2/resources/media/132607.rss",
+    "https://www.who.int/feeds/entity/mediacentre/news/en/rss.xml",
+    "https://www.medscape.com/cx/rssfeeds/alltopalerts.xml",
     "https://wellnessmama.com/feed/",
     "https://www.self.com/feed/rss"
   ],
@@ -135,6 +170,7 @@
     "https://www.newsbtc.com/feed/",
     "https://www.cryptoglobe.com/latest/feed/",
     "https://ambcrypto.com/feed/",
+    "https://beincrypto.com/feed/",
     "https://www.theblock.co/rss.xml",
     "https://cryptoslate.com/feed/",
     "https://decrypt.co/feed",
@@ -154,9 +190,44 @@
     "https://www.topbots.com/feed/",
     "https://www.kdnuggets.com/feed",
     "https://www.unite.ai/feed/",
+    "https://www.therundown.ai/feed",
+    "https://www.bensbites.co/feed",
+    "https://www.maginative.com/rss/",
     "https://www.artificialintelligence-news.com/feed/",
     "https://syncedreview.com/feed/",
     "https://www.datasciencecentral.com/feed/",
     "https://www.emerj.com/feed/"
   ]
+};
+
+async function testFeed(url) {
+  try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 5000);
+    const resp = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    clearTimeout(id);
+    return resp.ok;
+  } catch (e) {
+    return false;
+  }
 }
+
+const results = {};
+
+for (const [category, urls] of Object.entries(candidates)) {
+  console.log(`Testing category: ${category}`);
+  results[category] = [];
+  for (const url of urls) {
+    const ok = await testFeed(url);
+    if (ok) {
+      results[category].push(url);
+      console.log(`  OK: ${url}`);
+    } else {
+      console.log(`  FAIL: ${url}`);
+    }
+  }
+}
+
+console.log("FINAL_RESULTS_JSON_START");
+console.log(JSON.stringify(results, null, 2));
+console.log("FINAL_RESULTS_JSON_END");
