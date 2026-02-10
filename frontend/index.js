@@ -1621,7 +1621,7 @@ function alpineRSS() { return {
 		let limit = ~~(this.params?.l || this.K.LIMIT);
 
 		this.storageSet(this.K.hash, this.params.x);
-		this.storageSet(this.K.style, this.params.s);
+		this.storageSet(this.K.style, this.params.s || 'full');
 
 		const url = new URL(location);
 		Object.entries(this.params).forEach( ([k, v]) => {
@@ -1655,7 +1655,7 @@ function alpineRSS() { return {
 			console.log('saveTasks done');
 			this.loading = false;
 			this.loadingPercent = 1;
-			window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
+			window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||'full'}`, '_self')
 		})();
 	},
 

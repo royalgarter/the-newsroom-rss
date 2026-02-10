@@ -1,0 +1,87 @@
+{
+  "world": [
+    "https://news.google.com/rss?hl=en-US",
+    "https://feeds.bbci.co.uk/news/rss.xml",
+    "https://feeds.nbcnews.com/feeds/topstories",
+    "https://www.business-standard.com/rss/latest.rss",
+    "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+    "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    "https://time.com/feed/",
+    "https://nypost.com/news/feed/",
+    "https://www.dailymail.co.uk/news/index.rss",
+    "https://www.telegraph.co.uk/news/rss"
+  ],
+  "business": [
+    "https://www.forbes.com/business/feed2/",
+    "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+    "https://moxie.foxbusiness.com/google-publisher/latest.xml",
+    "https://finance.yahoo.com/news/rssindex",
+    "https://www.business-live.co.uk/?service=rss",
+    "https://www.ibtimes.com.au/rss"
+  ],
+  "technology": [
+    "https://hnrss.org/frontpage",
+    "https://www.producthunt.com/feed?category=undefined",
+    "https://feeds.arstechnica.com/arstechnica/technology-lab",
+    "https://www.techradar.com/feeds.xml",
+    "https://techresearchonline.com/feed/",
+    "https://techcrunch.com/feed/",
+    "https://feeds.wired.com/wired/index",
+    "https://www.chinanews.com/rss/it.xml",
+    "https://blog.pragmaticengineer.com/rss/",
+    "http://news.mit.edu/rss/topic/artificial-intelligence2"
+  ],
+  "entertainment": [
+    "https://www.dailymail.co.uk/news/index.rss",
+    "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed",
+    "https://www.usmagazine.com/feed/",
+    "https://www.indiewire.com/feed/",
+    "https://www.etonline.com/news/rss",
+    "https://www.buzzfeed.com/index.xml",
+    "https://screenrant.com/feed/",
+    "https://www.dailyentertainmentworld.com/blog-feed.xml"
+  ],
+  "sports": [
+    "https://sports.espn.go.com/espn/rss/news",
+    "https://sports.yahoo.com/general/news/rss/",
+    "https://www.sbnation.com/rss/index.xml",
+    "https://api.foxsports.com/v2/content/optimized-rss?partnerKey=MB0Wehpmuj2lUhuRhQaafhBjAJqaPU244mlTDK1i&size=30"
+  ],
+  "science": [
+    "https://feeds.wired.com/wired/index",
+    "https://www.science.org/rss/news_current.xml",
+    "https://www.sciencedaily.com/rss/top/science.xml",
+    "http://feeds.nature.com/nature/rss/current",
+    "https://www.science.org/rss/express.xml",
+    "https://www.cell.com/cell/inpress.rss"
+  ],
+  "health": [
+    "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml",
+    "http://feeds.bbci.co.uk/news/health/rss.xml",
+    "https://kffhealthnews.org/feed/",
+    "https://www.sciencedaily.com/rss/top/health.xml",
+    "https://www.iarc.who.int/feed/?post_type=news-events",
+    "https://www.emro.who.int/index.php?option=com_mediarss&feed_id=2&format=raw&utm_source=rss&utm_medium=rssfeeds&utm_campaign=emronews"
+  ],
+  "crypto": [
+    "https://cointelegraph.com/rss",
+    "https://www.coindesk.com/arc/outboundfeeds/rss",
+    "https://www.livebitcoinnews.com/feed/",
+    "https://blockonomi.com/feed/",
+    "https://blog.bitcoin.com/feed",
+    "https://thebitcoinnews.com/feed/",
+    "https://blog.bitfinex.com/feed/",
+    "https://blog.kraken.com/feed",
+    "https://cryptopotato.com/feed/",
+    "https://cryptobriefing.com/feed/",
+    "https://zycrypto.com/feed/"
+  ],
+  "ai": [
+    "https://www.marktechpost.com/feed/",
+    "https://bair.berkeley.edu/blog/feed.xml",
+    "https://research.google/blog/rss/",
+    "https://www.analyticsvidhya.com/feed/",
+    "https://news.mit.edu/rss/topic/artificial-intelligence2",
+    "https://news.microsoft.com/source/topics/ai/feed/"
+  ]
+}
