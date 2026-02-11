@@ -62,7 +62,8 @@ export async function handleFeeds(req: Request) {
     hash = hash || crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 8);
     let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
-    limit = Math.min(Math.max(limit || 6, 6), 100);
+    const isPreset = !!(hash && (presets as any)[hash]);
+    limit = isPreset ? 100 : Math.min(Math.max(limit || 6, 6), 100);
 
     let query_feeds = { urls: keys, limit, pioneer };
     let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
