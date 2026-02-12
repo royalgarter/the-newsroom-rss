@@ -16,7 +16,7 @@ async function embedding(text) {
         method: 'POST',
         headers: {
             'x-goog-api-key': apikey,
-            'Content-Type': 'application/json'
+            'content-type': 'application/json'
         },
         body: JSON.stringify({
             'model': 'models/gemini-embedding-001',
