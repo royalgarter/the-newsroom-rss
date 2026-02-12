@@ -697,8 +697,11 @@ function alpineRSS() { return {
 		toast('Bookmarks loaded');
 	},
 
-	async loadFeedsWithContent({limit=this.K.LIMIT, limit_adjust=this.K.LIMIT, init_urls, force_update}) {
+	async loadFeedsWithContent({limit, limit_adjust, init_urls, force_update} = {}) {
 		// return this.loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update});
+
+		limit = limit || (this.params.topic ? 100 : (this.params.l || this.K.LIMIT));
+		limit_adjust = (limit_adjust !== undefined) ? limit_adjust : (this.params.topic ? 0 : this.K.LIMIT);
 
 		if (this.is_hide_feeds) return;
 
@@ -999,8 +1002,11 @@ function alpineRSS() { return {
 	 * 3.  **Simplified and Predictable Loading:** The complex client-side pre-fetch and recursive loading logic have been removed. This results in a more linear, predictable, and maintainable code flow.
 	 * 4.  **Cleaner Asynchronous Code:** The logic for handling stale feeds is integrated more cleanly into the Promise-based flow for each feed request.
 	 */
-	async loadFeedsWithContentV2({limit = this.K.LIMIT, limit_adjust = 0, init_urls, force_update}) {
+	async loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update} = {}) {
 		// 1. Guard clauses
+		limit = limit || (this.params.topic ? 100 : (this.params.l || this.K.LIMIT));
+		limit_adjust = (limit_adjust !== undefined) ? limit_adjust : (this.params.topic ? 0 : this.K.LIMIT);
+
 		if (this.is_hide_feeds) return;
 		if (this.loading && !force_update) return;
 		this.loading = true;
@@ -1621,7 +1627,7 @@ function alpineRSS() { return {
 		let limit = ~~(this.params?.l || this.K.LIMIT);
 
 		this.storageSet(this.K.hash, this.params.x);
-		this.storageSet(this.K.style, this.params.s);
+		this.storageSet(this.K.style, this.params.s || 'full');
 
 		const url = new URL(location);
 		Object.entries(this.params).forEach( ([k, v]) => {
@@ -1655,7 +1661,7 @@ function alpineRSS() { return {
 			console.log('saveTasks done');
 			this.loading = false;
 			this.loadingPercent = 1;
-			window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||''}`, '_self')
+			window.open(`/?l=${limit}&x=${this.params.x||''}&s=${this.params.s||'full'}`, '_self')
 		})();
 	},
 
@@ -1867,11 +1873,11 @@ function alpineRSS() { return {
 		this.profile = this.storageGet(this.K.profile) || {};
 		this.params = Object.fromEntries(new URLSearchParams(location.search));
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
-		this.params.s = this.params.s || this.storageGet(this.K.style) || 'full';
+		this.params.s = (this.params.s && this.params.s !== 'null') ? this.params.s : (this.storageGet(this.K.style) || 'full');
 
 		if (!savedHash || !this.params?.x || (savedHash !== this.params.x)) this.pioneer = true;
 
-		let limit = this.params.l || this.K.LIMIT;
+		let limit = this.params.topic ? 100 : (this.params.l || this.K.LIMIT);
 		this.params.l = ~~limit;
 
 		this.ready = true;

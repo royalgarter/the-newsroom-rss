@@ -4,6 +4,7 @@ import { fetchRSSLinks, saveFeedCache } from './rss.ts';
 import { authorize, verifyJwt } from './auth.ts';
 import CACHE from './cache.ts';
 import KV from './kv.ts';
+import presets from './preset.json' with { type: 'json' };
 const crypto = await import('node:crypto');
 
 const head_json = {
@@ -45,10 +46,15 @@ export async function handleFeeds(req: Request) {
     }
 
     if (hash && !keys?.length) {
-        let authorized = await authorize(hash, sig);
-        if (authorized.public || authorized.valid) {
-            let tasks = (ver && (await KV.get(['/api/feeds', hash, ver]))?.value) || (await KV.get(['/api/feeds', hash]))?.value || [];
-            keys = tasks;
+        const presetUrls = (presets as any)[hash];
+        if (presetUrls) {
+            keys = presetUrls.map((url: string, order: number) => ({ url, order }));
+        } else {
+            let authorized = await authorize(hash, sig);
+            if (authorized.public || authorized.valid) {
+                let tasks = (ver && (await KV.get(['/api/feeds', hash, ver]))?.value) || (await KV.get(['/api/feeds', hash]))?.value || [];
+                keys = tasks;
+            }
         }
     }
 
@@ -56,7 +62,8 @@ export async function handleFeeds(req: Request) {
     hash = hash || crypto.createHash('md5').update(JSON.stringify(keys) + Date.now()).digest("hex").slice(0, 8);
     let saved = update ? batch : ((batch?.length ? batch : keys) || null);
 
-    limit = Math.min(Math.max(limit || 6, 6), 100);
+    const isPreset = !!(hash && (presets as any)[hash]);
+    limit = isPreset ? 100 : Math.min(Math.max(limit || 6, 6), 100);
 
     let query_feeds = { urls: keys, limit, pioneer };
     let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
