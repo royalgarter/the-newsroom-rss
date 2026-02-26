@@ -97,7 +97,7 @@
 		</script>
 
 	</head>
-	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden border">
+	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden">
 		<template id="tpl_header" x-if="ready">
 			<header class="p-4 border-b text-center flex items-center justify-start max-w-auto">
 				<!-- Hamburger Menu -->
@@ -278,13 +278,13 @@
 												/>
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
-												<div class="absolute bottom-0 left-0 border px-2 py-1 text-sm hover:underline"
+												<div class="absolute bottom-0 left-0 border px-2 py-1 text-sm hover:underline font-semibold"
 													x-html="item.author_formatted">
 												</div>
 											</a>
 
 											<a class="rss-author" :href="item.link" target="_blank">
-												<div class="text-xs p-1 border absolute top-0 right-0 flex flex-col items-center justify-center mt-3 mr-2 hover:underline">
+												<div class="text-xs font-semibold p-1 border absolute top-0 right-0 flex flex-col items-center justify-center mt-3 mr-2 hover:underline">
 													<small class="break-words text-center"
 														x-html="item.published_formatted">
 													</small>
