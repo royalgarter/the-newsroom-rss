@@ -97,7 +97,7 @@
 		</script>
 
 	</head>
-	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden">
+	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden font-mono">
 		<template id="tpl_header" x-if="ready">
 			<header class="p-4 border-b text-center flex items-center justify-start max-w-auto">
 				<!-- Hamburger Menu -->
@@ -217,7 +217,7 @@
 			:class="(loadingPercent > 0 && loadingPercent < 0.99) ? ('visible w-' + loadingFraction) : 'invisible'"
 		></div>
 
-		<main id="main" class="w-full mx-auto p-4 flex-1">
+		<main id="main" class="w-full mx-auto flex-1 md:px-2">
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in feeds" :key="index">
 				<section class="rss-feed relative border-b mb-4"
@@ -338,7 +338,7 @@
 														(item.prefetching && item.no_article ? 'invisible' : '')
 													].join(' ')"
 												>
-													<span x-text="item.read_more ? '[Collapse]' : (item.prefetching && !item.no_article && !item.article?.content ? '[Previewing...]' : '[Preview]')"></span>
+													<span x-text="item.read_more ? '[Collapse]' : (item.prefetching && !item.no_article && !item.article?.content ? '[Loading]' : '[Preview]')"></span>
 												</span>
 
 												<span class="py-1 text-xs flex items-center cursor-pointer px-1 ml-auto mr-3"
@@ -417,11 +417,11 @@
 						<!-- feed article -->
 						<template x-if="feed.read_more && feed.article">
 							<div :id="'rss-feed-article-' + index" x-show="feed.read_more && feed.article"
-								class="hidden sm:block grid grid-cols-1 gap-6"
+								class="hidden sm:block grid grid-cols-1 gap-6 justify-items-center"
 								:class="'single_view' != params?.f ? 'pt-18' : 'pt-0'"
 								x-intersect:leave="false && feed.read_more && feed.article && feed.read_more_item?.toggleReadmore?.()"
 							>
-								<div class="container max-w-md mx-auto p-2 overflow-hidden >
+								<div class="container max-w-3xl mx-auto p-2 overflow-hidden">
 									<div class="px-4 py-2 flex flex-row items-center border-b">
 										<span class="py-1 text-xl font-bold flex flex-row items-center">
 											<p class="rss-article-title whitespace-pre-line break-words" x-html="feed.article?.title || ''">
@@ -435,7 +435,7 @@
 										</span>
 									</div>
 									<div @click="feed.read_more_item?.toggleReadmore?.()" class="cursor-pointer p-2 flex flex-row items-center float-right mt-2">
-										<span class="p-1 text-xs font-bold">[▲▲]</span>
+										<span class="p-1 text-xs font-bold">[▲]</span>
 									</div>
 								</div>
 							</div>
@@ -454,7 +454,7 @@
 						<button
 							id="collapse-title-03"
 							type="button"
-							class="cursor-pointer flex items-center justify-between w-full text-left font-semibold py-2 border-b"
+							class="cursor-pointer flex items-center justify-between w-full text-left font-semibold py-2"
 							:aria-expanded="expanded"
 							aria-controls="collapse-03"
 							@click="
@@ -470,7 +470,7 @@
 								<span x-html="'[Bookmarks]' + (readlater?.items?.length ? ' [' + readlater?.items?.length + ']' : '')" class="inline"></span>
 							</div>
 
-							<span class="ml-8 font-bold" x-text="expanded ? '[▲]' : '[▼]'"></span>
+							<span class="ml-8 font-bold" x-text="expanded ? '▲' : '▼'"></span>
 						</button>
 					</h3>
 					<div
@@ -499,7 +499,7 @@
 									"
 								>
 									<span>Quick Note</span>
-									<span class="font-bold" x-text="expanded ? '[▲]' : '[▼]'"></span>
+									<span class="font-bold" x-text="expanded ? '▲' : '▼'"></span>
 								</button>
 							</h4>
 							<div x-show="expanded" class="mt-2">
@@ -625,7 +625,7 @@
 						<button
 							id="collapse-title-01"
 							type="button"
-							class="cursor-pointer flex items-center justify-between w-full text-left font-semibold py-2 border-b"
+							class="cursor-pointer flex items-center justify-between w-full text-left font-semibold py-2"
 							@click="expanded = !expanded"
 							:aria-expanded="expanded"
 							aria-controls="collapse-01"
@@ -634,7 +634,7 @@
 								<span x-html="'[Settings]' + (tasks?.length ? ' [' + tasks.length + ']' : '') + (loading ? ' (Loading...)' : '')" class="inline"></span>
 							</div>
 
-							<span class="ml-8 font-bold" x-text="expanded ? '[▲]' : '[▼]'"></span>
+							<span class="ml-8 font-bold" x-text="expanded ? '▲' : '▼'"></span>
 						</button>
 					</h3>
 
