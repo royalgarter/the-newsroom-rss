@@ -237,8 +237,10 @@
 					x-show="!is_hide_feeds && (feed?.items?.length > 0)"
 				>
 					<span class="relative flex w-2 h-2" :class="(loading || feed.loading) ? 'visible' : 'invisible'">
-						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
-						<span class="relative inline-flex w-2 h-2 rounded-full bg-orange-500"></span>
+						<span class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
+							:class="feed.loading ? 'bg-yellow-400' : 'bg-orange-400'"></span>
+						<span class="relative inline-flex w-2 h-2 rounded-full"
+							:class="feed.loading ? 'bg-yellow-500' : 'bg-orange-500'"></span>
 					</span>
 
 					<!-- feed title -->
