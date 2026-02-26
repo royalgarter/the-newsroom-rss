@@ -849,8 +849,8 @@ function alpineRSS() { return {
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
 							toast(`Stale ${newfeed.rss_url} ${last_published}` , 10e3);
 
+							if (found) found.loading = true;
 							setTimeout(() => {
-								if (found) found.loading = true;
 								// this.loading = true;
 								fetch(fetch_url, fetch_opts)
 									.then(resp => resp.json())
