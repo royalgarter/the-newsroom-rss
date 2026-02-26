@@ -32,7 +32,7 @@ function alpineRSS() { return {
 
 	debug: null,
 	params: {
-		l: 6,
+		l: 12,
 		s: 'full',
 	},
 
@@ -201,7 +201,7 @@ function alpineRSS() { return {
 	},
 
 	K: {
-		LIMIT: 6,
+		LIMIT: 12,
 
 		DEFAULTS: [
 			`https://news.google.com/rss?hl=${navigator.language}`,
@@ -2033,11 +2033,15 @@ function alpineRSS() { return {
 
 			!this.tasks?.length && !location.hash?.includes?.('note')
 
-			this.feeds = this.storageGet(this.K.feeds) || [];
-			// console.log('inited feeds_0', this.feeds.length, this.params.x, this.storageGet(this.K.feeds + this.params.x))
+			if (this.params.topic) {
+				this.feeds = [];
+			} else {
+				this.feeds = this.storageGet(this.K.feeds) || [];
+				// console.log('inited feeds_0', this.feeds.length, this.params.x, this.storageGet(this.K.feeds + this.params.x))
 
-			if (this.params.x && !this.params.topic && this.storageGet(this.K.feeds + this.params.x))
-				this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
+				if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
+					this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
+			}
 
 			this.loadReadLaterItems();
 			this.postProcessFeeds({limit});
