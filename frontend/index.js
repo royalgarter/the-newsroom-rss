@@ -1790,6 +1790,11 @@ function alpineRSS() { return {
 		});
 	},
 
+	isDark() {
+		return localStorage.getItem('theme') === 'dark' 
+			|| (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+	},
+
 	async init() {
 		// console.log('init')
 
@@ -1797,9 +1802,7 @@ function alpineRSS() { return {
 
 		let savedHash = this.storageGet(this.K.hash);
 
-		if ( localStorage.getItem('theme') === 'dark' ||
-			 (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-		) {
+		if (this.isDark()) {
 			document.documentElement.classList.add('dark');
 			this.dark = true;
 		} else {
