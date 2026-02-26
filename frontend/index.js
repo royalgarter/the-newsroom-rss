@@ -849,19 +849,27 @@ function alpineRSS() { return {
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
 							toast(`Stale ${newfeed.rss_url} ${last_published}` , 10e3);
 
-							if (found) found.loading = true;
-							setTimeout(() => {
-								// this.loading = true;
-								fetch(fetch_url, fetch_opts)
-									.then(resp => resp.json())
-									.then(json => fetchReceiveJSON(json, tryCount > 2, tryCount++))
-									.catch(null)
-									.finally(_ => {
-										if (found) found.loading = false;
-										// this.loading = false;
-										this.skipCheckOldPublished = true;
-									});
-							}, 10e3);
+							if (found) {
+								found.loading = true;
+								let is_refreshing_stale = true
+
+								const fetchStaling = () => {
+									if (!is_refreshing_stale) return;
+
+									fetch(fetch_url, fetch_opts)
+										.then(resp => resp.json())
+										.then(json => fetchReceiveJSON(json, tryCount > 2, tryCount++))
+										.catch(null)
+										.finally(_ => {
+											found.loading = false;
+											is_refreshing_stale = false;
+											this.skipCheckOldPublished = true;
+										});
+								}
+
+								setTimeout(fetchStaling, 5e3);
+								setTimeout(fetchStaling, 10e3);
+							}
 						}
 
 						if (found) {
