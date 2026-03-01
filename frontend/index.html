@@ -233,10 +233,11 @@
 							/>
 							<h2 class="text-xl font-bold mx-auto"
 								:title="feed.rss_url"
-								x-text="feed.short || feed.title">
+								x-text="(loading || feed.loading) ? '. . .' : (feed.short || feed.title)"
+							>
 							</h2>
 						</span>
-						<span x-show="loading || feed.loading">. . .</span>
+
 					</a>
 
 					<!-- feed rss -->
