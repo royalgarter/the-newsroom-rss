@@ -780,11 +780,13 @@ function alpineRSS() { return {
 
 			data = data.map(x => x.value);
 
+			/* DEPRECATED: do not generate random hash on client side
 			if (!this.params?.x && data.length) {
 				let hash_local = await this.digest(JSON.stringify(data) + Date.now());
 				this.params.x = hash_local.slice(0, 6);
 				this.storageSet(this.K.hash, this.params.x);
 			}
+			*/
 
 			// Split into critical (first 4) and remaining feeds for faster initial render
 			const CRITICAL_COUNT = 4;
@@ -1573,11 +1575,21 @@ function alpineRSS() { return {
 		// window.scrollTo({ top: 0, behavior: 'smooth' });
 
 		(async () => {
-			await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=savetasks`, {
+			const resp = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=savetasks`, {
 				method: 'POST',
 				headers: {"content-type": "application/json"},
 				body: JSON.stringify({batch: this.tasks, update: true}),
 			});
+
+			const json = await resp.json();
+			if (json?.hash && !this.params.x) {
+				this.params.x = json.hash;
+				this.storageSet(this.K.hash, this.params.x);
+				
+				const url = new URL(location);
+				url.searchParams.set('x', this.params.x);
+				history.replaceState({}, "", url.toString());
+			}
 
 			await this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
 
@@ -1603,12 +1615,6 @@ function alpineRSS() { return {
 
 				this.tasks.push({ url, order: this.tasks.length, checked: false });
 			});
-
-			this.storageSet(this.K.tasks, this.tasks);
-			if (this.params.x) {
-				this.storageSet(this.K.tasks + this.params.x, this.tasks);
-				this.storageDel(this.K.tasks);
-			}
 
 			this.input = '';
 			this.review_feed = null;
