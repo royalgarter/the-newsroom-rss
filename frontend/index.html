@@ -122,7 +122,7 @@
 						[≡]
 					</button>
 					<!-- 2-level Menu -->
-					<div x-show="burger_open" @click.away="burger_open = false" class="absolute left-0 w-48 z-100" :class="isDark() ? 'bg-black' : 'bg-white'">
+					<div x-show="burger_open" @click.away="burger_open = false" style="margin-left: -1rem;" class="absolute left-0 w-48 border z-100" :class="isDark() ? 'bg-black' : 'bg-white'">
 						<ul class="py-1">
 							<li>
 								<a id="burger_newsfeed" href="/#home" class="block px-4 py-2 text-left text-sm hover:underline">News Feed</a>
@@ -136,7 +136,7 @@
 							<li>
 								<a href="#" @click.prevent="burger_sub_cat_open = !burger_sub_cat_open" class="flex items-center px-4 py-2 text-left text-sm hover:underline">
 									<span>Topics</span>
-									<span class="ml-4" x-text="burger_sub_cat_open ? '[▲]' : '[▼]'"></span>
+									<span x-text="burger_sub_cat_open ? '▲' : '▼'"></span>
 								</a>
 								<ul x-show="burger_sub_cat_open" class="pl-4">
 									<template x-for="(cat, index) in categories" :key="index">
@@ -893,7 +893,9 @@
 		</div>
 
 
-		<div id="anchor_jump" x-data="{
+		<div id="anchor_jump"
+			class="fixed left-0 bottom-2 text-sm z-100"
+			x-data="{
 			_alBody: Alpine.$data(document.querySelector('body')),
 			_alRead: Alpine.$data(document.querySelector('#expander_readlater')),
 			_alSettings: Alpine.$data(document.querySelector('#expander_settings')),
@@ -910,7 +912,6 @@
 				];
 			} }" 
 			x-init="refresh()"
-			class="fixed left-2 bottom-2 text-sm z-100"
 		>
 			<div x-show="is_open" @click.away="is_open = false" class="border mb-2 overflow-y-auto max-h-128" :class="isDark() ? 'bg-black' : 'bg-white'">
 				<template x-for="(anchor, index) in anchors" :key="index">
