@@ -7,7 +7,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="color-scheme" content="light dark">
-		<meta name="description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
+		<meta name="description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: focus, concise, deterministic sources without mindless infinity scroll.">
 		<meta name="keywords" content="news, rss, feed, aggregator, reader, alpinejs, tailwindcss">
 
 		<link rel="canonical" :href="host">
@@ -26,7 +26,7 @@
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="mobile-web-app-capable" content="yes">
 		<meta property="og:title" :content="title" content="The Newsroom RSS">
-		<meta property="og:description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
+		<meta property="og:description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: focus, concise, deterministic sources without mindless infinity scroll.">
 		<meta property="og:image" :content="host + '/screenshots/the-newsroom-rss_600x315.png'" content="/screenshots/the-newsroom-rss_600x315.png">
 		<meta property="og:image:secure_url" :content="host + '/screenshots/the-newsroom-rss_600x315.png'" content="/screenshots/the-newsroom-rss_600x315.png">
 		<meta property="og:image:alt" :content="host + '/screenshots/the-newsroom-rss_600x315.png'">
@@ -37,7 +37,7 @@
 		<meta property="og:locale" content="en_US">
 		<meta property="og:site_name" :content="title" content="The Newsroom RSS">
 		<meta name="twitter:title" :content="title" content="The Newsroom RSS">
-		<meta name="twitter:description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.">
+		<meta name="twitter:description" :content="description" content="We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: focus, concise, deterministic sources without mindless infinity scroll.">
 		<meta name="twitter:url" :content="host + ''">
 		<meta name="twitter:image" :content="host + '/screenshots/the-newsroom-rss_600x315.png'">
 		<meta name="twitter:card" content="summary">
@@ -233,8 +233,8 @@
 							/>
 							<h2 class="text-xl font-bold mx-auto"
 								:title="feed.rss_url"
-								x-text="(loading || feed.loading) ? '. . .' : (feed.short || feed.title)"
-							>
+								:class="{'border-b': (loading || feed.loading)}"
+								x-text="feed.short || feed.title">
 							</h2>
 						</span>
 
@@ -728,12 +728,12 @@
 										@dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
 									>
 										<template x-for="(item, index) in tasks" :key="index">
-											<div class="rss-task-item p-2 mt-2 flex items-center relative"
-												:class="{'border-2': drag === index}"
+											<div class="rss-task-item p-2 mt-2 flex items-center relative hover:underline"
+												:class="{'italic underline font-bold': drag === index}"
 												style="overflow-wrap: anywhere;"
 												draggable="true" @dragstart="drag = index" @dragend="drag = null"
 											>
-												<span class="mr-2 text-xs font-bold min-w-10">[Drag]</span>
+												<span class="cursor-pointer mr-2 text-xs font-bold min-w-10">[#]</span>
 												<div class="mx-2">
 													<a :href="item.url" target="_blank" class="hover:underline"><span x-text="'[' + (index+1) + '] '+ item.url"></span></a>
 												</div>
@@ -758,7 +758,7 @@
 												</label>
 											</div>
 											<div class="w-full cursor-pointer">
-												<input class="border-2 w-full py-2 px-4 focus:outline-none" id="settings-hash" type="text" x-model.debounce.500ms="params.x">
+												<input class="border w-full py-2 px-4 focus:outline-none" id="settings-hash" type="text" x-model.debounce.500ms="params.x">
 											</div>
 										</div>
 										<div class="flex items-center px-4 py-2">
@@ -768,7 +768,7 @@
 												</label>
 											</div>
 											<div class="w-full cursor-pointer">
-												<select class="block w-full py-3 px-4 pr-8 focus:outline-none" id="settings-limit" x-model.number="params.l">
+												<select class="border block w-full py-3 px-4 pr-8 focus:outline-none" id="settings-limit" x-model.number="params.l">
 													<template x-for="lim in [3,6,9,12,15,20,24,30,36,48,64,100]">
 														<option :value="lim" x-text="lim" :selected="params.l == lim"></option>
 													</template>
@@ -782,7 +782,7 @@
 												</label>
 											</div>
 											<div class="w-full cursor-pointer">
-												<select class="block w-full py-3 px-4 pr-8 focus:outline-none" id="settings-style" x-model="params.s">
+												<select class="border block w-full py-3 px-4 pr-8 focus:outline-none" id="settings-style" x-model="params.s">
 													<template x-for="sty in Object.keys(style_flags)">
 														<option :value="sty" x-text="sty" :selected="params.s == sty"></option>
 													</template>
