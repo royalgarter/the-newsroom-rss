@@ -89,6 +89,9 @@
 		<script type="module" src="./js/module.mjs"></script>
 
 		<script type="module">
+			import { COUNTRIES } from "./js/countries.mjs";
+			window.COUNTRIES = COUNTRIES;
+
 			import { embeddingText } from "./js/llm.mjs";
 			window.embeddingText = embeddingText;
 
@@ -132,7 +135,13 @@
 					<div x-show="burger_open" @click.away="burger_open = false" class="absolute left-0 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-100">
 						<ul class="py-1">
 							<li>
-								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Bookmarks</a>
+								<a id="burger_newsfeed" href="/#home" class="block px-4 py-2 text-left text-sm hover:underline">News Feed</a>
+							</li>
+							<li>
+								<a href="#worldmap" class="block px-4 py-2 text-left text-sm hover:underline" @click="showWorldMap = true; burger_open = false">World Map</a>
+							</li>
+							<li>
+								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm hover:underline">Bookmarks</a>
 							</li>
 							<li>
 								<a href="#bookmarks_note" class="block px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Notes</a>
@@ -943,6 +952,14 @@
 							</div>
 						</template>
 					</div>
+				</div>
+
+				<!-- worldmap -->
+				<div x-data="{
+					html_worldmap: function() {
+						fetch('/components/worldmap.html').then(r => r.text()).then(html => {this.$root.innerHTML = html});
+					}
+				}" x-init="html_worldmap">
 				</div>
 
 				<!-- declarations -->

@@ -30,6 +30,9 @@ function alpineRSS() { return {
 	linkToItemMap: new Map(),
 	viewedItemsCache: {},
 
+	countryClusters: [],
+	showWorldMap: false,
+
 	debug: null,
 	params: {
 		l: 6,
@@ -1554,6 +1557,274 @@ function alpineRSS() { return {
 		});
 	},
 
+	isDark() {
+		return localStorage.getItem('theme') === 'dark' 
+			|| (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+	},
+
+	async getEmbedding(item) {
+		let cached = this.storageGet(this.K.embedding + item.link);
+		if (cached) return cached;
+
+		let text = `${item.title} ${item.description}`.substr(0, 1000);
+		let vector = await embeddingText(text, this.params.k);
+		if (vector) {
+			this.storageSet(this.K.embedding + item.link, vector);
+		}
+		return vector;
+	},
+
+	async clusterItems() {
+		if (this.clustering) return;
+		this.clustering = true;
+		
+		let startTime = Date.now();
+		let stats = { method: 'none', total: 0, clusters: 0, hidden: 0 };
+
+		try {
+			let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
+			stats.total = allItems.length;
+			
+			allItems.forEach(item => {
+				item.hidden_by_cluster = false;
+				item.related_sources = [];
+			});
+
+			// if (window.TinyTFIDF) {
+			// 	await this.clusterItemsWithTFIDF(allItems, stats);
+			// } else if (this.params.k) {
+			// 	await this.clusterItemsWithGemini(allItems, stats);
+			// } else if (window.MiniSearch) {
+			// 	await this.clusterItemsWithMiniSearch(allItems, stats);
+			// }
+
+			await this.clusterItemsWithMiniSearch(allItems, stats); // Temporapy pick this because of performance
+
+			let duration = ((Date.now() - startTime) / 1000).toFixed(2);
+			console.log([
+				`%c[Clustering Summary]`,
+				`- Method: ${stats.method.toUpperCase()}`,
+				`- Items Processed: ${stats.total}`,
+				`- Clusters Found: ${stats.clusters}`,
+				`- Hidden (Duplicates): ${stats.hidden}`,
+				`- Time taken: ${duration}s`,
+			].join('\n'));
+		} catch (e) {
+			console.error('Clustering error:', e);
+		} finally {
+			this.clustering = false;
+		}
+	},
+
+	async clusterItemsWithTFIDF(allItems, stats) {
+		stats.method = 'tfidf';
+		const corpus = new TinyTFIDF.Corpus(
+			allItems.map((_, i) => i.toString()),
+			allItems.map(item => `${item.title} ${item.description}`)
+		);
+
+		let processed = new Set();
+		const SIMILARITY_THRESHOLD = 0.33; // Adjust based on testing
+
+		for (let i = 0; i < allItems.length; i++) {
+			if (processed.has(i)) continue;
+			
+			let currentCluster = [allItems[i]];
+			processed.add(i);
+
+			for (let j = i + 1; j < allItems.length; j++) {
+				if (processed.has(j)) continue;
+
+				// TinyTFIDF.Similarity.cosine expects two Map objects (term weights)
+				const vecA = corpus.getDocumentVector(i.toString());
+				const vecB = corpus.getDocumentVector(j.toString());
+				const similarity = TinyTFIDF.Similarity.cosineSimilarity(vecA, vecB);
+
+				if (similarity > SIMILARITY_THRESHOLD) {
+					currentCluster.push(allItems[j]);
+					processed.add(j);
+				}
+			}
+
+			if (currentCluster.length > 1) {
+				stats.clusters++;
+				stats.hidden += this.applyCluster(currentCluster);
+			}
+		}
+	},
+
+	async clusterItemsWithGemini(allItems, stats) {
+		stats.method = 'gemini';
+		const BATCH_SIZE = 5;
+		for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
+			let batch = allItems.slice(i, i + BATCH_SIZE);
+			await Promise.all(batch.map(item => this.getEmbedding(item).then(v => item.vector = v)));
+		}
+
+		let itemsWithVector = allItems.filter(x => x.vector);
+		if (itemsWithVector.length < 2) return;
+
+		const vectorSize = itemsWithVector[0].vector.length;
+		itemsWithVector.forEach(item => {
+			let mag = 0;
+			for (let v of item.vector) mag += v * v;
+			mag = Math.sqrt(mag) || 1;
+			item.normVec = new Float32Array(vectorSize);
+			for (let k = 0; k < vectorSize; k++) item.normVec[k] = item.vector[k] / mag;
+		});
+
+		const SIMILARITY_THRESHOLD = 0.15;
+		const MIN_SIMILARITY = 1 - SIMILARITY_THRESHOLD;
+		let processed = new Set();
+		let yieldCounter = 0;
+
+		for (let i = 0; i < itemsWithVector.length; i++) {
+			if (processed.has(i)) continue;
+			let currentCluster = [itemsWithVector[i]];
+			processed.add(i);
+			const vecA = itemsWithVector[i].normVec;
+
+			for (let j = i + 1; j < itemsWithVector.length; j++) {
+				if (processed.has(j)) continue;
+				if (++yieldCounter % 1000 === 0) await new Promise(r => setTimeout(r, 0));
+
+				const vecB = itemsWithVector[j].normVec;
+				let dotProduct = 0;
+				for (let k = 0; k < vectorSize; k++) dotProduct += vecA[k] * vecB[k];
+				
+				if (dotProduct > MIN_SIMILARITY) {
+					currentCluster.push(itemsWithVector[j]);
+					processed.add(j);
+				}
+			}
+			if (currentCluster.length > 1) {
+				stats.clusters++;
+				stats.hidden += this.applyCluster(currentCluster);
+			}
+		}
+	},
+
+	async clusterItemsWithMiniSearch(allItems, stats) {
+		stats.method = 'minisearch';
+		let miniSearch = new MiniSearch({
+			fields: ['title', 'description'],
+			storeFields: ['link'],
+			searchOptions: {
+				boost: { title: 4 },
+				fuzzy: 0.2,
+				prefix: true,
+				combineWith: 'OR'
+			}
+		});
+
+		allItems.forEach((item, idx) => item._idx = idx);
+		miniSearch.addAll(allItems.map(item => ({
+			id: item._idx,
+			title: item.title,
+			description: item.description,
+			link: item.link
+		})));
+
+		let processed = new Set();
+		const SIMILARITY_RATIO = 0.2;
+
+		for (let i = 0; i < allItems.length; i++) {
+			if (processed.has(i)) continue;
+			
+			let item = allItems[i];
+			let query = item.title || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
+							.filter(word => word.length > 3)
+							.join(' ');
+			
+			if (!query) continue;
+
+			let selfResults = miniSearch.search(query);
+			let maxScore = selfResults.find(r => r.id === i)?.score || selfResults[0]?.score || 1;
+
+			let results = miniSearch.search(query, {
+				filter: (result) => !processed.has(result.id)
+			});
+
+			let currentCluster = [item];
+			processed.add(i);
+
+			results.forEach(res => {
+				if (res.score > (maxScore * SIMILARITY_RATIO) && res.id !== i) {
+					currentCluster.push(allItems[res.id]);
+					processed.add(res.id);
+				}
+			});
+
+			if (currentCluster.length > 1) {
+				stats.clusters++;
+				stats.hidden += this.applyCluster(currentCluster);
+			}
+		}
+	},
+
+	applyCluster(clusterItems) {
+		if (clusterItems.length <= 1) return 0;
+
+		// Sort items in cluster by date (earliest first)
+		clusterItems.sort((a, b) => new Date(a.published) - new Date(b.published));
+
+		let primary = clusterItems[0];
+		primary.related_sources = clusterItems.slice(1).map(item => {
+			item.hidden_by_cluster = true;
+			return {
+				title: item.title,
+				link: item.link,
+				source: item.author || new URL(item.link).hostname
+			};
+		});
+		
+		return primary.related_sources.length;
+	},
+
+	clusterByCountry() {
+		if (!window.COUNTRIES) return;
+		const allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
+		const clusters = {};
+
+		for (const code in window.COUNTRIES) {
+			clusters[code] = {
+				...window.COUNTRIES[code],
+				code,
+				count: 0,
+				items: []
+			};
+		}
+
+		allItems.forEach(item => {
+			let matched = false;
+			const text = `${item.title} ${item.description} ${item.author} ${item.source}`.toLowerCase();
+			const domain = new URL(item.link).hostname.toLowerCase();
+
+			for (const code in clusters) {
+				const country = clusters[code];
+				
+				// Match by domain
+				if (country.domains.some(d => domain.includes(d.toLowerCase()))) {
+					country.count++;
+					country.items.push(item);
+					matched = true;
+					break;
+				}
+
+				// Match by keywords
+				if (country.keywords.some(k => text.includes(k.toLowerCase()))) {
+					country.count++;
+					country.items.push(item);
+					matched = true;
+					break;
+				}
+			}
+		});
+
+		this.countryClusters = Object.values(clusters).filter(c => c.count > 0);
+		console.log('Country Clusters:', this.countryClusters);
+	},
+
 	async init() {
 		// console.log('init')
 
@@ -1571,6 +1842,8 @@ function alpineRSS() { return {
 			this.dark = false;
 		}
 
+		this.showWorldMap = (location.hash == '#worldmap');
+
 		// window.onscroll = (e) => {
 		// 	this.loading_scroll = this.loading;
 		// 	this.loading = true;
@@ -1587,6 +1860,11 @@ function alpineRSS() { return {
 
 		this.$watch('loading', value => {
 			this.title = this.theTitle();
+			if (value === false) {
+				// Trigger clustering when all feeds are loaded
+				this.clusterItems();
+				this.clusterByCountry();
+			}
 		});
 
 		this.$watch('modal_showed', value => {
@@ -1611,9 +1889,10 @@ function alpineRSS() { return {
 			if (oldValue.length != value.length) {
 				Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 				Alpine.$data(document.querySelector('#menu_burger'))?.refresh?.();
+				this.clusterByCountry();
 			}
-
 		})
+
 
 		try {
 			let {country} = await fetch('https://api.country.is/').then(r => r.json()).catch(_ => ({}));

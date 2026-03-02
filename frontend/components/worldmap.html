@@ -1,0 +1,95 @@
+<div id="world_map_dashboard" x-show="showWorldMap" class="fixed inset-0 z-[150] bg-white dark:bg-black overflow-auto p-4 flex flex-col font-mono"
+    @keydown.escape.window="showWorldMap = false"
+>
+    <div class="flex justify-between items-center mb-4 border-b pb-2">
+        <h2 class="text-2xl font-bold">[World Map Dashboard]</h2>
+        <div class="flex gap-4">
+            <button @click="clusterByCountry()" class="border px-4 py-2 font-bold cursor-pointer hover:underline">[Recalculate]</button>
+            <button @click="showWorldMap = false; location.hash = '#home'" class="border px-4 py-2 font-bold cursor-pointer hover:underline">[Close]</button>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="relative w-full aspect-[2/1] border bg-blue-50 dark:bg-blue-900/10 overflow-hidden shadow-inner">
+        <!-- SVG Map Background (Approximate World) -->
+        <svg viewBox="0 0 360 180" class="w-full h-full opacity-20 pointer-events-none text-black dark:text-white">
+            <!-- N. America -->
+            <path d="M30,25 L80,20 L100,35 L110,65 L80,85 L50,85 L25,60 Z" fill="currentColor" />
+            <!-- Central & S. America -->
+            <path d="M85,85 L95,95 L105,105 L115,115 L105,155 L75,145 L85,115 L80,95 Z" fill="currentColor" />
+            <!-- Europe -->
+            <path d="M165,35 L185,30 L205,35 L210,65 L180,75 L165,65 Z" fill="currentColor" />
+            <!-- Africa -->
+            <path d="M170,80 L215,85 L225,125 L200,155 L165,145 L155,105 Z" fill="currentColor" />
+            <!-- Asia -->
+            <path d="M210,25 L310,25 L330,85 L285,120 L220,95 L210,65 Z" fill="currentColor" />
+            <!-- Australia -->
+            <path d="M290,125 L330,125 L340,155 L300,165 Z" fill="currentColor" />
+            <!-- Greenland -->
+            <path d="M115,10 L145,5 L155,25 L135,35 Z" fill="currentColor" />
+        </svg>
+
+        <!-- Circles for Country Clusters -->
+        <template x-for="c in countryClusters" :key="c.code">
+            <div class="absolute rounded-full bg-blue-500/40 border border-blue-600 flex items-center justify-center cursor-pointer hover:bg-blue-500/70 hover:scale-110 transition-all group z-10"
+                 :style="{
+                    left: ((c.lon + 180) * 100 / 360) + '%',
+                    top: ((90 - c.lat) * 100 / 180) + '%',
+                    width: (Math.sqrt(c.count) * 20 + 30) + 'px',
+                    height: (Math.sqrt(c.count) * 20 + 30) + 'px',
+                    transform: 'translate(-50%, -50%)'
+                 }"
+                 @click="toast(c.name + ': ' + c.count + ' articles')"
+            >
+                <div class="flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-black dark:text-white leading-none" x-text="c.code"></span>
+                    <span class="text-[12px] font-extrabold text-black dark:text-white" x-text="c.count"></span>
+                </div>
+                
+                <!-- Tooltip -->
+                <div class="hidden group-hover:block absolute bottom-full mb-3 p-3 bg-black dark:bg-white text-white dark:text-black text-xs border z-[200] min-w-[150px] shadow-lg">
+                    <div class="font-bold border-b mb-1 pb-1 flex justify-between">
+                        <span x-text="c.name"></span>
+                        <span x-text="c.count"></span>
+                    </div>
+                    <ul class="space-y-1">
+                        <template x-for="item in c.items.slice(0, 3)" :key="item.link">
+                            <li class="truncate" x-text="item.title"></li>
+                        </template>
+                    </ul>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Country Stats & Links -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+        <template x-for="c in countryClusters" :key="c.code">
+            <div class="border p-4 bg-gray-50/50 dark:bg-gray-900/20 hover:border-blue-500 transition-colors">
+                <h3 class="text-lg font-bold border-b mb-3 flex justify-between items-center">
+                    <span>
+                        <img width="16" height="12" class="inline mr-2" :src="'https://flagcdn.com/16x12/' + c.code.toLowerCase() + '.png'" onerror="this.style.display='none'">
+                        <span x-text="c.name"></span>
+                    </span>
+                    <span class="bg-blue-500 text-white px-2 py-0.5 text-xs rounded" x-text="c.count"></span>
+                </h3>
+                <div class="space-y-3">
+                    <template x-for="item in c.items.slice(0, 5)" :key="item.link">
+                        <div class="group">
+                            <a :href="item.link" target="_blank" class="text-sm hover:underline font-semibold block leading-tight mb-1" x-text="item.title"></a>
+                            <div class="flex justify-between items-center text-[10px] opacity-60">
+                                <span x-text="new URL(item.link).hostname.replace('www.', '')"></span>
+                                <span x-text="item.published_formatted"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <template x-if="c.items.length > 5">
+                    <div class="mt-4 pt-2 border-t text-center">
+                        <span class="text-xs italic opacity-50" x-text="'+ ' + (c.count - 5) + ' more articles'"></span>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</div>
