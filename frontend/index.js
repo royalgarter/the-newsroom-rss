@@ -1782,7 +1782,7 @@ function alpineRSS() { return {
 		);
 
 		let processed = new Set();
-		const SIMILARITY_THRESHOLD = 0.4; // Adjust based on testing
+		const SIMILARITY_THRESHOLD = 0.33; // Adjust based on testing
 
 		for (let i = 0; i < allItems.length; i++) {
 			if (processed.has(i)) continue;
