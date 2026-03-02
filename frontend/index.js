@@ -31,9 +31,11 @@ function alpineRSS() { return {
 	viewedItemsCache: {},
 
 	debug: null,
+	clustering: false,
 	params: {
 		l: 12,
 		s: 'full',
+		k: '',
 	},
 
 	input: '',
@@ -1795,6 +1797,136 @@ function alpineRSS() { return {
 			|| (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
 	},
 
+	async getEmbedding(item) {
+		let cached = this.storageGet(this.K.embedding + item.link);
+		if (cached) return cached;
+
+		let text = `${item.title} ${item.description}`.substr(0, 1000);
+		let vector = await embeddingText(text, this.params.k);
+		if (vector) {
+			this.storageSet(this.K.embedding + item.link, vector);
+		}
+		return vector;
+	},
+
+	async clusterItems() {
+		if (this.clustering) return;
+		this.clustering = true;
+		console.log('Clustering started...');
+
+		try {
+			let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
+			
+			// Reset clustering state for all items
+			allItems.forEach(item => {
+				item.hidden_by_cluster = false;
+				item.related_sources = [];
+			});
+
+			// 1. Get Embeddings for all items (parallel with limit)
+			const BATCH_SIZE = 5;
+			for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
+				let batch = allItems.slice(i, i + BATCH_SIZE);
+				await Promise.all(batch.map(item => this.getEmbedding(item).then(v => item.vector = v)));
+			}
+
+			let itemsWithVector = allItems.filter(x => x.vector);
+			if (itemsWithVector.length < 2) return;
+
+			// Optimization: Pre-normalize vectors to Float32Array for much faster dot product
+			const vectorSize = itemsWithVector[0].vector.length;
+			itemsWithVector.forEach(item => {
+				let mag = 0;
+				for (let v of item.vector) mag += v * v;
+				mag = Math.sqrt(mag) || 1;
+				
+				item.normVec = new Float32Array(vectorSize);
+				for (let k = 0; k < vectorSize; k++) {
+					item.normVec[k] = item.vector[k] / mag;
+				}
+			});
+
+			// 2. Run Similarity Matching with optimized inner loop
+			const SIMILARITY_THRESHOLD = 0.15; // Cosine distance threshold
+			const MIN_SIMILARITY = 1 - SIMILARITY_THRESHOLD; // Minimum dot product for normalized vectors
+			
+			let clusters = [];
+			let processed = new Set();
+			let yieldCounter = 0;
+
+			for (let i = 0; i < itemsWithVector.length; i++) {
+				if (processed.has(i)) continue;
+
+				let currentCluster = [i];
+				processed.add(i);
+				
+				const vecA = itemsWithVector[i].normVec;
+
+				for (let j = i + 1; j < itemsWithVector.length; j++) {
+					if (processed.has(j)) continue;
+
+					// Yield to keep UI responsive
+					yieldCounter++;
+					if (yieldCounter % 1000 === 0) {
+						await new Promise(r => setTimeout(r, 0));
+					}
+
+					const vecB = itemsWithVector[j].normVec;
+					let dotProduct = 0;
+					
+					// High-performance dot product loop
+					for (let k = 0; k < vectorSize; k++) {
+						dotProduct += vecA[k] * vecB[k];
+					}
+					
+					if (dotProduct > MIN_SIMILARITY) {
+						currentCluster.push(j);
+						processed.add(j);
+					}
+				}
+				clusters.push(currentCluster);
+			}
+
+			// 3. Process clusters and update UI state
+			clusters.forEach(clusterIndices => {
+				if (clusterIndices.length <= 1) return;
+
+				clusterIndices.sort((a, b) => new Date(itemsWithVector[a].published) - new Date(itemsWithVector[b].published));
+
+				let primary = itemsWithVector[clusterIndices[0]];
+				primary.related_sources = clusterIndices.slice(1).map(idx => {
+					let item = itemsWithVector[idx];
+					item.hidden_by_cluster = true;
+					return {
+						title: item.title,
+						link: item.link,
+						source: item.author || new URL(item.link).hostname
+					};
+				});
+			});
+
+			console.log(`Clustering finished. Found ${clusters.length} clusters.`);
+		} catch (e) {
+			console.error('Clustering error:', e);
+		} finally {
+			this.clustering = false;
+		}
+	},
+
+	cosineSimilarity(a, b) {
+		let dotProduct = 0;
+		let mA = 0;
+		let mB = 0;
+		for (let i = 0; i < a.length; i++) {
+			dotProduct += (a[i] * b[i]);
+			mA += (a[i] * a[i]);
+			mB += (b[i] * b[i]);
+		}
+		mA = Math.sqrt(mA);
+		mB = Math.sqrt(mB);
+		return dotProduct / (mA * mB);
+	},
+
 	async init() {
 		// console.log('init')
 
@@ -1826,6 +1958,10 @@ function alpineRSS() { return {
 
 		this.$watch('loading', value => {
 			this.title = this.theTitle();
+			if (value === false) {
+				// Trigger clustering when all feeds are loaded
+				this.clusterItems();
+			}
 		});
 
 		this.$watch('modal_showed', value => {

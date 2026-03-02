@@ -252,6 +252,7 @@
 							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
 								<div class="rss-item border p-2 relative"
+									x-show="!item.hidden_by_cluster"
 									:class="[
 										item.viewed ? 'italic' : '',
 										style()?.preview ? 'pb-8' : '',
@@ -323,6 +324,25 @@
 												x-html="item.description_formatted || item.description"
 											>
 											</p>
+										</template>
+
+										<template x-if="item.related_sources?.length > 0">
+											<div class="mt-4 pt-2 border-t border-dashed">
+												<p class="text-xs font-bold uppercase mb-1 opacity-60">Related Sources:</p>
+												<div class="flex flex-col gap-1">
+													<template x-for="source in item.related_sources" :key="source.link">
+														<a :href="source.link" target="_blank" 
+															class="flex items-center gap-2 hover:underline text-xs"
+															:title="source.title"
+														>
+															<img width="16" height="16" class="w-3 h-3 mr-2 grayscale opacity-70"
+																:src="'https://www.google.com/s2/favicons?domain=' + new URL(source.link).hostname +'&sz=64'"
+															/>
+															<span class="truncate italic opacity-80" x-text="source.title"></span>
+														</a>
+													</template>
+												</div>
+											</div>
 										</template>
 									</div>
 
@@ -566,6 +586,25 @@
 											>
 											</p>
 										</template>
+
+										<template x-if="item.related_sources?.length > 0">
+											<div class="mt-4 pt-2 border-t border-dashed">
+												<p class="text-xs font-bold uppercase mb-1 opacity-60">Related Sources:</p>
+												<div class="flex flex-col gap-1">
+													<template x-for="source in item.related_sources" :key="source.link">
+														<a :href="source.link" target="_blank" 
+															class="flex items-center gap-2 hover:underline text-xs"
+															:title="source.title"
+														>
+															<img width="16" height="16" class="w-3 h-3 grayscale opacity-70"
+																:src="'https://www.google.com/s2/favicons?domain=' + new URL(source.link).hostname +'&sz=64'"
+															/>
+															<span class="truncate italic opacity-80" x-text="source.title"></span>
+														</a>
+													</template>
+												</div>
+											</div>
+										</template>
 									</div>
 									<!-- readlater article -->
 									<div :id="'rss-item-readlater-article-' + itemIndex">
@@ -793,6 +832,16 @@
 														<option :value="sty" x-text="sty" :selected="params.s == sty"></option>
 													</template>
 												</select>
+											</div>
+										</div>
+										<div class="flex items-center px-4 py-2">
+											<div class="min-w-32">
+												<label class="block font-bold md:text-right mb-1 md:mb-0 pr-4" for="settings-gemini-api-key">
+												Gemini API Key
+												</label>
+											</div>
+											<div class="w-full cursor-pointer">
+												<input class="border-2 w-full py-2 px-4 focus:outline-none" id="settings-gemini-api-key" type="password" x-model.debounce.500ms="params.k" placeholder="Enter your Gemini API Key for clustering...">
 											</div>
 										</div>
 									</div>

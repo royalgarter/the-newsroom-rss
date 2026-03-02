@@ -329,11 +329,19 @@ export async function handleEmbedding(req: Request) {
     const { searchParams } = new URL(req.url);
     let params = Object.fromEntries(searchParams);
     let text = decodeURIComponent(params.text);
+    
+    // Check for user-provided API key in headers
+    const userApiKey = req.headers.get('x-goog-api-key');
+    const apiKey = userApiKey || APIKEYS[Math.floor(Math.random() * APIKEYS.length)];
+
+    if (!apiKey) {
+        return response(JSON.stringify({ error: 'No API key available' }), { status: 401 });
+    }
 
     let result = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent', {
         method: 'POST',
         headers: {
-            'x-goog-api-key': APIKEYS[Math.floor(Math.random() * APIKEYS.length)],
+            'x-goog-api-key': apiKey,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
