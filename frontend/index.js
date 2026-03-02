@@ -1812,10 +1812,18 @@ function alpineRSS() { return {
 	async clusterItems() {
 		if (this.clustering) return;
 		this.clustering = true;
-		console.log('Clustering started...');
+		
+		let startTime = Date.now();
+		let stats = {
+			method: 'none',
+			total: 0,
+			clusters: 0,
+			hidden: 0
+		};
 
 		try {
 			let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
+			stats.total = allItems.length;
 			
 			// Reset clustering state for all items
 			allItems.forEach(item => {
@@ -1823,8 +1831,8 @@ function alpineRSS() { return {
 				item.related_sources = [];
 			});
 
-			if (false && this.params.k) {
-				// --- OPTION A: Semantic Clustering with Gemini ---
+			if (this.params.k) {
+				stats.method = 'gemini';
 				const BATCH_SIZE = 5;
 				for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
 					let batch = allItems.slice(i, i + BATCH_SIZE);
@@ -1832,7 +1840,7 @@ function alpineRSS() { return {
 				}
 
 				let itemsWithVector = allItems.filter(x => x.vector);
-				if (itemsWithVector.length < 2) return;
+				if (itemsWithVector.length < 2) throw new Error('Not enough items with vectors');
 
 				const vectorSize = itemsWithVector[0].vector.length;
 				itemsWithVector.forEach(item => {
@@ -1867,22 +1875,24 @@ function alpineRSS() { return {
 							processed.add(j);
 						}
 					}
-					this.applyCluster(currentCluster.map(idx => itemsWithVector[idx]));
+					if (currentCluster.length > 1) {
+						stats.clusters++;
+						stats.hidden += this.applyCluster(currentCluster.map(idx => itemsWithVector[idx]));
+					}
 				}
 			} else if (window.MiniSearch) {
-				// --- OPTION B: Syntactic Clustering with MiniSearch (Fallback) ---
+				stats.method = 'minisearch';
 				let miniSearch = new MiniSearch({
 					fields: ['title', 'description'],
 					storeFields: ['link'],
 					searchOptions: {
-						boost: { title: 2 },
-						// fuzzy: 0.1,
-						// prefix: true,
-						// combineWith: 'OR'
+						boost: { title: 4 },
+						fuzzy: 0.2,
+						prefix: true,
+						combineWith: 'OR'
 					}
 				});
 
-				// Index items with unique IDs
 				allItems.forEach((item, idx) => item._idx = idx);
 				miniSearch.addAll(allItems.map(item => ({
 					id: item._idx,
@@ -1892,14 +1902,22 @@ function alpineRSS() { return {
 				})));
 
 				let processed = new Set();
-				const MIN_SCORE = 400; // Threshold for similarity score
+				const SIMILARITY_RATIO = 0.2;
 
 				for (let i = 0; i < allItems.length; i++) {
 					if (processed.has(i)) continue;
 					
 					let item = allItems[i];
-					// Search for items similar to this one
-					let results = miniSearch.search(item.title, {
+					let query = item.title || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
+									.filter(word => word.length > 3)
+									.join(' ');
+					
+					if (!query) continue;
+
+					let selfResults = miniSearch.search(query);
+					let maxScore = selfResults.find(r => r.id === i)?.score || selfResults[0]?.score || 1;
+
+					let results = miniSearch.search(query, {
 						filter: (result) => !processed.has(result.id)
 					});
 
@@ -1907,19 +1925,28 @@ function alpineRSS() { return {
 					processed.add(i);
 
 					results.forEach(res => {
-						if (res.score > MIN_SCORE && res.id !== i) {
+						if (res.score > (maxScore * SIMILARITY_RATIO) && res.id !== i) {
 							currentCluster.push(allItems[res.id]);
 							processed.add(res.id);
 						}
 					});
 
 					if (currentCluster.length > 1) {
-						this.applyCluster(currentCluster);
+						stats.clusters++;
+						stats.hidden += this.applyCluster(currentCluster);
 					}
 				}
 			}
 
-			console.log('Clustering finished.');
+			let duration = ((Date.now() - startTime) / 1000).toFixed(2);
+			console.log([
+				`%c[Clustering Summary]`,
+				`- Method: ${stats.method.toUpperCase()}`,
+				`- Items Processed: ${stats.total}`,
+				`- Clusters Found: ${stats.clusters}`,
+				`- Hidden (Duplicates): ${stats.hidden}`,
+				`- Time taken: ${duration}s`,
+			].join('\n'));
 		} catch (e) {
 			console.error('Clustering error:', e);
 		} finally {
@@ -1928,7 +1955,7 @@ function alpineRSS() { return {
 	},
 
 	applyCluster(clusterItems) {
-		if (clusterItems.length <= 1) return;
+		if (clusterItems.length <= 1) return 0;
 
 		// Sort items in cluster by date (earliest first)
 		clusterItems.sort((a, b) => new Date(a.published) - new Date(b.published));
@@ -1942,6 +1969,8 @@ function alpineRSS() { return {
 				source: item.author || new URL(item.link).hostname
 			};
 		});
+		
+		return primary.related_sources.length;
 	},
 
 	async init() {
