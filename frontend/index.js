@@ -846,10 +846,10 @@ function alpineRSS() { return {
 
 						if (skipCheck) this.skipCheckOldPublished = true;
 
-						console.log('>> load.feed.item.stale_check', skipCheck, last_published, (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)));
+						// console.log('>> load.feed.item.stale_check', skipCheck, last_published, (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)));
 
 						if ( !skipCheck && last_published && (new Date(last_published).getTime() < (Date.now() - 60e3*60*8)) ) {
-							toast(`Stale ${newfeed.rss_url} ${last_published}` , 10e3);
+							toast(`Stale ${newfeed.rss_url}: ${Math.floor((Date.now() - new Date(last_published).getTime()) / 3600e3)} hours` , 10e3);
 
 							if (found) {
 								found.loading = true;
@@ -1823,89 +1823,103 @@ function alpineRSS() { return {
 				item.related_sources = [];
 			});
 
-			// 1. Get Embeddings for all items (parallel with limit)
-			const BATCH_SIZE = 5;
-			for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
-				let batch = allItems.slice(i, i + BATCH_SIZE);
-				await Promise.all(batch.map(item => this.getEmbedding(item).then(v => item.vector = v)));
-			}
-
-			let itemsWithVector = allItems.filter(x => x.vector);
-			if (itemsWithVector.length < 2) return;
-
-			// Optimization: Pre-normalize vectors to Float32Array for much faster dot product
-			const vectorSize = itemsWithVector[0].vector.length;
-			itemsWithVector.forEach(item => {
-				let mag = 0;
-				for (let v of item.vector) mag += v * v;
-				mag = Math.sqrt(mag) || 1;
-				
-				item.normVec = new Float32Array(vectorSize);
-				for (let k = 0; k < vectorSize; k++) {
-					item.normVec[k] = item.vector[k] / mag;
+			if (false && this.params.k) {
+				// --- OPTION A: Semantic Clustering with Gemini ---
+				const BATCH_SIZE = 5;
+				for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
+					let batch = allItems.slice(i, i + BATCH_SIZE);
+					await Promise.all(batch.map(item => this.getEmbedding(item).then(v => item.vector = v)));
 				}
-			});
 
-			// 2. Run Similarity Matching with optimized inner loop
-			const SIMILARITY_THRESHOLD = 0.15; // Cosine distance threshold
-			const MIN_SIMILARITY = 1 - SIMILARITY_THRESHOLD; // Minimum dot product for normalized vectors
-			
-			let clusters = [];
-			let processed = new Set();
-			let yieldCounter = 0;
+				let itemsWithVector = allItems.filter(x => x.vector);
+				if (itemsWithVector.length < 2) return;
 
-			for (let i = 0; i < itemsWithVector.length; i++) {
-				if (processed.has(i)) continue;
-
-				let currentCluster = [i];
-				processed.add(i);
-				
-				const vecA = itemsWithVector[i].normVec;
-
-				for (let j = i + 1; j < itemsWithVector.length; j++) {
-					if (processed.has(j)) continue;
-
-					// Yield to keep UI responsive
-					yieldCounter++;
-					if (yieldCounter % 1000 === 0) {
-						await new Promise(r => setTimeout(r, 0));
-					}
-
-					const vecB = itemsWithVector[j].normVec;
-					let dotProduct = 0;
-					
-					// High-performance dot product loop
-					for (let k = 0; k < vectorSize; k++) {
-						dotProduct += vecA[k] * vecB[k];
-					}
-					
-					if (dotProduct > MIN_SIMILARITY) {
-						currentCluster.push(j);
-						processed.add(j);
-					}
-				}
-				clusters.push(currentCluster);
-			}
-
-			// 3. Process clusters and update UI state
-			clusters.forEach(clusterIndices => {
-				if (clusterIndices.length <= 1) return;
-
-				clusterIndices.sort((a, b) => new Date(itemsWithVector[a].published) - new Date(itemsWithVector[b].published));
-
-				let primary = itemsWithVector[clusterIndices[0]];
-				primary.related_sources = clusterIndices.slice(1).map(idx => {
-					let item = itemsWithVector[idx];
-					item.hidden_by_cluster = true;
-					return {
-						title: item.title,
-						link: item.link,
-						source: item.author || new URL(item.link).hostname
-					};
+				const vectorSize = itemsWithVector[0].vector.length;
+				itemsWithVector.forEach(item => {
+					let mag = 0;
+					for (let v of item.vector) mag += v * v;
+					mag = Math.sqrt(mag) || 1;
+					item.normVec = new Float32Array(vectorSize);
+					for (let k = 0; k < vectorSize; k++) item.normVec[k] = item.vector[k] / mag;
 				});
-			});
 
-			console.log(`Clustering finished. Found ${clusters.length} clusters.`);
+				const SIMILARITY_THRESHOLD = 0.15;
+				const MIN_SIMILARITY = 1 - SIMILARITY_THRESHOLD;
+				let processed = new Set();
+				let yieldCounter = 0;
+
+				for (let i = 0; i < itemsWithVector.length; i++) {
+					if (processed.has(i)) continue;
+					let currentCluster = [i];
+					processed.add(i);
+					const vecA = itemsWithVector[i].normVec;
+
+					for (let j = i + 1; j < itemsWithVector.length; j++) {
+						if (processed.has(j)) continue;
+						if (++yieldCounter % 1000 === 0) await new Promise(r => setTimeout(r, 0));
+
+						const vecB = itemsWithVector[j].normVec;
+						let dotProduct = 0;
+						for (let k = 0; k < vectorSize; k++) dotProduct += vecA[k] * vecB[k];
+						
+						if (dotProduct > MIN_SIMILARITY) {
+							currentCluster.push(j);
+							processed.add(j);
+						}
+					}
+					this.applyCluster(currentCluster.map(idx => itemsWithVector[idx]));
+				}
+			} else if (window.MiniSearch) {
+				// --- OPTION B: Syntactic Clustering with MiniSearch (Fallback) ---
+				let miniSearch = new MiniSearch({
+					fields: ['title', 'description'],
+					storeFields: ['link'],
+					searchOptions: {
+						boost: { title: 2 },
+						// fuzzy: 0.1,
+						// prefix: true,
+						// combineWith: 'OR'
+					}
+				});
+
+				// Index items with unique IDs
+				allItems.forEach((item, idx) => item._idx = idx);
+				miniSearch.addAll(allItems.map(item => ({
+					id: item._idx,
+					title: item.title,
+					description: item.description,
+					link: item.link
+				})));
+
+				let processed = new Set();
+				const MIN_SCORE = 400; // Threshold for similarity score
+
+				for (let i = 0; i < allItems.length; i++) {
+					if (processed.has(i)) continue;
+					
+					let item = allItems[i];
+					// Search for items similar to this one
+					let results = miniSearch.search(item.title, {
+						filter: (result) => !processed.has(result.id)
+					});
+
+					let currentCluster = [item];
+					processed.add(i);
+
+					results.forEach(res => {
+						if (res.score > MIN_SCORE && res.id !== i) {
+							currentCluster.push(allItems[res.id]);
+							processed.add(res.id);
+						}
+					});
+
+					if (currentCluster.length > 1) {
+						this.applyCluster(currentCluster);
+					}
+				}
+			}
+
+			console.log('Clustering finished.');
 		} catch (e) {
 			console.error('Clustering error:', e);
 		} finally {
@@ -1913,18 +1927,21 @@ function alpineRSS() { return {
 		}
 	},
 
-	cosineSimilarity(a, b) {
-		let dotProduct = 0;
-		let mA = 0;
-		let mB = 0;
-		for (let i = 0; i < a.length; i++) {
-			dotProduct += (a[i] * b[i]);
-			mA += (a[i] * a[i]);
-			mB += (b[i] * b[i]);
-		}
-		mA = Math.sqrt(mA);
-		mB = Math.sqrt(mB);
-		return dotProduct / (mA * mB);
+	applyCluster(clusterItems) {
+		if (clusterItems.length <= 1) return;
+
+		// Sort items in cluster by date (earliest first)
+		clusterItems.sort((a, b) => new Date(a.published) - new Date(b.published));
+
+		let primary = clusterItems[0];
+		primary.related_sources = clusterItems.slice(1).map(item => {
+			item.hidden_by_cluster = true;
+			return {
+				title: item.title,
+				link: item.link,
+				source: item.author || new URL(item.link).hostname
+			};
+		});
 	},
 
 	async init() {
