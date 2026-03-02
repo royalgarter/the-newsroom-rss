@@ -1739,128 +1739,23 @@ function alpineRSS() { return {
 		this.clustering = true;
 		
 		let startTime = Date.now();
-		let stats = {
-			method: 'none',
-			total: 0,
-			clusters: 0,
-			hidden: 0
-		};
+		let stats = { method: 'none', total: 0, clusters: 0, hidden: 0 };
 
 		try {
 			let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
 			stats.total = allItems.length;
 			
-			// Reset clustering state for all items
 			allItems.forEach(item => {
 				item.hidden_by_cluster = false;
 				item.related_sources = [];
 			});
 
-			if (this.params.k) {
-				stats.method = 'gemini';
-				const BATCH_SIZE = 5;
-				for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
-					let batch = allItems.slice(i, i + BATCH_SIZE);
-					await Promise.all(batch.map(item => this.getEmbedding(item).then(v => item.vector = v)));
-				}
-
-				let itemsWithVector = allItems.filter(x => x.vector);
-				if (itemsWithVector.length < 2) throw new Error('Not enough items with vectors');
-
-				const vectorSize = itemsWithVector[0].vector.length;
-				itemsWithVector.forEach(item => {
-					let mag = 0;
-					for (let v of item.vector) mag += v * v;
-					mag = Math.sqrt(mag) || 1;
-					item.normVec = new Float32Array(vectorSize);
-					for (let k = 0; k < vectorSize; k++) item.normVec[k] = item.vector[k] / mag;
-				});
-
-				const SIMILARITY_THRESHOLD = 0.15;
-				const MIN_SIMILARITY = 1 - SIMILARITY_THRESHOLD;
-				let processed = new Set();
-				let yieldCounter = 0;
-
-				for (let i = 0; i < itemsWithVector.length; i++) {
-					if (processed.has(i)) continue;
-					let currentCluster = [i];
-					processed.add(i);
-					const vecA = itemsWithVector[i].normVec;
-
-					for (let j = i + 1; j < itemsWithVector.length; j++) {
-						if (processed.has(j)) continue;
-						if (++yieldCounter % 1000 === 0) await new Promise(r => setTimeout(r, 0));
-
-						const vecB = itemsWithVector[j].normVec;
-						let dotProduct = 0;
-						for (let k = 0; k < vectorSize; k++) dotProduct += vecA[k] * vecB[k];
-						
-						if (dotProduct > MIN_SIMILARITY) {
-							currentCluster.push(j);
-							processed.add(j);
-						}
-					}
-					if (currentCluster.length > 1) {
-						stats.clusters++;
-						stats.hidden += this.applyCluster(currentCluster.map(idx => itemsWithVector[idx]));
-					}
-				}
+			if (window.TinyTFIDF) {
+				await this.clusterItemsWithTFIDF(allItems, stats);
+			} else if (this.params.k) {
+				await this.clusterItemsWithGemini(allItems, stats);
 			} else if (window.MiniSearch) {
-				stats.method = 'minisearch';
-				let miniSearch = new MiniSearch({
-					fields: ['title', 'description'],
-					storeFields: ['link'],
-					searchOptions: {
-						boost: { title: 4 },
-						fuzzy: 0.2,
-						prefix: true,
-						combineWith: 'OR'
-					}
-				});
-
-				allItems.forEach((item, idx) => item._idx = idx);
-				miniSearch.addAll(allItems.map(item => ({
-					id: item._idx,
-					title: item.title,
-					description: item.description,
-					link: item.link
-				})));
-
-				let processed = new Set();
-				const SIMILARITY_RATIO = 0.2;
-
-				for (let i = 0; i < allItems.length; i++) {
-					if (processed.has(i)) continue;
-					
-					let item = allItems[i];
-					let query = item.title || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
-									.filter(word => word.length > 3)
-									.join(' ');
-					
-					if (!query) continue;
-
-					let selfResults = miniSearch.search(query);
-					let maxScore = selfResults.find(r => r.id === i)?.score || selfResults[0]?.score || 1;
-
-					let results = miniSearch.search(query, {
-						filter: (result) => !processed.has(result.id)
-					});
-
-					let currentCluster = [item];
-					processed.add(i);
-
-					results.forEach(res => {
-						if (res.score > (maxScore * SIMILARITY_RATIO) && res.id !== i) {
-							currentCluster.push(allItems[res.id]);
-							processed.add(res.id);
-						}
-					});
-
-					if (currentCluster.length > 1) {
-						stats.clusters++;
-						stats.hidden += this.applyCluster(currentCluster);
-					}
-				}
+				await this.clusterItemsWithMiniSearch(allItems, stats);
 			}
 
 			let duration = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -1876,6 +1771,152 @@ function alpineRSS() { return {
 			console.error('Clustering error:', e);
 		} finally {
 			this.clustering = false;
+		}
+	},
+
+	async clusterItemsWithTFIDF(allItems, stats) {
+		stats.method = 'tfidf';
+		const corpus = new TinyTFIDF.Corpus(
+			allItems.map((_, i) => i.toString()),
+			allItems.map(item => `${item.title} ${item.description}`)
+		);
+
+		let processed = new Set();
+		const SIMILARITY_THRESHOLD = 0.45; // Adjust based on testing
+
+		for (let i = 0; i < allItems.length; i++) {
+			if (processed.has(i)) continue;
+			
+			let currentCluster = [allItems[i]];
+			processed.add(i);
+
+			for (let j = i + 1; j < allItems.length; j++) {
+				if (processed.has(j)) continue;
+
+				// TinyTFIDF.Similarity.cosine expects two Map objects (term weights)
+				const vecA = corpus.getDocumentVector(i.toString());
+				const vecB = corpus.getDocumentVector(j.toString());
+				const similarity = TinyTFIDF.Similarity.cosineSimilarity(vecA, vecB);
+
+				if (similarity > SIMILARITY_THRESHOLD) {
+					currentCluster.push(allItems[j]);
+					processed.add(j);
+				}
+			}
+
+			if (currentCluster.length > 1) {
+				stats.clusters++;
+				stats.hidden += this.applyCluster(currentCluster);
+			}
+		}
+	},
+
+	async clusterItemsWithGemini(allItems, stats) {
+		stats.method = 'gemini';
+		const BATCH_SIZE = 5;
+		for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
+			let batch = allItems.slice(i, i + BATCH_SIZE);
+			await Promise.all(batch.map(item => this.getEmbedding(item).then(v => item.vector = v)));
+		}
+
+		let itemsWithVector = allItems.filter(x => x.vector);
+		if (itemsWithVector.length < 2) return;
+
+		const vectorSize = itemsWithVector[0].vector.length;
+		itemsWithVector.forEach(item => {
+			let mag = 0;
+			for (let v of item.vector) mag += v * v;
+			mag = Math.sqrt(mag) || 1;
+			item.normVec = new Float32Array(vectorSize);
+			for (let k = 0; k < vectorSize; k++) item.normVec[k] = item.vector[k] / mag;
+		});
+
+		const SIMILARITY_THRESHOLD = 0.15;
+		const MIN_SIMILARITY = 1 - SIMILARITY_THRESHOLD;
+		let processed = new Set();
+		let yieldCounter = 0;
+
+		for (let i = 0; i < itemsWithVector.length; i++) {
+			if (processed.has(i)) continue;
+			let currentCluster = [itemsWithVector[i]];
+			processed.add(i);
+			const vecA = itemsWithVector[i].normVec;
+
+			for (let j = i + 1; j < itemsWithVector.length; j++) {
+				if (processed.has(j)) continue;
+				if (++yieldCounter % 1000 === 0) await new Promise(r => setTimeout(r, 0));
+
+				const vecB = itemsWithVector[j].normVec;
+				let dotProduct = 0;
+				for (let k = 0; k < vectorSize; k++) dotProduct += vecA[k] * vecB[k];
+				
+				if (dotProduct > MIN_SIMILARITY) {
+					currentCluster.push(itemsWithVector[j]);
+					processed.add(j);
+				}
+			}
+			if (currentCluster.length > 1) {
+				stats.clusters++;
+				stats.hidden += this.applyCluster(currentCluster);
+			}
+		}
+	},
+
+	async clusterItemsWithMiniSearch(allItems, stats) {
+		stats.method = 'minisearch';
+		let miniSearch = new MiniSearch({
+			fields: ['title', 'description'],
+			storeFields: ['link'],
+			searchOptions: {
+				boost: { title: 4 },
+				fuzzy: 0.2,
+				prefix: true,
+				combineWith: 'OR'
+			}
+		});
+
+		allItems.forEach((item, idx) => item._idx = idx);
+		miniSearch.addAll(allItems.map(item => ({
+			id: item._idx,
+			title: item.title,
+			description: item.description,
+			link: item.link
+		})));
+
+		let processed = new Set();
+		const SIMILARITY_RATIO = 0.2;
+
+		for (let i = 0; i < allItems.length; i++) {
+			if (processed.has(i)) continue;
+			
+			let item = allItems[i];
+			let query = item.title || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
+							.filter(word => word.length > 3)
+							.join(' ');
+			
+			if (!query) continue;
+
+			let selfResults = miniSearch.search(query);
+			let maxScore = selfResults.find(r => r.id === i)?.score || selfResults[0]?.score || 1;
+
+			let results = miniSearch.search(query, {
+				filter: (result) => !processed.has(result.id)
+			});
+
+			let currentCluster = [item];
+			processed.add(i);
+
+			results.forEach(res => {
+				if (res.score > (maxScore * SIMILARITY_RATIO) && res.id !== i) {
+					currentCluster.push(allItems[res.id]);
+					processed.add(res.id);
+				}
+			});
+
+			if (currentCluster.length > 1) {
+				stats.clusters++;
+				stats.hidden += this.applyCluster(currentCluster);
+			}
 		}
 	},
 
