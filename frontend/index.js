@@ -1750,13 +1750,15 @@ function alpineRSS() { return {
 				item.related_sources = [];
 			});
 
-			if (window.TinyTFIDF) {
-				await this.clusterItemsWithTFIDF(allItems, stats);
-			} else if (this.params.k) {
-				await this.clusterItemsWithGemini(allItems, stats);
-			} else if (window.MiniSearch) {
-				await this.clusterItemsWithMiniSearch(allItems, stats);
-			}
+			// if (window.TinyTFIDF) {
+			// 	await this.clusterItemsWithTFIDF(allItems, stats);
+			// } else if (this.params.k) {
+			// 	await this.clusterItemsWithGemini(allItems, stats);
+			// } else if (window.MiniSearch) {
+			// 	await this.clusterItemsWithMiniSearch(allItems, stats);
+			// }
+
+			await this.clusterItemsWithMiniSearch(allItems, stats); // Temporapy pick this because of performance
 
 			let duration = ((Date.now() - startTime) / 1000).toFixed(2);
 			console.log([
