@@ -1,92 +1,147 @@
-// This is the service worker with the combined offline experience (Offline page + Offline copy of pages)
-
-const CACHE = "pwabuilder-offline-page";
-
+// Service Worker for The Newsroom RSS
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.4.1/workbox-sw.js');
 
-const offlineFallbackPage = "index.html";
+const CACHE_NAME = 'the-newsroom-rss-v1.16';
+const OFFLINE_PAGE = 'index.html';
 
-self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+self.addEventListener('message', (event) => {
+	if (event.data && event.data.type === 'SKIP_WAITING') {
+		self.skipWaiting();
+	}
 });
 
-self.addEventListener('install', async (event) => {
-  event.waitUntil(
-    caches.open(CACHE)
-      .then((cache) => cache.add(offlineFallbackPage))
-  );
+self.addEventListener('install', (event) => {
+	event.waitUntil(
+		caches.open(CACHE_NAME).then((cache) => {
+			return cache.addAll([
+				OFFLINE_PAGE,
+				'index.js?v=1.16',
+				'index.css?v=1.16',
+				'manifest.json',
+				'favicon.ico',
+				'default-profile-64x64.png',
+				'/js/module.mjs',
+				'/js/llm.mjs',
+				'/js/hclust.mjs'
+			]);
+		})
+	);
 });
 
 if (workbox.navigationPreload.isSupported()) {
-  workbox.navigationPreload.enable();
+	workbox.navigationPreload.enable();
 }
 
+// 1. Static Assets (JS, CSS) - StaleWhileRevalidate for fast loading + background update
 workbox.routing.registerRoute(
-  new RegExp('/*'),
-  new workbox.strategies.NetworkFirst({
-  // new workbox.strategies.CacheFirst({
-    cacheName: CACHE,
-    plugins: [
-      new workbox.expiration.ExpirationPlugin({
-        maxAgeSeconds: 7 * 24 * 60 * 60, // cache for 1 days
-        maxEntries: 1e3,
-        purgeOnQuotaError: true
-      })
-    ]
-  })
+	({request}) => request.destination === 'script' || request.destination === 'style',
+	new workbox.strategies.StaleWhileRevalidate({
+		cacheName: 'static-assets',
+		plugins: [
+			new workbox.expiration.ExpirationPlugin({
+				maxEntries: 50,
+				maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+			}),
+		],
+	})
 );
 
-self.addEventListener('fetch', async (event) => {
-  let x = event?.request?.url?.searchParams?.get?.('x');
-  const x_req = new Request(`https://x_last`);
+// 2. Images - CacheFirst for performance (rarely change)
+workbox.routing.registerRoute(
+	({request}) => request.destination === 'image',
+	new workbox.strategies.CacheFirst({
+		cacheName: 'images',
+		plugins: [
+			new workbox.expiration.ExpirationPlugin({
+				maxEntries: 200,
+				maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+				purgeOnQuotaError: true,
+			}),
+		],
+	})
+);
 
-  if (x) {
-    cache.put(x_req, new Response(JSON.stringify({ x })));
-  }
+// 3. Third-party CDNs - StaleWhileRevalidate
+workbox.routing.registerRoute(
+	({url}) => url.origin === 'https://cdn.jsdelivr.net' ||
+	           url.origin === 'https://unpkg.com' ||
+	           url.origin === 'https://accounts.google.com' ||
+	           url.origin === 'https://www.googletagmanager.com',
+	new workbox.strategies.StaleWhileRevalidate({
+		cacheName: 'third-party',
+		plugins: [
+			new workbox.expiration.ExpirationPlugin({
+				maxEntries: 50,
+				maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+			}),
+		],
+	})
+);
 
-  if (event.request.url.toString().includes('/api/share_target')) {
-    const x_res = await cache.match(x_req);
+// 4. API Requests - NetworkFirst to ensure fresh data, but with a short timeout and fallback
+workbox.routing.registerRoute(
+	({url}) => url.pathname.startsWith('/api/'),
+	new workbox.strategies.NetworkFirst({
+		cacheName: 'api-responses',
+		networkTimeoutSeconds: 5,
+		plugins: [
+			new workbox.expiration.ExpirationPlugin({
+				maxEntries: 100,
+				maxAgeSeconds: 15 * 60, // 15 mins
+			}),
+		],
+	})
+);
 
-    if (!x && x_res) {
-      const x_last = await x_res.json();
-      const url = new URL(event.request.url);  // Create a URL object
-      url.searchParams.set('x', x_last.x);    // Set the 'x' parameter
+// 5. Navigation - NetworkFirst with Offline Fallback
+const navigationStrategy = new workbox.strategies.NetworkFirst({
+	cacheName: 'navigations',
+	plugins: [
+		new workbox.expiration.ExpirationPlugin({
+			maxEntries: 20,
+			maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+		}),
+	],
+});
 
-      // Create a new Request object with the modified URL
-      const new_request = new Request(url.toString(), {
-        method: event.request.method,
-        headers: event.request.headers,
-        mode: event.request.mode,
-        credentials: event.request.credentials,
-        cache: event.request.cache,
-        redirect: event.request.redirect,
-        referrer: event.request.referrer,
-      });
+workbox.routing.registerRoute(
+	({request}) => request.mode === 'navigate',
+	async (params) => {
+		try {
+			return await navigationStrategy.handle(params);
+		} catch (error) {
+			return caches.match(OFFLINE_PAGE);
+		}
+	}
+);
 
-      event.respondWith(fetch(new_request)); // Use fetch with the new request
-      return; // Important: prevent further processing of the original request
-    }
-  }
-  
-  if (event.request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        const preloadResp = await event.preloadResponse;
+// Custom logic for share_target
+self.addEventListener('fetch', (event) => {
+	if (event.request.url.toString().includes('/api/share_target')) {
+		event.respondWith((async () => {
+			const cache = await caches.open(CACHE_NAME);
+			const x_req = new Request('https://x_last');
+			const x_res = await cache.match(x_req);
+			const url = new URL(event.request.url);
+			const x = url.searchParams.get('x');
 
-        if (preloadResp) {
-          return preloadResp;
-        }
-
-        const networkResp = await fetch(event.request);
-        return networkResp;
-      } catch (error) {
-
-        const cache = await caches.open(CACHE);
-        const cachedResp = await cache.match(offlineFallbackPage);
-        return cachedResp;
-      }
-    })());
-  }
+			if (x) {
+				await cache.put(x_req, new Response(JSON.stringify({x})));
+			} else if (x_res) {
+				const x_last = await x_res.json();
+				url.searchParams.set('x', x_last.x);
+				const new_request = new Request(url.toString(), {
+					method: event.request.method,
+					headers: event.request.headers,
+					mode: event.request.mode,
+					credentials: event.request.credentials,
+					cache: event.request.cache,
+					redirect: event.request.redirect,
+					referrer: event.request.referrer,
+				});
+				return fetch(new_request);
+			}
+			return fetch(event.request);
+		})());
+	}
 });

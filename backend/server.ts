@@ -36,5 +36,5 @@ async function handleRequest(req: Request) {
     return new Response(JSON.stringify({ error: 'E404' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 }
 
-const port = 17385; try { port = process.env.PORT || 17385 } catch { }
+let port = 17385; try { port = process.env.PORT || 17385 } catch { }
 serve(handleRequest, { port });
