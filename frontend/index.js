@@ -250,7 +250,9 @@ function alpineRSS() { return {
 	CACHE: {},
 
 	storageSet(key, val) {
-		return localStorage.setItem(key, JSON.stringify(val));
+		try {
+			return localStorage.setItem(key, JSON.stringify(val));	
+		} catch {}
 	},
 	storageGet(key) {
 		return JSON.parse(localStorage.getItem(key) || null);
