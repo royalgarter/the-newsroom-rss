@@ -296,7 +296,8 @@ export async function handleHtml(req: Request) {
 
 export async function handleStatic(req: Request) {
     const { pathname } = new URL(req.url);
-    const localpath = `./frontend${pathname}`;
+    const decodedPath = decodeURIComponent(pathname);
+    const localpath = `./frontend${decodedPath}`;
 
     if (await exists(localpath)) {
 		const mimetypes = {
