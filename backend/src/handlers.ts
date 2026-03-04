@@ -360,6 +360,39 @@ export async function handleEmbedding(req: Request) {
     return response(JSON.stringify(vector));
 }
 
+export async function handleLLM(req: Request) {
+    const { searchParams } = new URL(req.url);
+    let params = Object.fromEntries(searchParams);
+    let prompt = decodeURIComponent(params.prompt);
+    
+    // Check for user-provided API key in headers
+    const userApiKey = req.headers.get('x-goog-api-key');
+    const apiKey = userApiKey || APIKEYS[Math.floor(Math.random() * APIKEYS.length)];
+
+    if (!apiKey) {
+        return response(JSON.stringify({ error: 'No API key available' }), { status: 401 });
+    }
+
+    let result = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'contents': [{
+                'parts': [{ text: prompt }]
+            }]
+        })
+    }).then(r => r.json()).catch(e => {
+        console.error('Gemini API Error:', e);
+        return null;
+    });
+
+    let text = result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+
+    return response(JSON.stringify(text));
+}
+
 export async function handleIndex(req: Request) {
     const { pathname } = new URL(req.url);
     if (pathname === "/") {

@@ -1988,6 +1988,47 @@ function alpineRSS() { return {
 		console.log('Country Clusters:', this.countryClusters);
 	},
 
+	async digestNews() {
+		if (this.loading) return;
+
+		let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
+		if (allItems.length === 0) {
+			toast('No news items to digest.');
+			return;
+		}
+
+		this.loading = true;
+		toast('Digesting news with Gemini...');
+
+		try {
+			let titles = allItems.map(item => `- ${item.title}`).join('\n');
+			let prompt = `You are a professional news editor. Here is a list of today's news titles:\n\n${titles}\n\nPlease select the top 10 most important and interesting news articles from this list.\nProvide a concise, engaging summary for each of the selected articles.\nFormat the output as a Markdown list with titles as bold and summaries as text below each title.\nStart with a general overview of the news landscape today.\nUse **Title** for titles.\n. Response straight to the point, don't foreword.`;
+
+			let digest = await window.generateContent(prompt, this.params.k);
+			if (digest) {
+				// Basic Markdown-ish to HTML conversion
+				let html = digest
+					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+					.replace(/\*(.*?)\*/g, '<i>$1</i>')
+					.replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
+					.replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-3 mb-1">$1</h2>')
+					.replace(/^### (.*$)/gm, '<h3 class="text-md font-bold mt-2 mb-1">$1</h3>')
+					.replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>');
+
+				this.modalShow('Daily News Digest', html, 'Cool', 'Close', () => {
+					// Add to notes if they want? Maybe another button for that.
+				});
+			} else {
+				toast('Failed to generate digest. Check your Gemini API Key in settings.');
+			}
+		} catch (error) {
+			console.error('Digest error:', error);
+			toast('Error generating digest.');
+		} finally {
+			this.loading = false;
+		}
+	},
+
 	async init() {
 		// console.log('init')
 

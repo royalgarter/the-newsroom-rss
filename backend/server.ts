@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std/http/server.ts";
-import { handleFeeds, handleReadLater, handleJwtVerify, handleHtml, handleStatic, handleIndex, handleEmbedding } from './src/handlers.ts';
+import { handleFeeds, handleReadLater, handleJwtVerify, handleHtml, handleStatic, handleIndex, handleEmbedding, handleLLM } from './src/handlers.ts';
 
 async function handleRequest(req: Request) {
     const { pathname } = new URL(req.url);
@@ -22,6 +22,10 @@ async function handleRequest(req: Request) {
 
     if (pathname === "/embedding") {
         return handleEmbedding(req);
+    }
+
+    if (pathname === "/llm") {
+        return handleLLM(req);
     }
 
     if (pathname === "/") {

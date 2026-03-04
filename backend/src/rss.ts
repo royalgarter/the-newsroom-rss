@@ -128,26 +128,57 @@ async function processRssItem(item, head, pioneer) {
 
         images = images.filter(x => x);
 
-        if (link && (images.length == 0)) {
+        let ldjson = null;
+        if (link) {
             try {
                 let key_html = 'HTML:' + link;
                 let key_image = 'HTML_IMAGE:' + link;
+                let key_ldjson = 'HTML_LDJSON:' + link;
 
                 let image_og = CACHE.get(key_image);
+                ldjson = CACHE.get(key_ldjson);
 
-                if (!image_og) {
-                    let html = CACHE.get(key_html) || (await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(5e3) })
-                        .then(resp => resp.text()).catch(_ => null));
-
-                    const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/;
-                    image_og = (html || '')?.match(REGEX_IMAGE)?.[1];
-
-                    if (html) CACHE.set(key_html, html);
+                // Try to find LD-JSON in the item first (RSS custom tags)
+                if (!ldjson) {
+                    let rss_ldjson = Object.entries(item).find(([k, v]) => k.toLowerCase().includes('ld+json') || k.toLowerCase().includes('ldjson'))?.[1];
+                    if (rss_ldjson) {
+                        try {
+                            ldjson = typeof rss_ldjson === 'string' ? JSON.parse(rss_ldjson) : rss_ldjson;
+                        } catch (e) {}
+                    }
                 }
 
-                if (image_og) {
+                if (!image_og || !ldjson) {
+                    let html = CACHE.get(key_html);
+
+                    if (!html && (images.length == 0 || !ldjson)) {
+                        html = await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 3e3 : 5e3) })
+                            .then(resp => resp.text()).catch(_ => null);
+                        if (html) CACHE.set(key_html, html);
+                    }
+
+                    if (html) {
+                        if (!image_og) {
+                            const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/;
+                            image_og = html.match(REGEX_IMAGE)?.[1];
+                            if (image_og) CACHE.set(key_image, image_og);
+                        }
+
+                        if (!ldjson) {
+                            const REGEX_LDJSON = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i;
+                            let match = html.match(REGEX_LDJSON);
+                            if (match && match[1]) {
+                                try {
+                                    ldjson = JSON.parse(match[1].trim());
+                                    if (ldjson) CACHE.set(key_ldjson, ldjson);
+                                } catch (e) {}
+                            }
+                        }
+                    }
+                }
+
+                if (image_og && images.length == 0) {
                     images.push(image_og);
-                    CACHE.set(key_image, image_og);
                 }
             } catch (ex) { console.error(ex) }
         }
@@ -171,6 +202,7 @@ async function processRssItem(item, head, pioneer) {
             link_author: item?.author?.url || item?.author?.uri,
             source: item?.source?.url,
             statistics: Object.entries(item?.['media:community']?.['media:statistics'] || {})?.map(([k, v]) => `${titleCase(k)}: ${v}`).join(', ').trim(),
+            ldjson,
         };
 
         // processed.embedding = await embedding([processed.title, processed.description].join('-')).catch(e => null);
