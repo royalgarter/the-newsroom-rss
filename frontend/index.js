@@ -2004,7 +2004,16 @@ function alpineRSS() { return {
 
 		try {
 			let titles = allItems.map(item => `- ${item.title}`).join('\n');
-			let prompt = `You are a professional news editor. Here is a list of today's news titles:\n\n${titles}\n\nPlease select the top 10 most important and interesting news articles from this list.\nProvide a concise, engaging summary for each of the selected articles.\nFormat the output as a Markdown list with titles as bold and summaries as text below each title.\nStart with a general overview of the news landscape today.\nUse **Title** for titles.\n. Response straight to the point, don't foreword.`;
+			let prompt = [
+				`You are a professional news editor. Here is a list of today's news titles:`,
+				`\n${titles}\n`,
+				`Select the top 10 most important and interesting news articles from this list.`,
+				`Provide a concise, engaging summary for each of the selected articles.`,
+				`Format the output as a **Markdown Ordered Lists** with titles as bold and summaries as text below each title.`,
+				`Start with a general overview of the news landscape today.`,
+				`Use **Title** for titles.`,
+				`Response straight to the point, don't foreword.`
+			].join('\n');
 
 			let digest = await window.generateContent(prompt, this.params.k);
 			if (digest) {
