@@ -2003,22 +2003,24 @@ function alpineRSS() { return {
 		toast('Digesting news with Gemini...');
 
 		try {
-			let titles = allItems.map(item => `- ${item.title}`).join('\n');
+			let titles = allItems.map(item => `- [${item.title}](${item.link})`).join('\n');
 			let prompt = [
 				`You are a professional news editor. Here is a list of today's news titles:`,
 				`\n${titles}\n`,
 				`Select the top 10 most important and interesting news articles from this list.`,
 				`Provide a concise, engaging summary for each of the selected articles.`,
-				`Format the output as a **Markdown Ordered Lists** with titles as bold and summaries as text below each title.`,
+				`Format the output as a **Markdown Ordered Lists** with titles as bold, url and summaries as text below each title.`,
 				`Start with a general overview of the news landscape today.`,
-				`Use **Title** for titles.`,
-				`Response straight to the point, don't foreword.`
+				`Use **Heading 2 [title](link)** for titles.`,
+				`Response straight to the point, **NEVER** say foreword like "Here is the top 10 items...".`
 			].join('\n');
 
 			let digest = await window.generateContent(prompt, this.params.k);
 			if (digest) {
 				// Basic Markdown-ish to HTML conversion
 				let html = digest
+					.replace(/\[([^\[\]]+)\]\s*\((http\S+)\)/g, 
+						'<a href="$2" class="cursor-pointer text-md underline font-bold my-2" target="_blank">$1</a>')
 					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
 					.replace(/\*(.*?)\*/g, '<i>$1</i>')
 					.replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
