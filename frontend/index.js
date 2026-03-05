@@ -244,6 +244,7 @@ function alpineRSS() { return {
 		noClientFetch: VERSION + '_ncf_',
 
 		persona: VERSION + '_persona_',
+		gemini_api_key: VERSION + '_gemini_api_key_',
 	},
 
 	TRIGGER: {
@@ -1766,7 +1767,7 @@ function alpineRSS() { return {
 
 			let duration = ((Date.now() - startTime) / 1000).toFixed(2);
 			console.log([
-				`%c[Clustering Summary]`,
+				`[Clustering Summary]`,
 				`- Method: ${stats.method.toUpperCase()}`,
 				`- Items Processed: ${stats.total}`,
 				`- Clusters Found: ${stats.clusters}`,
@@ -2061,6 +2062,10 @@ function alpineRSS() { return {
 			history.replaceState(null, '', url.toString());
 		});
 
+		this.$watch('params.k', value => {
+			this.storageSet(this.K.gemini_api_key, value);
+		});
+
 		this.$watch('loading', value => {
 			this.title = this.theTitle();
 			if (value === false) {
@@ -2128,6 +2133,7 @@ function alpineRSS() { return {
 		this.params = Object.fromEntries(new URLSearchParams(location.search));
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = (this.params.s && this.params.s !== 'null') ? this.params.s : (this.storageGet(this.K.style) || 'full');
+		this.params.k = this.params.k || this.storageGet(this.K.gemini_api_key) || '';
 
 		if (!savedHash || !this.params?.x || (savedHash !== this.params.x)) this.pioneer = true;
 

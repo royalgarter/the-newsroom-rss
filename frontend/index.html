@@ -49,12 +49,12 @@
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
 		<!-- Critical CSS -->
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.17">
+		<link rel="stylesheet" type="text/css" href="index.css?v=1.18">
 
 		<!-- Preload Critical Scripts -->
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" />
-		<link rel="preload" as="script" href="index.js?v=1.17" />
+		<link rel="preload" as="script" href="index.js?v=1.18" />
 
 		<!-- Deferred Scripts -->
 		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
@@ -78,7 +78,7 @@
 			gtag('config', 'G-SF3W5SZ5PM');
 		</script>
 
-		<script id="version" src="index.js?v=1.17"></script>
+		<script id="version" src="index.js?v=1.18"></script>
 		<script type="module" src="./js/module.mjs"></script>
 
 		<script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.1/dist/umd/index.min.js"></script>
@@ -136,9 +136,6 @@
 							<!-- <li>
 								<a href="#worldmap" class="block px-4 py-2 text-left text-sm hover:underline" @click="showWorldMap = true; burger_open = false">World Map</a>
 							</li> -->
-							<li>
-								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm hover:underline">Bookmarks</a>
-							</li>
 							<li>
 								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm hover:underline">Bookmarks</a>
 							</li>
@@ -1011,11 +1008,11 @@
 				</template>
 			</div>
 			<div class="flex flex-row items-center border">
-				<button @click="_alBody.digestNews()" class="font-bold flex items-center justify-center h-10 px-2 cursor-pointer border-r" :class="isDark() ? 'bg-black' : 'bg-white'">
-					<span>[Digest]</span>
-				</button>
 				<button @click="is_open = !is_open" class="font-bold flex items-center justify-center h-10 w-10 cursor-pointer" :class="isDark() ? 'bg-black' : 'bg-white'">
 					<span x-text="is_open ? '[▼]' : '[▲]'"></span>
+				</button>
+				<button @click="_alBody.digestNews()" class="font-bold flex items-center justify-center h-10 px-2 cursor-pointer border-r" :class="isDark() ? 'bg-black' : 'bg-white'">
+					<span>[Digest]</span>
 				</button>
 			</div>
 		</div>
