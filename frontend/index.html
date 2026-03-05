@@ -133,9 +133,9 @@
 							<li>
 								<a id="burger_newsfeed" href="/#home" class="block px-4 py-2 text-left text-sm hover:underline">News Feed</a>
 							</li>
-							<li>
+							<!-- <li>
 								<a href="#worldmap" class="block px-4 py-2 text-left text-sm hover:underline" @click="showWorldMap = true; burger_open = false">World Map</a>
-							</li>
+							</li> -->
 							<li>
 								<a href="#bookmarks" class="block px-4 py-2 text-left text-sm hover:underline">Bookmarks</a>
 							</li>
@@ -367,6 +367,13 @@
 													<span x-text="item.read_more ? '[Collapse]' : (item.prefetching && !item.no_article && !item.article?.content ? '[Loading]' : '[Preview]')"></span>
 												</span>
 
+												<span class="hidden cursor-pointer py-1 text-xs flex flex-row items-center px-1"
+													x-show="item.ldjson"
+													@click="item.show_ldjson = !item.show_ldjson"
+												>
+													<span x-text="item.show_ldjson ? '[Hide Meta]' : '[Metadata]'"></span>
+												</span>
+
 												<span class="py-1 text-xs flex items-center cursor-pointer px-1 ml-auto mr-3"
 													@mouseover="item?.prefetchContent?.()"
 													@click="
@@ -401,6 +408,13 @@
 														<p class="rss-article-content max-w-full text-sm whitespace-pre-line break-words" x-html="item.article?.content || ''">
 														</p>
 													</span>
+												</div>
+											</template>
+											<template x-if="item.show_ldjson">
+												<div x-show="item.show_ldjson"
+													class="px-4 py-2 border-t bg-gray-50/50 dark:bg-gray-900/20 max-w-full overflow-hidden"
+												>
+													<pre class="text-[10px] opacity-70 leading-tight whitespace-pre-wrap break-all" x-text="JSON.stringify(item.ldjson, null, 2)"></pre>
 												</div>
 											</template>
 										</div>
@@ -1007,12 +1021,12 @@
 		</div>
 
 		<!-- worldmap -->
-		<div x-data="{
+		<!-- <div x-data="{
 			html_worldmap: function() {
 				fetch('/components/worldmap.html').then(r => r.text()).then(html => {this.$root.innerHTML = html});
 			}
 		}" x-init="html_worldmap">
-		</div>
+		</div> -->
 
 		<div id="g_id_onload"
 			data-client_id="547832701518-ai09ubbqs2i3m5gebpmkt8ccfkmk58ru.apps.googleusercontent.com"

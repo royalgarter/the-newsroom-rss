@@ -41,8 +41,8 @@
                     });
 
                     // Add IDs and classes to paths for highlighting
-                    this.countryClusters.forEach(c => {
-                        const path = doc.getElementById(c.code.toLowerCase());
+                    this.countryClusters.forEach(country => {
+                        const path = doc.getElementById(country.code.toLowerCase());
                         if (path) {
                             path.classList.add('has-news');
                         }
@@ -92,7 +92,7 @@
                         <span class="font-bold text-lg" x-text="hoverCountry"></span>
                     </div>
                     <div class="text-sm">
-                        <template x-data="{ cluster: countryClusters.find(c => c.code === hoverCountry) }" x-if="cluster">
+                        <template x-data="{ cluster: countryClusters.find(country => country.code === hoverCountry) }" x-if="cluster">
                             <div>
                                 <div class="font-bold text-blue-600 dark:text-blue-400 mb-2" x-text="cluster.count + ' articles found'"></div>
                                 <ul class="space-y-1">
@@ -102,7 +102,7 @@
                                 </ul>
                             </div>
                         </template>
-                        <template x-if="!countryClusters.find(c => c.code === hoverCountry)">
+                        <template x-if="!countryClusters.find(country => country.code === hoverCountry)">
                             <div class="italic opacity-50">No articles for this region.</div>
                         </template>
                     </div>
@@ -114,23 +114,23 @@
         <!-- We use the same viewBox as the SVG (2754 1398) to position them -->
         <template x-if="ready">
             <svg viewBox="0 0 2754 1398" class="absolute inset-0 w-full h-full pointer-events-none z-10">
-                <template x-for="c in countryClusters" :key="c.code">
-                    <template x-if="centroids[c.code.toLowerCase()]">
+                <template x-for="country in countryClusters" :key="country.code">
+                    <template x-if="centroids[country.code.toLowerCase()]">
                         <g class="pointer-events-auto cursor-pointer group" 
-                        @click="toast(c.name + ': ' + c.count + ' articles')">
+                        @click="toast(country.name + ': ' + country.count + ' articles')">
                             <circle 
-                                :cx="centroids[c.code.toLowerCase()].x" 
-                                :cy="centroids[c.code.toLowerCase()].y - 10" 
-                                :r="Math.sqrt(c.count) * 15 + 10" 
+                                :cx="centroids[country.code.toLowerCase()]?.x || 0" 
+                                :cy="(centroids[country.code.toLowerCase()]?.y || 10) - 10" 
+                                :r="Math.sqrt(country.count) * 15 + 10" 
                                 class="fill-blue-500/40 stroke-blue-600 hover:fill-blue-500/60 transition-all"
                             />
                             <text 
-                                :x="centroids[c.code.toLowerCase()].x" 
-                                :y="centroids[c.code.toLowerCase()].y - 10" 
+                                :x="centroids[country.code.toLowerCase()]?.x || 0" 
+                                :y="(centroids[country.code.toLowerCase()]?.y || 10) - 10" 
                                 text-anchor="middle" 
                                 dominant-baseline="middle"
                                 class="text-[20px] font-bold fill-black dark:fill-white pointer-events-none"
-                                x-text="c.count"
+                                x-text="country.count"
                             ></text>
                         </g>
                     </template>
@@ -141,17 +141,17 @@
 
     <!-- Country Stats & Links -->
     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-        <template x-for="c in countryClusters" :key="c.code">
+        <template x-for="country in countryClusters" :key="country.code">
             <div class="border p-4 bg-gray-50/50 dark:bg-gray-900/20 hover:border-blue-500 transition-colors">
                 <h3 class="text-lg font-bold border-b mb-3 flex justify-between items-center">
                     <span>
-                        <img width="16" height="12" class="inline mr-2" :src="'https://flagcdn.com/16x12/' + c.code.toLowerCase() + '.png'" onerror="this.style.display='none'">
-                        <span x-text="c.name"></span>
+                        <img width="16" height="12" class="inline mr-2" :src="'https://flagcdn.com/16x12/' + country.code.toLowerCase() + '.png'" onerror="this.style.display='none'">
+                        <span x-text="country.name"></span>
                     </span>
-                    <span class="bg-blue-500 text-white px-2 py-0.5 text-xs rounded" x-text="c.count"></span>
+                    <span class="bg-blue-500 text-white px-2 py-0.5 text-xs rounded" x-text="country.count"></span>
                 </h3>
                 <div class="space-y-3">
-                    <template x-for="item in c.items.slice(0, 5)" :key="item.link">
+                    <template x-for="item in country.items.slice(0, 5)" :key="item.link">
                         <div class="group">
                             <a :href="item.link" target="_blank" class="text-sm hover:underline font-semibold block leading-tight mb-1" x-text="item.title"></a>
                             <div class="flex justify-between items-center text-[10px] opacity-60">
@@ -161,9 +161,9 @@
                         </div>
                     </template>
                 </div>
-                <template x-if="c.items.length > 5">
+                <template x-if="country.items.length > 5">
                     <div class="mt-4 pt-2 border-t text-center">
-                        <span class="text-xs italic opacity-50" x-text="'+ ' + (c.count - 5) + ' more articles'"></span>
+                        <span class="text-xs italic opacity-50" x-text="'+ ' + (country.count - 5) + ' more articles'"></span>
                     </div>
                 </template>
             </div>

@@ -1253,6 +1253,7 @@ function alpineRSS() { return {
 					item.read_more = false;
 					item.prefetching = false;
 					item.read_later = false;
+					item.show_ldjson = false;
 
 					this.linkToItemMap.set(item.link, item);
 					item.viewed = this.storageGet(this.K.viewed + item.link);
