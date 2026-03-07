@@ -86,7 +86,23 @@ export async function handleFeeds(req: Request) {
     }
 
     if (params.is_tasks) {
+        let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
+        let feeds_cached = CACHE.get(key_feeds) || feeds_permanent || [];
         feeds = saved.map((x, order) => ({ order, ...x }));
+
+        // Proactive refresh if cache is empty
+        if (!feeds_cached?.length && !params.is_tasks_only) {
+            fetchRSSLinks(query_feeds)
+                .then(fs => saveFeedCache({ limit, feeds: fs, key_feeds, key_feeds_permanent }))
+                .catch(e => console.dir({ query_feeds, e }))
+        }
+
+        return response(JSON.stringify({ feeds, feeds_cached, hash }), {
+            headers: {
+                ...cors, ...head_json,
+                "Cache-Control": "public, max-age=300"
+            },
+        });
     } else {
         let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
         feeds = CACHE.get(key_feeds);

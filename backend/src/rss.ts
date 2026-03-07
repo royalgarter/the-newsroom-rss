@@ -57,14 +57,14 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 					}
 				}),
 				new Promise((resolve, reject) => {
-					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 5e3 : 30e3)})
+					fetch(url, {redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 5e3 : 20e3)})
 						.then(resp => resp.text())
 						.then(text => {
-							CACHE.set(key_rss, text, 60*15);
+							if (text) CACHE.set(key_rss, text, 60*15);
 							resolve(text);
 						})
 						.catch(ex => {
-                            console.log('>> parseRSS.catch' + url + ': ' + ex)
+                            console.log('>> parseRSS.catch ' + url + ': ' + ex)
 							reject(null);
 						});
 				}),
@@ -78,8 +78,16 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 		data.rss_url = url;
 		return data;
 	} catch (error) {
+		console.error('parseRSS error', url, error);
 		return {rss_url: url};
 	}
+}
+
+function safeHost(urlStr) {
+    try {
+        if (!urlStr) return '';
+        return new URL(urlStr).host;
+    } catch { return '' }
 }
 
 async function processRssItem(item, head, pioneer) {
@@ -93,8 +101,12 @@ async function processRssItem(item, head, pioneer) {
         images.push(item['media:thumbnail']?.url);
         images.push(item['media:content']?.url);
 
-        let link = item?.links?.[0]?.href;
-        let url = new URL(link).searchParams.get('url');
+        let link = item?.links?.[0]?.href || item?.link || '';
+        if (!link) return null;
+
+        let urlParams = null;
+        try { urlParams = new URL(link).searchParams; } catch {}
+        let url = urlParams?.get('url');
 
         if (link.includes('news.google.com/rss/articles/')) {
             let key_gnews = 'GOOGLE_NEWS:' + link;
@@ -151,7 +163,7 @@ async function processRssItem(item, head, pioneer) {
                 if (!image_og || !ldjson) {
                     let html = CACHE.get(key_html);
 
-                    if (!html && (images.length == 0 || !ldjson)) {
+                    if (!html && (images.length == 0)) { // Skip HTML fetch if images already found
                         html = await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(pioneer ? 3e3 : 5e3) })
                             .then(resp => resp.text()).catch(_ => null);
                         if (html) CACHE.set(key_html, html);
@@ -184,7 +196,8 @@ async function processRssItem(item, head, pioneer) {
         }
 
         if (images.length == 0) {
-            images.push(`https://www.google.com/s2/favicons?domain=https://${new URL(link).hostname}&sz=256`)
+            let hostname = safeHost(link);
+            if (hostname) images.push(`https://www.google.com/s2/favicons?domain=https://${hostname}&sz=256`);
             images.push(head.image);
         }
 
@@ -193,7 +206,7 @@ async function processRssItem(item, head, pioneer) {
         let processed = {
             link,
             title: item?.title?.value,
-            author: item?.author?.name || item?.['dc:subject'] || new URL(link).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a, b) => b.length - a.length)[0],
+            author: item?.author?.name || item?.['dc:subject'] || safeHost(link).split('.').slice(-3).filter(x => !x.includes('www')).sort((a, b) => b.length - a.length)[0],
             description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
             published: item?.published,
             updated: item?.updated,
@@ -253,7 +266,10 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 
             const SPLIT = /[\:\,\.\/\|\~]/;
             head.short = head.title.substr(0, 100).trim();
-            head.title = upperCase(new URL(head.link).hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
+            const hostname = safeHost(head.link);
+            if (hostname) {
+                head.title = upperCase(hostname.split('.').slice(-2, -1)[0]) + ` > ` + head.title;
+            }
 
             const rss_items = await Promise.allSettled(items.map(item => processRssItem(item, head, pioneer)));
 

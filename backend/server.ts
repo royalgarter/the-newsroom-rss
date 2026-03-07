@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std/http/server.ts";
 import { handleFeeds, handleReadLater, handleJwtVerify, handleHtml, handleStatic, handleIndex, handleEmbedding, handleLLM } from './src/handlers.ts';
 
 async function handleRequest(req: Request) {
@@ -40,5 +39,6 @@ async function handleRequest(req: Request) {
     return new Response(JSON.stringify({ error: 'E404' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 }
 
-let port = 17385; try { port = process.env.PORT || 17385 } catch { }
-serve(handleRequest, { port });
+const PORT = Number(Deno.env.get('PORT')) || 17385;
+console.log(`Server starting on port ${PORT}`);
+Deno.serve({ port: PORT }, handleRequest);

@@ -742,6 +742,11 @@ function alpineRSS() { return {
 			if (resp_tasks?.feeds?.length) {
 				this.tasks = resp_tasks?.feeds;
 				urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
+
+				if (resp_tasks.feeds_cached?.length) {
+					this.feeds = resp_tasks.feeds_cached;
+					this.postProcessFeeds({limit});
+				}
 			} else if (!this.feeds?.length && this.tasks?.length) {
 				urls = this.tasks.map(x => x.url);
 			} else if (!this.tasks?.length) {
@@ -963,6 +968,11 @@ function alpineRSS() { return {
 				if (resp_tasks?.feeds?.length) {
 					this.tasks = resp_tasks.feeds;
 					urls = this.tasks.map(x => x.url);
+
+					if (resp_tasks.feeds_cached?.length) {
+						this.feeds = resp_tasks.feeds_cached;
+						this.postProcessFeeds({limit});
+					}
 				} else if (!urls?.length) {
 					urls = this.K.DEFAULTS;
 				}
@@ -2113,33 +2123,6 @@ function alpineRSS() { return {
 		})
 
 
-		try {
-			let {country} = await fetch('https://api.country.is/').then(r => r.json()).catch(_ => ({}));
-
-			fetch(location.origin + '/feeds.json').then(r => r.json()).then(feedsByCountry => {
-				let locale = new Intl.Locale(navigator.language);
-				locale.name = locale.region ? new Intl.DisplayNames(['en'], {type:'region'}).of(locale.region) : locale.language;
-
-				console.dir({feedsByCountry, country, locale});
-
-				let region = locale.region.toUpperCase();
-				let language = locale.language.toUpperCase();
-				let name = locale.name.toUpperCase();
-
-				// /*DEBUG*/country = 'CA';
-
-				let found = feedsByCountry.find(x => country && (country == x.country))
-					|| feedsByCountry.find(x => region == x.country)
-					|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country))
-					|| feedsByCountry.find(x => stringSimilarity(name, x.name) >= 0.8 || stringSimilarity(name, x.country) >= 0.5)
-				;
-
-				if (found?.feeds?.length) {
-					this.K.DEFAULTS = found.feeds.slice(0, 10);
-				}
-			}).catch(console.log)
-		} catch {}
-
 		this.profile = this.storageGet(this.K.profile) || {};
 		this.params = Object.fromEntries(new URLSearchParams(location.search));
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
@@ -2153,6 +2136,26 @@ function alpineRSS() { return {
 
 		this.ready = true;
 		this.loading = true;
+
+		// Move non-critical country/defaults fetch to background
+		(async () => {
+			try {
+				let {country} = await fetch('https://api.country.is/').then(r => r.json()).catch(_ => ({}));
+				const feedsByCountry = await fetch(location.origin + '/feeds.json').then(r => r.json()).catch(_ => []);
+				if (!feedsByCountry?.length) return;
+
+				let locale = new Intl.Locale(navigator.language);
+				let region = (locale.region || country || '').toUpperCase();
+				let language = locale.language.toUpperCase();
+				
+				let found = feedsByCountry.find(x => region == x.country)
+					|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country));
+
+				if (found?.feeds?.length) {
+					this.K.DEFAULTS = found.feeds.slice(0, 10);
+				}
+			} catch (e) { console.error('Background init failed', e); }
+		})();
 
 		if (this.params.f == 'bookmarks' || location.hash?.includes('#bookmark') || location.hash?.includes('#note_')) this.is_hide_feeds = true;
 

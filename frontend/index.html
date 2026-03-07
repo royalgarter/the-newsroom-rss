@@ -60,41 +60,8 @@
 		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@mozilla/readability@0.x.x/Readability.min.js" />
-		<script async defer src="//cdn.jsdelivr.net/npm/@mozilla/readability@0.x.x/Readability.min.js"></script>
-
-		<link rel="preload" as="script" href="//accounts.google.com/gsi/client" />
-		<script async defer src="//accounts.google.com/gsi/client"></script>
-
-		<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
-		<script async defer src="//cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
-
-		<!-- Google tag (gtag.js) -->
-		<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF3W5SZ5PM"></script>
-		<script>
-			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);}
-			gtag('js', new Date());
-			gtag('config', 'G-SF3W5SZ5PM');
-		</script>
-
 		<script id="version" src="index.js?v=1.19"></script>
 		<script type="module" src="./js/module.mjs"></script>
-
-		<script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.1/dist/umd/index.min.js"></script>
-		<script src="/js/tiny-tfidf.min.js"></script>
-		<script type="module">
-			import { COUNTRIES } from "./js/countries.mjs";
-			window.COUNTRIES = COUNTRIES;
-
-			import { embeddingText, generateContent } from "./js/llm.mjs";
-			window.embeddingText = embeddingText;
-			window.generateContent = generateContent;
-
-			import { hclust } from "./js/hclust.mjs";
-			window.hclust = hclust;
-		</script>
-
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden font-mono">
 		<template id="tpl_header" x-if="ready">
@@ -1031,5 +998,35 @@
 			data-itp_support="true"
 			data-callback="handleGoogle1TapSignin">
 		</div>
+
+		<!-- Non-Critical Scripts -->
+		<script src="//cdn.jsdelivr.net/npm/@mozilla/readability@0.x.x/Readability.min.js" defer></script>
+		<script src="//accounts.google.com/gsi/client" defer></script>
+		<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
+		<script src="//cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js" defer></script>
+		
+		<!-- Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF3W5SZ5PM"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-SF3W5SZ5PM');
+		</script>
+
+		<!-- Clustering and NLP -->
+		<script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.1/dist/umd/index.min.js" defer></script>
+		<script src="/js/tiny-tfidf.min.js" defer></script>
+		<script type="module">
+			import { COUNTRIES } from "./js/countries.mjs";
+			window.COUNTRIES = COUNTRIES;
+
+			import { embeddingText, generateContent } from "./js/llm.mjs";
+			window.embeddingText = embeddingText;
+			window.generateContent = generateContent;
+
+			import { hclust } from "./js/hclust.mjs";
+			window.hclust = hclust;
+		</script>
 	</body>
 </html>

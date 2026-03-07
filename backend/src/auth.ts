@@ -19,13 +19,18 @@ export async function authorize(hash, sig) {
 	return {valid: false};
 }
 
+let GOOGLE_JWKS = null;
 export async function verifyJwt(jwt) {
     if (!jwt) return {error: 'E403_jwt'};
 
     try {
         let verified = false;
         let profile = decodeJWT(jwt);
-        let jwks = (await fetch('https://www.googleapis.com/oauth2/v3/certs').then(r => r.json()).catch(null))?.keys;
+        
+        if (!GOOGLE_JWKS) {
+            GOOGLE_JWKS = (await fetch('https://www.googleapis.com/oauth2/v3/certs').then(r => r.json()).catch(() => null))?.keys;
+        }
+        let jwks = GOOGLE_JWKS;
 
         // split the token into it's parts for verifcation
         const [headerb64, payloadb64, signatureb64] = jwt.split(".")
