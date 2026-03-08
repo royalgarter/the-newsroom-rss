@@ -78,7 +78,7 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 		data.rss_url = url;
 		return data;
 	} catch (error) {
-		console.error('parseRSS error', url, error);
+		console.error('parseRSS.error:', url, error?.message || error);
 		return {rss_url: url};
 	}
 }

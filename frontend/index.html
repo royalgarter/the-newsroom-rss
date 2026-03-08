@@ -449,7 +449,7 @@
 			</template>
 
 			<!-- expanders -->
-			<div class="divide-y">
+			<div class="divide-y px-2">
 
 				<!-- readlater -->
 				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds || !!~location.hash.search(/\#.*note/)) }" class="py-2">
@@ -762,14 +762,13 @@
 												style="overflow-wrap: anywhere;"
 												draggable="true" @dragstart="drag = index" @dragend="drag = null"
 											>
-												<span class="cursor-pointer mr-2 text-xs font-bold min-w-10">[#]</span>
+												<span class="cursor-pointer text-xs font-bold min-w-10">[#]</span>
 												<div class="mx-2">
 													<a :href="item.url" target="_blank" class="hover:underline"><span x-text="'[' + (index+1) + '] '+ item.url"></span></a>
 												</div>
 												<span class="cursor-pointer font-bold ml-auto min-w-6"
 													@click="tasks.splice(index, 1);storageSet(K.tasks, tasks);"
 												>[X]</span>
-
 												<div class="absolute inset-0 border"
 													x-show="drag !== null"
 													@dragenter.prevent="if (index !== drag) {drop = index}"
@@ -881,9 +880,9 @@
 		</main>
 
 		<template id="tpl_footer" x-if="ready">
-			<footer class="border-t p-4 mt-6 text-center text-xs">
+			<footer class="border-t p-4 my-6 text-center text-xs">
 				<blockquote class="m-2 text-sm italic">
-					"In the Information Age, ignorance is a choice.", "It's not the news, it's HOW you get the news.", "We just decided to try to do it better."
+					"In the Information Age, ignorance is a choice", "It's not the news, it's HOW you get the news", "We just decided to try to do it better", "The first step in fixing the world is to Be Informed"
 				</blockquote>
 				— <cite>Will McAvoy, The Newsroom by Aaron Sorkin</cite>
 			</footer>
@@ -897,7 +896,7 @@
 			<div class="fixed inset-0 border"></div>
 			<div class="fixed inset-0 z-10 w-screen overflow-y-auto">
 				<div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-					<div class="relative transform overflow-hidden border text-left sm:my-8 sm:w-full sm:max-w-lg"
+					<div class="relative transform overflow-hidden border text-left sm:my-8 w-full max-w-3xl"
 						:class="document.querySelector('html').classList.contains('dark') ? 'bg-black' : 'bg-white'"
 					>
 						<div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">

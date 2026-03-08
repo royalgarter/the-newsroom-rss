@@ -1885,7 +1885,7 @@ function alpineRSS() { return {
 			fields: ['title', 'description'],
 			storeFields: ['link'],
 			searchOptions: {
-				boost: { title: 4 },
+				boost: { title: 2 },
 				fuzzy: 0.2,
 				prefix: true,
 				combineWith: 'OR'
@@ -1907,7 +1907,7 @@ function alpineRSS() { return {
 			if (processed.has(i)) continue;
 			
 			let item = allItems[i];
-			let query = item.title || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
+			let query = (item.title + item.description) || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
 							.filter(word => word.length > 3)
 							.join(' ');
 			
@@ -1957,6 +1957,8 @@ function alpineRSS() { return {
 	},
 
 	clusterByCountry() {
+		return;
+
 		if (!window.COUNTRIES) return;
 		const allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
 		const clusters = {};
@@ -2029,8 +2031,8 @@ function alpineRSS() { return {
 			if (digest) {
 				// Basic Markdown-ish to HTML conversion
 				let html = digest
-					.replace(/\[([^\[\]]+)\]\s*\((http\S+)\)/g, 
-						'<a href="$2" class="cursor-pointer text-md underline font-bold my-2" target="_blank">$1</a>')
+					.replace(/([\d\.\-\*\+]+\s*)\[([^\[\]]+)\]\s*\((http\S+)\)/g, 
+						'<a href="$3" class="cursor-pointer text-md underline font-bold my-2 mt-4" target="_blank">$1$2</a>')
 					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
 					.replace(/\*(.*?)\*/g, '<i>$1</i>')
 					.replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
