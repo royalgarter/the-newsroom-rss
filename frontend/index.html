@@ -209,7 +209,7 @@
 							/>
 							<h2 class="text-xl font-bold mx-auto"
 								:title="feed.rss_url"
-								:class="{'border-b': (loading || feed.loading)}"
+								:class="{'italic': (loading || feed.loading)}"
 								x-text="feed.short || feed.title">
 							</h2>
 						</span>
@@ -889,7 +889,7 @@
 			</footer>
 		</template>
 
-		<div id="toast" class="fixed bottom-3 right-4 border text-sm pb-1 pt-2 px-2 invisible max-w-[350px]">
+		<div id="toast" class="fixed bottom-3 right-4 border text-sm pb-1 pt-2 px-2 max-w-sm" :class="isDark() ? 'bg-black' : 'bg-white'">
 			<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
 		</div>
 
