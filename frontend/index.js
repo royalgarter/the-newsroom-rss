@@ -1507,7 +1507,58 @@ function alpineRSS() { return {
 			// 	await this.clusterItemsWithMiniSearch(allItems, stats);
 			// }
 
-			await this.clusterItemsWithMiniSearch(allItems, stats); // Temporapy pick this because of performance
+			// Use Web Worker for clustering
+			if (window.Worker) {
+				const workerItems = allItems.map(item => ({
+					title: item.title,
+					description: item.description,
+					link: item.link,
+					published: item.published,
+					author: item.author,
+					hostname: new URL(item.link).hostname,
+					vector: item.vector
+				}));
+
+				let method = 'minisearch';
+				if (this.params.k) {
+					method = 'gemini';
+				} else if (window.TinyTFIDF) {
+					// method = 'tfidf'; // Backup option
+				}
+
+				const result = await new Promise((resolve, reject) => {
+					const worker = new Worker('/js/clustering-worker.js');
+					worker.onmessage = (e) => {
+						resolve(e.data);
+						worker.terminate();
+					};
+					worker.onerror = (e) => {
+						reject(e);
+						worker.terminate();
+					};
+					worker.postMessage({ items: workerItems, method: method });
+				});
+
+				const { clusterMap, stats: workerStats } = result;
+				stats.method = workerStats.method || method;
+				stats.clusters = workerStats.clusters;
+				stats.hidden = workerStats.hidden;
+
+				// Apply clustering results
+				for (const primaryIdx in clusterMap) {
+					const primary = allItems[primaryIdx];
+					primary.related_sources = clusterMap[primaryIdx].map(related => {
+						allItems[related.idx].hidden_by_cluster = true;
+						return {
+							title: related.title,
+							link: related.link,
+							source: related.source
+						};
+					});
+				}
+			} else {
+				await this.clusterItemsWithMiniSearch(allItems, stats); // Fallback
+			}
 
 			let duration = ((Date.now() - startTime) / 1000).toFixed(2);
 			console.log([
@@ -1520,96 +1571,15 @@ function alpineRSS() { return {
 			].join('\n'));
 		} catch (e) {
 			console.error('Clustering error:', e);
+			// Try fallback if worker failed
+			try {
+				let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
+				await this.clusterItemsWithMiniSearch(allItems, stats);
+			} catch (innerE) {
+				console.error('Fallback clustering error:', innerE);
+			}
 		} finally {
 			this.clustering = false;
-		}
-	},
-
-	async clusterItemsWithTFIDF(allItems, stats) {
-		stats.method = 'tfidf';
-		const corpus = new TinyTFIDF.Corpus(
-			allItems.map((_, i) => i.toString()),
-			allItems.map(item => `${item.title} ${item.description}`)
-		);
-
-		let processed = new Set();
-		const SIMILARITY_THRESHOLD = 0.33; // Adjust based on testing
-
-		for (let i = 0; i < allItems.length; i++) {
-			if (processed.has(i)) continue;
-			
-			let currentCluster = [allItems[i]];
-			processed.add(i);
-
-			for (let j = i + 1; j < allItems.length; j++) {
-				if (processed.has(j)) continue;
-
-				// TinyTFIDF.Similarity.cosine expects two Map objects (term weights)
-				const vecA = corpus.getDocumentVector(i.toString());
-				const vecB = corpus.getDocumentVector(j.toString());
-				const similarity = TinyTFIDF.Similarity.cosineSimilarity(vecA, vecB);
-
-				if (similarity > SIMILARITY_THRESHOLD) {
-					currentCluster.push(allItems[j]);
-					processed.add(j);
-				}
-			}
-
-			if (currentCluster.length > 1) {
-				stats.clusters++;
-				stats.hidden += this.applyCluster(currentCluster);
-			}
-		}
-	},
-
-	async clusterItemsWithGemini(allItems, stats) {
-		stats.method = 'gemini';
-		const BATCH_SIZE = 5;
-		for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
-			let batch = allItems.slice(i, i + BATCH_SIZE);
-			await Promise.all(batch.map(item => this.getEmbedding(item).then(v => item.vector = v)));
-		}
-
-		let itemsWithVector = allItems.filter(x => x.vector);
-		if (itemsWithVector.length < 2) return;
-
-		const vectorSize = itemsWithVector[0].vector.length;
-		itemsWithVector.forEach(item => {
-			let mag = 0;
-			for (let v of item.vector) mag += v * v;
-			mag = Math.sqrt(mag) || 1;
-			item.normVec = new Float32Array(vectorSize);
-			for (let k = 0; k < vectorSize; k++) item.normVec[k] = item.vector[k] / mag;
-		});
-
-		const SIMILARITY_THRESHOLD = 0.15;
-		const MIN_SIMILARITY = 1 - SIMILARITY_THRESHOLD;
-		let processed = new Set();
-		let yieldCounter = 0;
-
-		for (let i = 0; i < itemsWithVector.length; i++) {
-			if (processed.has(i)) continue;
-			let currentCluster = [itemsWithVector[i]];
-			processed.add(i);
-			const vecA = itemsWithVector[i].normVec;
-
-			for (let j = i + 1; j < itemsWithVector.length; j++) {
-				if (processed.has(j)) continue;
-				if (++yieldCounter % 1000 === 0) await new Promise(r => setTimeout(r, 0));
-
-				const vecB = itemsWithVector[j].normVec;
-				let dotProduct = 0;
-				for (let k = 0; k < vectorSize; k++) dotProduct += vecA[k] * vecB[k];
-				
-				if (dotProduct > MIN_SIMILARITY) {
-					currentCluster.push(itemsWithVector[j]);
-					processed.add(j);
-				}
-			}
-			if (currentCluster.length > 1) {
-				stats.clusters++;
-				stats.hidden += this.applyCluster(currentCluster);
-			}
 		}
 	},
 
@@ -1827,8 +1797,10 @@ function alpineRSS() { return {
 			this.title = this.theTitle();
 			if (value === false) {
 				// Trigger clustering when all feeds are loaded
-				this.clusterItems();
-				this.clusterByCountry();
+				setTimeout(() => {
+					this.clusterItems();
+					this.clusterByCountry();
+				}, 100);
 			}
 		});
 
