@@ -754,387 +754,117 @@ function alpineRSS() { return {
 			} else {
 			}
 
-			step = 0.2 / (urls?.length || 1);
-			// console.time('>> load.rss_client_side')
-			let data = urls?.length ? await Promise.allSettled(urls.map(url => new Promise(resolve => {
-				if (force_update) {
-					this.loadingPercent += step;
-					return resolve({url});
-				}
+			this.linkToItemMap.clear();
 
+			const prefetch = (url) => new Promise(resolve => {
+				if (force_update) return resolve({url});
 				let key_nofetch = this.K.noClientFetch + new URL(url).hostname;
-
-				if (this.pioneer || this.storageGet(key_nofetch)) {
-					this.loadingPercent += step;
-					return resolve({url});
-				}
-
-				// console.time('>> load.rss_client_side.url.' + url);
+				if (this.pioneer || this.storageGet(key_nofetch)) return resolve({url});
 				try {
-					fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(3e3)})
+					fetch(url.replaceAll(' ', '+'), {redirect: 'follow', signal: AbortSignal.timeout(1.5e3)})
 						.then(resp => resp.text())
 						.then(content => resolve({url, content}))
 						.catch(ex => {
 							this.storageSet(key_nofetch, true);
-
-							this.loadingPercent += step;
 							resolve({url});
 						})
 				} catch (ex) {
 					this.storageSet(key_nofetch, true);
-					this.loadingPercent += step;
 					resolve({url})
 				}
+			});
 
-				// console.timeEnd('>> load.rss_client_side.url.' + url);
-			}))) : [];
-			// console.timeEnd('>> load.rss_client_side');
-			toast('RSS list prefetched');
-
-			data = data.map(x => x.value);
-
-			/* DEPRECATED: do not generate random hash on client side
-			if (!this.params?.x && data.length) {
-				let hash_local = await this.digest(JSON.stringify(data) + Date.now());
-				this.params.x = hash_local.slice(0, 6);
-				this.storageSet(this.K.hash, this.params.x);
-			}
-			*/
-
-			// Split into critical (first 4) and remaining feeds for faster initial render
-			const CRITICAL_COUNT = 4;
-			const criticalData = data.slice(0, CRITICAL_COUNT);
-			const remainingData = data.slice(CRITICAL_COUNT);
-
-			this.linkToItemMap.clear();
-
-			const fetchBatch = async (batchData) => {
+			const fetchBatch = async (batchData, allUrls) => {
 				if (!batchData.length) return [];
-				let stepBatch = 0.8 / (data?.length || 1);
 				let batchLimit = parseInt(limit) + parseInt(limit_adjust);
-				let batchKeys = data.map(x => ({url: x.url}));
+				let batchKeys = allUrls.map(u => ({url: u}));
 				
-				let results = await Promise.allSettled(
+				return await Promise.allSettled(
 					batchData.map((item) => {
 						let fetch_url = `/api/feeds?type=keys&sig=${sig}&l=${batchLimit}&x=${hash}&pioneer=${this.pioneer || ''}`;
-						let fetch_opts = {
+						return fetch(fetch_url, {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(60e3),
 							body: JSON.stringify({batch: batchKeys, keys: [item]}),
-						};
-
-						return fetch(fetch_url, fetch_opts)
-							.then(resp => resp.json())
-							.then(json => {
-								// Re-integrate stale check logic if needed here or in post-processing
-								return json;
-							})
-							.catch(null)
-							.finally(() => this.loadingPercent += stepBatch);
+						}).then(resp => resp.json()).catch(null);
 					})
 				);
-				return results;
 			};
 
-			// Fetch critical feeds first
-			let criticalResults = await fetchBatch(criticalData);
-			let respFeeds = criticalResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
+			const CRITICAL_COUNT = 4;
+			const criticalUrls = urls.slice(0, CRITICAL_COUNT);
+			const remainingUrls = urls.slice(CRITICAL_COUNT);
 
-			if (respFeeds.length) {
-				this.feeds = [...respFeeds, ...(this.feeds.filter(f => !respFeeds.find(rf => rf.rss_url === f.rss_url)))];
-				this.postProcessFeeds({limit, auto_fetch_content: true});
-			}
+			// Step 1: Prefetch and fetch critical feeds
+			Promise.allSettled(criticalUrls.map(prefetch)).then(async (results) => {
+				const criticalData = results.map(r => r.value);
+				const criticalResults = await fetchBatch(criticalData, urls);
+				const respFeeds = criticalResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
 
-			// Background fetch remaining feeds
-			fetchBatch(remainingData).then(remainingResults => {
-				let remainingFeeds = remainingResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
-				
-				if (remainingFeeds.length) {
-					const existingUrls = new Set(respFeeds.map(f => f.rss_url));
-					const filteredRemaining = remainingFeeds.filter(f => !existingUrls.has(f.rss_url));
-					
-					let finalFeeds = [];
-					data.forEach(d => {
-						let found = respFeeds.find(f => f.rss_url === d.url) || filteredRemaining.find(f => f.rss_url === d.url);
-						if (found) finalFeeds.push(found);
-					});
-
-					this.feeds = finalFeeds;
+				if (respFeeds.length) {
+					this.feeds = [...respFeeds, ...(this.feeds.filter(f => !respFeeds.find(rf => rf.rss_url === f.rss_url)))];
 					this.postProcessFeeds({limit, auto_fetch_content: true});
+					toast('Critical feeds loaded');
+				}
+
+				// Step 2: Background prefetch and fetch remaining feeds
+				(async () => {
+					const remainingResultsPrefetch = await Promise.allSettled(remainingUrls.map(prefetch));
+					const remainingData = remainingResultsPrefetch.map(r => r.value);
+					const remainingResults = await fetchBatch(remainingData, urls);
+					const remainingFeeds = remainingResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
 					
+					if (remainingFeeds.length) {
+						const existingUrls = new Set(this.feeds.map(f => f.rss_url));
+						const filteredRemaining = remainingFeeds.filter(f => !existingUrls.has(f.rss_url));
+						
+						let finalFeeds = [];
+						urls.forEach(u => {
+							let found = this.feeds.find(f => f.rss_url === u) || filteredRemaining.find(f => f.rss_url === u);
+							if (found) finalFeeds.push(found);
+						});
+
+						this.feeds = finalFeeds;
+						this.postProcessFeeds({limit, auto_fetch_content: true});
+						
+						if (!this.params.topic) {
+							const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
+							this.storageSet(storageKey, this.feeds);
+						}
+					}
+
+					this.tasks = urls.map((u, i) => ({url: u, order: i, checked: false}));
 					if (!this.params.topic) {
-						const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
-						this.storageSet(storageKey, this.feeds);
+						this.storageSet(this.params.x ? this.K.tasks + this.params.x : this.K.tasks, this.tasks);
 					}
-				}
 
-				this.tasks = data.map((x, i) => ({url: x.url, order: i, checked: false}));
-
-				if (!this.params.topic) {
-					if (this.params.x) {
-						this.storageSet(this.K.tasks + this.params.x, this.tasks);
-						this.storageDel(this.K.tasks);
-					} else {
-						this.storageSet(this.K.tasks, this.tasks);
+					let allResults = [...criticalResults, ...remainingResults];
+					let hash_server = allResults.find(p => p.status == 'fulfilled')?.value?.hash;
+					if (hash_server && !this.params.topic) {
+						const url = new URL(location);
+						url.searchParams.delete("u");
+						url.searchParams.set("x", hash_server);
+						history.replaceState({}, "", url);
+						this.params.x = hash_server;
+						this.storageSet(this.K.hash, this.params.x);
 					}
-				}
 
-				// Update server hash if provided
-				let allResults = [...criticalResults, ...remainingResults];
-				let hash_server = allResults.find(p => p.status == 'fulfilled')?.value?.hash;
-				if (hash_server && !this.params.topic) {
-					const url = new URL(location);
-					url.searchParams.delete("u");
-					url.searchParams.set("x", hash_server);
-					history.replaceState({}, "", url);
-					this.params.x = hash_server;
-					this.storageSet(this.K.hash, this.params.x);
-				}
-
-				this.loadingPercent = 1;
-				this.loading = false;
+					this.loadingPercent = 1;
+					this.loading = false;
+					toast('All feeds loaded');
+				})();
 			});
 
 			this.pioneer = false;
-			return; // Exit as batching handles the rest
-
-			// console.timeEnd('>> load.feeds.postprocess')
-
-			// console.log(this.tasks);
-
-			// console.log('...clustering')
-			// let arrays = [], links = [];
-			// this.feeds.forEach(feed => feed.items.forEach(item => {
-			// 	if (!item.embedding) return;
-
-			// 	arrays.push(item.embedding);
-			// 	links.push(item.link);
-			// }));
-
-			// if (!this.loading && arrays.length && arrays?.[0]?.length) {
-			// 	this.cluster = hclust(arrays, 'cosine');
-			// 	let last = this.cluster.pop();
-			// 	let i1 = last.elements[0];
-			// 	let i2 = last.elements[1];
-			// 	console.dir({cluster: this.cluster});
-			// 	console.log('cluster:', last.distance, links[i1], links[i2])
-			// }
-
+			return;
 		} catch (error) {
 			console.error("Error fetching feeds:", error);
 			this.debug = "Failed to load feeds. Please check the server logs for more details";
 			this.loading = false;
 			this.loadingPercent = 1;
 		} finally {
-			toast('Feeds loaded');
 			console.log('loadFeedsWithContent.done');
-			Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
-		}
-	},
-
-	/**
-	 * This is an optimized version of loadFeedsWithContent, designed to be a drop-in replacement.
-	 *
-	 * Key Improvements:
-	 * 1.  **Robust State Management:** Fixes a critical bug where task metadata (like tags) was overwritten on every refresh. The new version safely merges new data, preserving user customizations.
-	 * 2.  **Optimized Network Requests:** In the individual-feed fetch strategy, the request body is now minimal and correct, sending only the necessary data for each feed instead of the entire feed list in every call.
-	 * 3.  **Simplified and Predictable Loading:** The complex client-side pre-fetch and recursive loading logic have been removed. This results in a more linear, predictable, and maintainable code flow.
-	 * 4.  **Cleaner Asynchronous Code:** The logic for handling stale feeds is integrated more cleanly into the Promise-based flow for each feed request.
-	 */
-	async loadFeedsWithContentV2({limit, limit_adjust, init_urls, force_update} = {}) {
-		// 1. Guard clauses
-		limit = limit || (this.params.topic ? 100 : (this.params.l || this.K.LIMIT));
-		limit_adjust = (limit_adjust !== undefined) ? limit_adjust : (this.params.topic ? 0 : this.K.LIMIT);
-
-		if (this.is_hide_feeds) return;
-		if (this.loading && !force_update) return;
-		this.loading = true;
-		this.loadingPercent = 0;
-		console.log('loadFeedsWithContentV2', {limit, limit_adjust, force_update});
-
-		let hash = this.params.topic || this.params.x || '';
-		try {
-			// 2. Determine URLs to fetch (from tasks api or local state)
-			let urls = this.params.topic ? [] : (init_urls || (this.params?.u?.length ? this.params?.u?.split(',') : this.tasks?.map(x => x.url)));
-
-			if (force_update || !urls?.length) {
-				const sig = this?.profile?.signature || '';
-				const resp_tasks = await fetch(`/api/feeds?is_tasks=true&x=${hash}&log=gettasks&sig=${sig}`, {
-					method: 'GET',
-					headers: {"content-type": "application/json"},
-					signal: AbortSignal.timeout(20e3),
-				}).then(r => r.json()).catch(null);
-				if (resp_tasks?.feeds?.length) {
-					this.tasks = resp_tasks.feeds;
-					urls = this.tasks.map(x => x.url);
-
-					if (resp_tasks.feeds_cached?.length) {
-						this.feeds = resp_tasks.feeds_cached;
-						this.postProcessFeeds({limit});
-					}
-				} else if (!urls?.length) {
-					urls = this.K.DEFAULTS;
-				}
-			}
-			this.loadingPercent = 0.1;
-			toast('RSS list loaded');
-
-			// 3. Individual Fetch Loop
-			const sig = this?.profile?.signature || '';
-			const limit_adjusted = parseInt(limit) + parseInt(limit_adjust || this.K.LIMIT);
-			const step = 0.8 / (urls?.length || 1);
-
-			const parallel = await Promise.allSettled(
-				urls.map(url => new Promise((resolve, reject) => {
-					const fetch_url = `/api/feeds?type=keys&sig=${sig}&l=${limit_adjusted}&x=${hash}`;
-					const fetch_opts = {
-						method: 'POST',
-						headers: {"content-type": "application/json"},
-						signal: AbortSignal.timeout(60e3),
-						body: JSON.stringify({ keys: [{url}] }), // OPTIMIZED: only send the key we're fetching
-					};
-
-					const handleStaleCheckAndResolve = (json) => {
-						if (this.skipCheckOldPublished) {
-							this.loadingPercent += step;
-							return resolve(json);
-						}
-
-						const newfeed = json?.feeds?.[0];
-						if (!newfeed) {
-							this.loadingPercent += step;
-							return resolve(json);
-						}
-
-						const last_published = newfeed.items?.filter(x => x.published)?.map(x => x.published)?.sort()?.pop();
-						const isStale = last_published && (new Date(last_published).getTime() < (Date.now() - 60e3 * 60 * 8));
-
-						if (isStale) {
-							toast(`Stale feed detected: ${new URL(url).hostname}. Refreshing...`);
-							// Fire-and-forget a refresh, but don't let it block the initial render
-							setTimeout(() => {
-								fetch(fetch_url, { ...fetch_opts, body: JSON.stringify({ keys: [{url}], update: true }) })
-									.then(r => r.json())
-									.then(refreshedJson => {
-										const refreshedFeed = refreshedJson?.feeds?.[0];
-										if (!refreshedFeed) return;
-
-										const index = this.feeds.findIndex(f => f.rss_url === refreshedFeed.rss_url);
-										if (index !== -1) {
-											this.feeds[index] = refreshedFeed;
-											this.feeds[index].postProcessItems?.();
-											toast(`Feed ${new URL(url).hostname} updated.`);
-										}
-									})
-									.catch(e => console.error('Stale refresh failed for', url, e));
-							}, 3e3); // 3s delay
-						}
-
-						this.loadingPercent += step;
-						resolve(json);
-					};
-
-					fetch(fetch_url, fetch_opts)
-						.then(resp => {
-							if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-							return resp.json();
-						})
-						.then(handleStaleCheckAndResolve)
-						.catch(err => {
-							console.error('Feed fetch failed for', url, err);
-							this.loadingPercent += step;
-							reject(err); // Reject the promise for this feed
-						});
-				}))
-			);
-
-			// 4. Process the response
-			const respFeeds = parallel.filter(p => p.status === 'fulfilled' && p.value)
-								.map(p => p.value.feeds || [])
-								.flat()
-								.filter(x => x);
-
-			if (!respFeeds.length && !this.feeds.length) {
-				 console.log("EEMPTYRESPFEEDS - No feeds returned and no existing feeds.");
-				 this.loading = false;
-				 this.loadingPercent = 1;
-				 return;
-			}
-
-			// Merge new data into existing feeds to preserve state (like read articles)
-			respFeeds.forEach(feed => {
-				const curFeed = this.feeds?.find?.(f => f.rss_url == feed.rss_url);
-				if (!curFeed) return;
-
-				feed.items.forEach(item => {
-					const curItem = curFeed.items?.find?.(x => x.link == item.link);
-					if (curItem?.article) {
-						item.article = curItem.article;
-					}
-					if (curItem?.viewed) {
-						item.viewed = curItem.viewed;
-					}
-				});
-			});
-
-			this.feeds = respFeeds;
-			this.linkToItemMap.clear();
-
-			// Update user hash if provided by server
-			let hash_server = parallel.find(p => p.status == 'fulfilled')?.value?.hash;
-			if (hash_server && !this.params.topic) {
-				const url = new URL(location);
-				url.searchParams.delete("u");
-				url.searchParams.set("x", hash_server);
-				history.replaceState({}, "", url);
-				this.params.x = hash_server;
-				this.storageSet(this.K.hash, this.params.x);
-			}
-
-			if (!this.feeds.length) {
-				console.log("EEMPTYFEEDS - No feeds to display.");
-				this.loading = false;
-				this.loadingPercent = 1;
-				return;
-			}
-
-			// 5. Post-process and save
-			const {count} = this.postProcessFeeds({ limit, auto_fetch_content: true }) || {};
-			this.pioneer = false;
-
-			if (this.params.topic) return;
-
-			// Save feeds and tasks to local storage
-			const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
-			this.storageSet(storageKey, this.feeds);
-			if (this.params.x) this.storageDel(this.K.feeds);
-
-			// Update tasks state without losing metadata
-			const taskUrls = new Set(this.tasks.map(t => t.url));
-			urls.forEach((url, i) => {
-				if (!taskUrls.has(url)) {
-					this.tasks.push({ url, order: this.tasks.length, checked: false });
-				}
-			});
-			const tasksStorageKey = this.params.x ? this.K.tasks + this.params.x : this.K.tasks;
-			this.storageSet(tasksStorageKey, this.tasks);
-			if (this.params.x) this.storageDel(this.K.tasks);
-
-			if (limit_adjust == 0 && count > 0) {
-				await this.loadFeedsWithContentV2({limit, limit_adjust: count});
-				return;
-			}
-
-			this.loadingPercent = 1;
-
-		} catch (error) {
-			console.error("Error in loadFeedsWithContentV2:", error);
-			this.debug = "Failed to load feeds. Please check the console for more details.";
-		} finally {
-			this.loading = false;
-			toast('Feeds loaded');
-			console.log('loadFeedsWithContentV2.done');
 			Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.();
 		}
 	},
@@ -1261,6 +991,8 @@ function alpineRSS() { return {
 				// console.log('viewed_0.1', feed.items.length, limit)
 
 				feed.items.forEach((item, idx) => {
+					if (item.processed && !is_load_more) return;
+
 					item.read_more = false;
 					item.prefetching = false;
 					item.read_later = false;
@@ -1294,6 +1026,8 @@ function alpineRSS() { return {
 					item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
 					item.author_formatted = item.author?.toString().substr(0, 20).trim();
 					item.anchor = anchorling(item?.link);
+
+					item.processed = true;
 
 					/*item.vector = this.storageGet(this.K.embedding + item.link);
 					if (!item.vector) {
@@ -2140,24 +1874,26 @@ function alpineRSS() { return {
 		this.loading = true;
 
 		// Move non-critical country/defaults fetch to background
-		(async () => {
-			try {
-				let {country} = await fetch('https://api.country.is/').then(r => r.json()).catch(_ => ({}));
-				const feedsByCountry = await fetch(location.origin + '/feeds.json').then(r => r.json()).catch(_ => []);
-				if (!feedsByCountry?.length) return;
+		setTimeout(() => {
+			(async () => {
+				try {
+					let {country} = await fetch('https://api.country.is/').then(r => r.json()).catch(_ => ({}));
+					const feedsByCountry = await fetch(location.origin + '/feeds.json').then(r => r.json()).catch(_ => []);
+					if (!feedsByCountry?.length) return;
 
-				let locale = new Intl.Locale(navigator.language);
-				let region = (locale.region || country || '').toUpperCase();
-				let language = locale.language.toUpperCase();
-				
-				let found = feedsByCountry.find(x => region == x.country)
-					|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country));
+					let locale = new Intl.Locale(navigator.language);
+					let region = (locale.region || country || '').toUpperCase();
+					let language = locale.language.toUpperCase();
+					
+					let found = feedsByCountry.find(x => region == x.country)
+						|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country));
 
-				if (found?.feeds?.length) {
-					this.K.DEFAULTS = found.feeds.slice(0, 10);
-				}
-			} catch (e) { console.error('Background init failed', e); }
-		})();
+					if (found?.feeds?.length) {
+						this.K.DEFAULTS = found.feeds.slice(0, 10);
+					}
+				} catch (e) { console.error('Background init failed', e); }
+			})();
+		}, 100);
 
 		if (this.params.f == 'bookmarks' || location.hash?.includes('#bookmark') || location.hash?.includes('#note_')) this.is_hide_feeds = true;
 
