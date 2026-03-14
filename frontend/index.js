@@ -739,12 +739,38 @@ function alpineRSS() { return {
 			// console.timeEnd('>> load.tasks')
 			toast('RSS list loaded');
 
+			let is_stale = false;
+			const STALE_THRESHOLD = 4 * 60 * 60 * 1000;
+			if (this.feeds?.length) {
+				for (const f of this.feeds) {
+					const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
+					if (lastPub && (Date.now() - lastPub > STALE_THRESHOLD)) {
+						is_stale = true;
+						break;
+					}
+				}
+			}
+
+			if (is_stale) {
+				this.pioneer = true;
+				toast('Stale detected, refreshing...');
+			}
+
 			if (resp_tasks?.feeds?.length) {
 				this.tasks = resp_tasks?.feeds;
 				urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
 
 				if (resp_tasks.feeds_cached?.length) {
-					this.feeds = resp_tasks.feeds_cached;
+					resp_tasks.feeds_cached.forEach(rf => {
+						let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
+						if (existing) {
+							const existingLinks = new Set(existing.items.map(i => i.link));
+							const newItems = (rf.items || []).filter(i => !existingLinks.has(i.link));
+							existing.items = [...newItems, ...existing.items];
+						} else {
+							this.feeds.push(rf);
+						}
+					});
 					this.postProcessFeeds({limit});
 				}
 			} else if (!this.feeds?.length && this.tasks?.length) {
@@ -803,7 +829,16 @@ function alpineRSS() { return {
 				const respFeeds = criticalResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
 
 				if (respFeeds.length) {
-					this.feeds = [...respFeeds, ...(this.feeds.filter(f => !respFeeds.find(rf => rf.rss_url === f.rss_url)))];
+					respFeeds.forEach(rf => {
+						let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
+						if (existing) {
+							const existingLinks = new Set(existing.items.map(i => i.link));
+							const newItems = (rf.items || []).filter(i => !existingLinks.has(i.link));
+							existing.items = [...newItems, ...existing.items];
+						} else {
+							this.feeds.push(rf);
+						}
+					});
 					this.postProcessFeeds({limit, auto_fetch_content: true});
 					toast('Critical feeds loaded');
 				}
@@ -816,12 +851,20 @@ function alpineRSS() { return {
 					const remainingFeeds = remainingResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
 					
 					if (remainingFeeds.length) {
-						const existingUrls = new Set(this.feeds.map(f => f.rss_url));
-						const filteredRemaining = remainingFeeds.filter(f => !existingUrls.has(f.rss_url));
+						remainingFeeds.forEach(rf => {
+							let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
+							if (existing) {
+								const existingLinks = new Set(existing.items.map(i => i.link));
+								const newItems = (rf.items || []).filter(i => !existingLinks.has(i.link));
+								existing.items = [...newItems, ...existing.items];
+							} else {
+								this.feeds.push(rf);
+							}
+						});
 						
 						let finalFeeds = [];
 						urls.forEach(u => {
-							let found = this.feeds.find(f => f.rss_url === u) || filteredRemaining.find(f => f.rss_url === u);
+							let found = this.feeds.find(f => f.rss_url === u);
 							if (found) finalFeeds.push(found);
 						});
 
@@ -1467,6 +1510,8 @@ function alpineRSS() { return {
 	},
 
 	isDark() {
+		return window.matchMedia('(prefers-color-scheme: dark)').matches;
+
 		return localStorage.getItem('theme') === 'dark' 
 			|| (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
 	},
