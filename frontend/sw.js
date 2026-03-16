@@ -79,18 +79,20 @@ workbox.routing.registerRoute(
 );
 
 // 4. API Requests - NetworkFirst to ensure fresh data, but with a short timeout and fallback
+const apiStrategy = new workbox.strategies.NetworkFirst({
+	cacheName: 'api-responses',
+	networkTimeoutSeconds: 5,
+	plugins: [
+		new workbox.expiration.ExpirationPlugin({
+			maxEntries: 100,
+			maxAgeSeconds: 24 * 60 * 60, // 24 hours (keep stale data longer for offline)
+		}),
+	],
+});
+
 workbox.routing.registerRoute(
 	({url}) => url.pathname.startsWith('/api/'),
-	new workbox.strategies.NetworkFirst({
-		cacheName: 'api-responses',
-		networkTimeoutSeconds: 5,
-		plugins: [
-			new workbox.expiration.ExpirationPlugin({
-				maxEntries: 100,
-				maxAgeSeconds: 15 * 60, // 15 mins
-			}),
-		],
-	})
+	apiStrategy
 );
 
 // 5. Navigation - NetworkFirst with Offline Fallback
@@ -143,5 +145,42 @@ self.addEventListener('fetch', (event) => {
 			}
 			return fetch(event.request);
 		})());
+	}
+});
+
+// Periodic Sync Support
+self.addEventListener('periodicsync', (event) => {
+	if (event.tag === 'get-feeds') {
+		event.waitUntil(fetchAndCacheFeeds(event));
+	}
+});
+
+async function fetchAndCacheFeeds(event) {
+	const cacheConfig = await caches.open('sync-config');
+	const configRes = await cacheConfig.match('https://sync-config');
+	let x = '', sig = '';
+	if (configRes) {
+		const config = await configRes.json();
+		x = config.x || '';
+		sig = config.sig || '';
+	}
+	
+	// URL and parameter order MUST match index.js for cache hits
+	const url = `/api/feeds?is_tasks=true&x=${x}&log=gettasks&sig=${sig}`;
+	return apiStrategy.handle({
+		request: new Request(url),
+		event: event
+	});
+}
+
+self.addEventListener('message', (event) => {
+	if (event.data && event.data.type === 'SKIP_WAITING') {
+		self.skipWaiting();
+	}
+	if (event.data && event.data.type === 'SYNC_CONFIG') {
+		const cachePromise = caches.open('sync-config').then(cache => {
+			return cache.put(new Request('https://sync-config'), new Response(JSON.stringify(event.data.config)));
+		});
+		if (event.waitUntil) event.waitUntil(cachePromise);
 	}
 });

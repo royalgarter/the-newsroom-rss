@@ -1385,6 +1385,8 @@ function alpineRSS() { return {
 				const url = new URL(location);
 				url.searchParams.set('x', this.params.x);
 				history.replaceState({}, "", url.toString());
+
+				this.syncSWConfig();
 			}
 
 			await this.loadFeedsWithContent({limit, force_update: true, init_urls: this.tasks?.map(x => x.url)})
@@ -1504,6 +1506,8 @@ function alpineRSS() { return {
 				.then(hash_local => {
 					THIS.params.x = hash_local.slice(0, 6);
 					THIS.storageSet(THIS.K.hash, THIS.params.x);
+
+					THIS.syncSWConfig();
 				})
 				.catch()
 		});
@@ -1803,6 +1807,18 @@ function alpineRSS() { return {
 		}
 	},
 
+	syncSWConfig() {
+		if (navigator.serviceWorker?.controller) {
+			navigator.serviceWorker.controller.postMessage({
+				type: 'SYNC_CONFIG',
+				config: {
+					x: this.params?.x || '',
+					sig: this.profile?.signature || '',
+				}
+			});
+		}
+	},
+
 	async init() {
 		// console.log('init')
 
@@ -1881,6 +1897,8 @@ function alpineRSS() { return {
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = (this.params.s && this.params.s !== 'null') ? this.params.s : (this.storageGet(this.K.style) || 'full');
 		this.params.k = this.params.k || this.storageGet(this.K.gemini_api_key) || '';
+
+		navigator?.serviceWorker?.ready.then(() => this.syncSWConfig());
 
 		if (!savedHash || !this.params?.x || (savedHash !== this.params.x)) this.pioneer = true;
 
@@ -2141,6 +2159,8 @@ function alpineRSS() { return {
 				location = url.toString();
 				location.reload();
 			}
+
+			THIS.syncSWConfig();
 		});
 
 		setInterval(() => {
@@ -2170,7 +2190,13 @@ function alpineRSS() { return {
 	},
 }};
 
-navigator?.serviceWorker?.register?.('./sw.js');
+navigator?.serviceWorker?.register?.('./sw.js').then(registration => {
+	if ('periodicSync' in registration) {
+		registration.periodicSync.register('get-feeds', {
+			minInterval: 4 * 60 * 60 * 1000,
+		}).catch(console.error);
+	}
+});
 
 function handleGoogle1TapSignin(response) {
 	let jwt = response?.credential;
