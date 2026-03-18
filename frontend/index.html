@@ -328,7 +328,7 @@
 														(item.prefetching && item.no_article ? 'invisible' : '')
 													].join(' ')"
 												>
-													<span x-text="item.read_more ? '[Collapse]' : (item.prefetching && !item.no_article && !item.article?.content ? '[Loading]' : '[Preview]')"></span>
+												<span x-text="item.read_more ? '[Collapse]' : (item.no_article ? '[N/A]' : (item.prefetching && !item.no_article && !item.article?.content ? '[Loading]' : '[Preview]'))"></span>
 												</span>
 
 												<span class="hidden cursor-pointer py-1 text-xs flex flex-row items-center px-1"

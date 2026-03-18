@@ -1163,11 +1163,19 @@ function alpineRSS() { return {
 
 						feed.loading = false;
 
-						if (!resp || resp?.status >= 400) return (item.no_article = true);/*console.log(item.link, resp)*/;
+						if (!resp || resp?.status >= 400) {
+							item.no_article = true;
+							item.prefetching = false; // Reset prefetching flag on failure
+							return;
+						}
 
 						let html = await resp?.text?.().catch(null);
 
-						if (!html) return (item.no_article = true);
+						if (!html) {
+							item.no_article = true;
+							item.prefetching = false; // Reset prefetching flag on failure
+							return;
+						}
 
 						let doc = new DOMParser().parseFromString(html, "text/html");
 						item.article = new Readability(doc).parse();
@@ -1176,6 +1184,8 @@ function alpineRSS() { return {
 						if (content?.length) {
 							item.article.content = cleanContent(content);
 						}
+						item.prefetching = false; // Reset prefetching flag on success
+
 
 						// if (feed.items.filter(item => item.prefetching && item.article).length == feed.items.length) {
 						// 	let feedNext = this.feeds[feedIdx + 1];
