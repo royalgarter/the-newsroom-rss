@@ -942,9 +942,11 @@
 					...[...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
 						href: '#' + a.name,
 						text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
-					})),
-				];
-			} }" 
+						})),
+						{href: '#settings', text: '# [Settings]'},
+						];
+						} }"
+ 
 			x-init="refresh()"
 		>
 			<div x-show="is_open" @click.away="is_open = false" class="border mb-2 overflow-y-auto max-h-128" :class="isDark() ? 'bg-black' : 'bg-white'">

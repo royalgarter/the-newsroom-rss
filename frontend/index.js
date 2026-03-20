@@ -756,6 +756,21 @@ function alpineRSS() { return {
 				toast('Stale detected, refreshing...');
 			}
 
+			if (resp_tasks?.settings) {
+				const s = resp_tasks.settings;
+				if (s.k && !this.params.k) {
+					this.params.k = s.k;
+					this.storageSet(this.K.gemini_api_key, this.params.k);
+				}
+				if (s.s && !this.params.s) {
+					this.params.s = s.s;
+					this.storageSet(this.K.style, this.params.s);
+				}
+				if (s.l && !this.params.l) {
+					this.params.l = s.l;
+				}
+			}
+
 			if (resp_tasks?.feeds?.length) {
 				this.tasks = resp_tasks?.feeds;
 				urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
@@ -1020,7 +1035,15 @@ function alpineRSS() { return {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
 						signal: AbortSignal.timeout(20e3),
-						body: JSON.stringify({batch: this.tasks, update: true}),
+						body: JSON.stringify({
+							batch: this.tasks, 
+							update: true,
+							settings: {
+								k: this.params.k,
+								s: this.params.s,
+								l: this.params.l,
+							}
+						}),
 					})
 					.then(resp => resp.json())
 					.then(console.log)
@@ -1384,7 +1407,15 @@ function alpineRSS() { return {
 			const resp = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=savetasks`, {
 				method: 'POST',
 				headers: {"content-type": "application/json"},
-				body: JSON.stringify({batch: this.tasks, update: true}),
+				body: JSON.stringify({
+					batch: this.tasks, 
+					update: true,
+					settings: {
+						k: this.params.k,
+						s: this.params.s,
+						l: this.params.l,
+					}
+				}),
 			});
 
 			const json = await resp.json();
