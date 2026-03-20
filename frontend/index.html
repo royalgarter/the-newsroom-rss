@@ -91,7 +91,7 @@
 					}"
 					x-init="refresh()"
 				>
-					<button @click="burger_open = !burger_open" class="focus:outline-none cursor-pointer px-2 py-1">
+					<button @click="burger_open = !burger_open" class="focus:outline-none cursor-pointer px-2 py-1 text-xl">
 						[≡]
 					</button>
 					<!-- 2-level Menu -->
@@ -904,7 +904,7 @@
 								<div class="mt-3 text-center sm:mt-0 sm:text-left" >
 									<h3 class="text-xl font-semibold" id="modal-title" x-text="modal_title">Title</h3>
 									<div class="mt-2">
-										<div class="text-sm whitespace-pre-line break-all" id="modal-text" x-html="modal_text">Text</div>
+										<div class="text-sm whitespace-pre-line break-all italic" id="modal-text" x-html="modal_text">Text</div>
 									</div>
 								</div>
 							</div>
@@ -946,7 +946,7 @@
 						{href: '#settings', text: '# [Settings]'},
 						];
 						} }"
- 
+
 			x-init="refresh()"
 		>
 			<div x-show="is_open" @click.away="is_open = false" class="border mb-2 overflow-y-auto max-h-128" :class="isDark() ? 'bg-black' : 'bg-white'">
@@ -974,7 +974,7 @@
 				<button @click="is_open = !is_open" class="font-bold flex items-center justify-center h-10 w-10 cursor-pointer" >
 					<span x-text="is_open ? '▼' : '▲'"></span>
 				</button>
-				<button @click="_alBody.digestNews()" class="font-bold flex items-center justify-center h-10 pr-2 cursor-pointer border-r" x-show="!loading">
+				<button @click="_alBody.digestNews()" class="font-bold flex items-center justify-center h-10 pr-2 cursor-pointer" x-show="!loading">
 					<span>/digest</span>
 				</button>
 			</div>
