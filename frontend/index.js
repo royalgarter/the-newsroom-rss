@@ -1829,14 +1829,14 @@ function alpineRSS() { return {
 			if (digest) {
 				// Basic Markdown-ish to HTML conversion
 				let html = digest
-					.replace(/([\d\.\-\*\+]+\s*)\[([^\[\]]+)\]\s*\((http\S+)\)/g,
-						'<a href="$3" class="cursor-pointer text-md underline font-bold my-2 mt-4" target="_blank">$1$2</a>')
+					.replace(/\[([^\[\]]+)\]\s*\((http\S+)\)/g,
+						'<a href="$2" class="cursor-pointer text-md underline font-bold my-2 mt-4 inline-block" target="_blank">$1</a>')
 					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
 					.replace(/\*(.*?)\*/g, '<i>$1</i>')
 					.replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
 					.replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-3 mb-1">$1</h2>')
 					.replace(/^### (.*$)/gm, '<h3 class="text-md font-bold mt-2 mb-1">$1</h3>')
-					.replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>');
+					.replace(/^[\d\.\-\*\+]+\s+(.*$)/gm, '<li class="ml-4">$1</li>');
 
 				this.modalShow('Daily News Digest', html, 'Cool', 'Close', () => {
 					// Add to notes if they want? Maybe another button for that.
