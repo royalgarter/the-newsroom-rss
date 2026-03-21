@@ -40,6 +40,7 @@ function alpineRSS() { return {
 		s: 'full',
 		k: '',
 	},
+	prev_style: 'full',
 
 	input: '',
 	tasks: [],

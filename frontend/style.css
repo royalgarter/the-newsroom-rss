@@ -54,6 +54,7 @@ p.rss-article-content img {
 }
 
 #modal-text .b {
+	margin-top: 1rem;
 	font-size: 1.2rem;
 	font-style: normal;
 }
