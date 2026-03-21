@@ -207,7 +207,7 @@
 								onerror="this.src = '/favicons/ios/128.png';"
 								@click="window.open(feed.rss_url)"
 							/>
-							<h2 class="text-xl font-bold mx-auto text-gray-500"
+							<h2 class="text-base font-bold mx-auto text-gray-500"
 								:title="feed.rss_url"
 								:class="{'italic': (loading || feed.loading)}"
 								x-text="feed.short || feed.title">
