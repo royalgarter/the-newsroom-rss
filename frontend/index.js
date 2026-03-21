@@ -256,7 +256,7 @@ function alpineRSS() { return {
 
 	storageSet(key, val) {
 		try {
-			return localStorage.setItem(key, JSON.stringify(val));	
+			return localStorage.setItem(key, JSON.stringify(val));
 		} catch {}
 	},
 	storageGet(key) {
@@ -865,7 +865,7 @@ function alpineRSS() { return {
 					const remainingData = remainingResultsPrefetch.map(r => r.value);
 					const remainingResults = await fetchBatch(remainingData, urls);
 					const remainingFeeds = remainingResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
-					
+
 					if (remainingFeeds.length) {
 						remainingFeeds.forEach(rf => {
 							let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
@@ -877,7 +877,7 @@ function alpineRSS() { return {
 								this.feeds.push(rf);
 							}
 						});
-						
+
 						let finalFeeds = [];
 						urls.forEach(u => {
 							let found = this.feeds.find(f => f.rss_url === u);
@@ -886,7 +886,7 @@ function alpineRSS() { return {
 
 						this.feeds = finalFeeds;
 						this.postProcessFeeds({limit, auto_fetch_content: true});
-						
+
 						if (!this.params.topic) {
 							const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
 							this.storageSet(storageKey, this.feeds);
@@ -1037,7 +1037,7 @@ function alpineRSS() { return {
 						headers: {"content-type": "application/json"},
 						signal: AbortSignal.timeout(20e3),
 						body: JSON.stringify({
-							batch: this.tasks, 
+							batch: this.tasks,
 							update: true,
 							settings: {
 								k: this.params.k,
@@ -1409,7 +1409,7 @@ function alpineRSS() { return {
 				method: 'POST',
 				headers: {"content-type": "application/json"},
 				body: JSON.stringify({
-					batch: this.tasks, 
+					batch: this.tasks,
 					update: true,
 					settings: {
 						k: this.params.k,
@@ -1577,14 +1577,14 @@ function alpineRSS() { return {
 	async clusterItems() {
 		if (this.clustering) return;
 		this.clustering = true;
-		
+
 		let startTime = Date.now();
 		let stats = { method: 'none', total: 0, clusters: 0, hidden: 0 };
 
 		try {
 			let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
 			stats.total = allItems.length;
-			
+
 			allItems.forEach(item => {
 				item.hidden_by_cluster = false;
 				item.related_sources = [];
@@ -1700,12 +1700,12 @@ function alpineRSS() { return {
 
 		for (let i = 0; i < allItems.length; i++) {
 			if (processed.has(i)) continue;
-			
+
 			let item = allItems[i];
 			let query = (item.title + item.description) || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
 							.filter(word => word.length > 3)
 							.join(' ');
-			
+
 			if (!query) continue;
 
 			let selfResults = miniSearch.search(query);
@@ -1747,7 +1747,7 @@ function alpineRSS() { return {
 				source: item.author || new URL(item.link).hostname
 			};
 		});
-		
+
 		return primary.related_sources.length;
 	},
 
@@ -1774,7 +1774,7 @@ function alpineRSS() { return {
 
 			for (const code in clusters) {
 				const country = clusters[code];
-				
+
 				// Match by domain
 				if (country.domains.some(d => domain.includes(d.toLowerCase()))) {
 					country.count++;
@@ -1810,23 +1810,26 @@ function alpineRSS() { return {
 		toast('Digesting news with Gemini...');
 
 		try {
+			let COUNT = 20;
 			let titles = allItems.map(item => `- [${item.title}](${item.link})`).join('\n');
 			let prompt = [
 				`You are a professional news editor. Here is a list of today's news titles:`,
+				`---\n`,
 				`\n${titles}\n`,
-				`Select the top 10 most important and interesting news articles from this list.`,
+				`---\n`,
+				`Select the **top ${COUNT}** most important, impact and interesting news articles from this list.`,
 				`Provide a concise, engaging summary for each of the selected articles.`,
 				`Format the output as a **Markdown Ordered Lists** with titles as bold, url and summaries as text below each title.`,
 				`Start with a general overview of the news landscape today.`,
 				`Use **Heading 2 [title](link)** for titles.`,
-				`Response straight to the point, **NEVER** say foreword like "Here is the top 10 items...".`
+				`Response straight to the point, **NEVER** say foreword like "Here is the top ${COUNT} items...".`
 			].join('\n');
 
 			let digest = await window.generateContent(prompt, this.params.k);
 			if (digest) {
 				// Basic Markdown-ish to HTML conversion
 				let html = digest
-					.replace(/([\d\.\-\*\+]+\s*)\[([^\[\]]+)\]\s*\((http\S+)\)/g, 
+					.replace(/([\d\.\-\*\+]+\s*)\[([^\[\]]+)\]\s*\((http\S+)\)/g,
 						'<a href="$3" class="cursor-pointer text-md underline font-bold my-2 mt-4" target="_blank">$1$2</a>')
 					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
 					.replace(/\*(.*?)\*/g, '<i>$1</i>')
@@ -1961,7 +1964,7 @@ function alpineRSS() { return {
 					let locale = new Intl.Locale(navigator.language);
 					let region = (locale.region || country || '').toUpperCase();
 					let language = locale.language.toUpperCase();
-					
+
 					let found = feedsByCountry.find(x => region == x.country)
 						|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country));
 
