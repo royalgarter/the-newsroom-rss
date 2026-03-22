@@ -3,6 +3,9 @@
     "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --env-file=.env backend/server.ts",
     "local": "deno task tailwind;deno task start;",
     "tailwind": "npx @tailwindcss/cli -m -i ./frontend/style.css -o ./frontend/index.css --content \"frontend/**/*.html,./frontend/**/*.js\";",
-    "tailwind:install": "npm install --no-save tailwindcss@4 @tailwindcss/cli"
+    "tailwind:install": "npm install --no-save tailwindcss@4 @tailwindcss/cli",
+    "update-preset": "deno run --allow-read --allow-write backend/src/update-preset.ts",
+    "check-preset": "deno run --allow-net --allow-read --allow-write backend/src/check-preset.ts",
+    "check-preset-full": "cp backend/src/preset.json backend/src/preset-full.json && deno run --allow-net --allow-read --allow-write backend/src/check-preset.ts"
   }
 }
