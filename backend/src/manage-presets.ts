@@ -9,6 +9,7 @@ import { parse } from "https://deno.land/std@0.224.0/csv/parse.ts";
 
 const PRESET_PATH = new URL("../../data/preset.json", import.meta.url).pathname;
 const PRESET_FULL_PATH = new URL("../../data/preset-full.json", import.meta.url).pathname;
+const FEEDS_PATH = new URL("../../data/feeds.json", import.meta.url).pathname;
 const CSV_REPORT_PATH = new URL("../../data/rss-feeds-report.csv", import.meta.url).pathname;
 
 const FETCH_TIMEOUT = 10000; // 10 seconds
@@ -92,12 +93,20 @@ interface CheckResult {
 	status: "OK" | "DEAD" | "STALE" | "EMPTY";
 	error?: string;
 	newestDate?: string;
+	source: "preset" | "feeds";
+	countryCode?: string;
 }
 
 interface FeedEntry {
 	category: string;
 	name: string;
 	url: string;
+}
+
+interface CountryFeeds {
+	country: string;
+	name: string;
+	feeds: string[];
 }
 
 // --- Utilities ---
@@ -204,8 +213,8 @@ function isStale(dateStr?: string): boolean {
 	return daysDiff > 30;
 }
 
-async function checkFeed(category: string, url: string): Promise<CheckResult> {
-	const result: CheckResult = { category, url, status: "OK" };
+async function checkFeed(category: string, url: string, source: "preset" | "feeds", countryCode?: string): Promise<CheckResult> {
+	const result: CheckResult = { category, url, status: "OK", source, countryCode };
 	const fetchResult = await fetchWithTimeout(url, FETCH_TIMEOUT);
 
 	if (!fetchResult.ok) {
@@ -252,16 +261,32 @@ async function checkFeed(category: string, url: string): Promise<CheckResult> {
 }
 
 async function runCheck(): Promise<void> {
+	const urlsToCheck: { category: string; url: string; source: "preset" | "feeds"; countryCode?: string }[] = [];
+
 	console.log("Reading preset-full.json...");
 	const preset = await readPreset(PRESET_FULL_PATH);
-
-	const urlsToCheck: { category: string; url: string }[] = [];
 	for (const [category, urls] of Object.entries(preset)) {
 		for (const url of urls) {
 			if (!shouldSkip(url)) {
-				urlsToCheck.push({ category, url });
+				urlsToCheck.push({ category, url, source: "preset" });
 			}
 		}
+	}
+
+	console.log("Reading feeds.json...");
+	let countries: CountryFeeds[] = [];
+	try {
+		const feedsContent = await Deno.readTextFile(FEEDS_PATH);
+		countries = JSON.parse(feedsContent);
+		for (const c of countries) {
+			for (const url of c.feeds) {
+				if (!shouldSkip(url)) {
+					urlsToCheck.push({ category: c.name, url, source: "feeds", countryCode: c.country });
+				}
+			}
+		}
+	} catch (error) {
+		console.warn(`Could not read feeds.json: ${error.message}`);
 	}
 
 	console.log(`Checking ${urlsToCheck.length} URLs (skipping Google News RSS)...\n`);
@@ -271,7 +296,7 @@ async function runCheck(): Promise<void> {
 
 	for (let i = 0; i < urlsToCheck.length; i += CONCURRENCY) {
 		const batch = urlsToCheck.slice(i, i + CONCURRENCY);
-		const batchPromises = batch.map(({ category, url }) => checkFeed(category, url));
+		const batchPromises = batch.map((item) => checkFeed(item.category, item.url, item.source, item.countryCode));
 		const batchResults = await Promise.all(batchPromises);
 
 		for (const result of batchResults) {
@@ -299,35 +324,46 @@ async function runCheck(): Promise<void> {
 	}
 
 	const newPreset: Record<string, string[]> = {};
+	const newCountries: CountryFeeds[] = countries.map(c => ({ ...c, feeds: [] }));
 	const domainSeen = new Map<string, string>();
 	const dedupStats = { removed: 0 };
 
 	for (const result of results) {
 		if (result.status !== "OK") continue;
 
-		const baseDomain = getBaseDomain(result.url);
-		const existingUrl = domainSeen.get(baseDomain);
+		if (result.source === "preset") {
+			const baseDomain = getBaseDomain(result.url);
+			const existingUrl = domainSeen.get(baseDomain);
 
-		if (existingUrl) {
-			dedupStats.removed++;
-			console.log(`⊘ Duplicate domain: ${result.url} (keeping ${existingUrl})`);
-			continue;
+			if (existingUrl) {
+				dedupStats.removed++;
+				console.log(`⊘ Duplicate domain: ${result.url} (keeping ${existingUrl})`);
+				continue;
+			}
+
+			domainSeen.set(baseDomain, result.url);
+
+			if (!newPreset[result.category]) {
+				newPreset[result.category] = [];
+			}
+			newPreset[result.category].push(result.url);
+		} else {
+			const country = newCountries.find(c => c.country === result.countryCode);
+			if (country) {
+				country.feeds.push(result.url);
+			}
 		}
-
-		domainSeen.set(baseDomain, result.url);
-
-		if (!newPreset[result.category]) {
-			newPreset[result.category] = [];
-		}
-		newPreset[result.category].push(result.url);
 	}
 
 	await writePreset(PRESET_PATH, newPreset);
+	if (countries.length > 0) {
+		await Deno.writeTextFile(FEEDS_PATH, JSON.stringify(newCountries, null, 2) + "\n");
+	}
 
 	const reportPath = PRESET_PATH.replace(".json", "-check-report.csv");
 	const csvLines = [
-		"Category,URL,Status,Error,NewestDate",
-		...results.map((r) => `"${r.category}","${r.url}","${r.status}","${r.error || ""}","${r.newestDate || ""}"`),
+		"Source,Category,URL,Status,Error,NewestDate",
+		...results.map((r) => `"${r.source}","${r.category}","${r.url}","${r.status}","${r.error || ""}","${r.newestDate || ""}"`),
 	];
 	await Deno.writeTextFile(reportPath, csvLines.join("\n"));
 
@@ -336,9 +372,11 @@ async function runCheck(): Promise<void> {
 	console.log(`DEAD (removed): ${stats.dead}`);
 	console.log(`STALE (removed): ${stats.stale}`);
 	console.log(`EMPTY (removed): ${stats.empty}`);
-	console.log(`Duplicates (removed): ${dedupStats.removed}`);
-	console.log(`Total kept: ${Object.values(newPreset).flat().length}`);
+	console.log(`Duplicates (preset only, removed): ${dedupStats.removed}`);
+	console.log(`Total kept in preset: ${Object.values(newPreset).flat().length}`);
+	console.log(`Total kept in feeds: ${newCountries.reduce((sum, c) => sum + c.feeds.length, 0)}`);
 	console.log(`\nOutput written to: ${PRESET_PATH}`);
+	console.log(`Feeds updated in: ${FEEDS_PATH}`);
 	console.log(`Report saved to: ${reportPath}`);
 }
 
