@@ -7,6 +7,30 @@ import KV from './kv.ts';
 import presets from './preset.json' with { type: 'json' };
 const crypto = await import('node:crypto');
 
+export function handlePresets(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get('category');
+
+    if (category) {
+        const presetUrls = (presets as any)[category];
+        if (presetUrls) {
+            return new Response(JSON.stringify({ category, urls: presetUrls }), {
+                headers: { ...head_json, ...cors }
+            });
+        }
+        return new Response(JSON.stringify({ error: 'Category not found' }), {
+            status: 404,
+            headers: { ...head_json, ...cors }
+        });
+    }
+
+    // Return all categories
+    const categories = Object.keys(presets);
+    return new Response(JSON.stringify({ categories }), {
+        headers: { ...head_json, ...cors }
+    });
+}
+
 const head_json = {
 	"Content-Type": "application/json; charset=utf-8"
 };

@@ -44,7 +44,7 @@
     "https://www.defenseone.com/rss/all/",
     "https://www.eltiempo.com/rss/mundo_latinoamerica.xml",
     "https://www.euronews.com/rss?format=xml",
-    "https://www.fao.org/feeds/fao-newsroom-rss"
+    "https://www.fao.org/feeds/fao-newsroom-rss",
     "https://www.foreignaffairs.com/rss.xml",
     "https://www.fpri.org/feed/",
     "https://www.france24.com/en/rss",
@@ -82,7 +82,7 @@
     "https://www.twz.com/feed",
     "https://www.upworthy.com/feed/",
     "https://www.vanguardngr.com/feed/",
-    "https://www.who.int/rss-feeds/news-english.xml",
+    "https://www.who.int/rss-feeds/news-english.xml"
   ],
   "business": [
     "https://www.forbes.com/business/feed2/",

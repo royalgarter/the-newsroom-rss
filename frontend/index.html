@@ -65,7 +65,7 @@
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden font-mono">
 		<template id="tpl_header" x-if="ready">
-			<header class="p-4 border-b text-center flex items-center justify-start max-w-auto">
+			<header class="px-2 py-4 border-b text-center flex items-center justify-start max-w-auto">
 				<!-- Hamburger Menu -->
 				<div class="relative"
 					id="menu_burger"
@@ -91,7 +91,7 @@
 					}"
 					x-init="refresh()"
 				>
-					<button @click="burger_open = !burger_open" class="focus:outline-none cursor-pointer px-2 py-1 text-xl">
+					<button @click="burger_open = !burger_open" class="focus:outline-none cursor-pointer pb-1 text-xl">
 						[≡]
 					</button>
 					<!-- 2-level Menu -->
@@ -112,7 +112,7 @@
 							<li>
 								<a href="#" @click.prevent="burger_sub_cat_open = !burger_sub_cat_open" class="flex items-center px-4 py-2 text-left text-sm hover:underline">
 									<span>Topics</span>
-									<span class="pl-1" x-text="burger_sub_cat_open ? '▲' : '▼'"></span>
+									<span class="pl-2" x-text="burger_sub_cat_open ? '▲' : '▼'"></span>
 								</a>
 								<ul x-show="burger_sub_cat_open" class="pl-4">
 									<template x-for="(cat, index) in categories" :key="index">
@@ -142,7 +142,7 @@
 				</div>
 
 				<a id="anchor_home" href="#home" name="home" class="scroll-smooth"></a>
-				<h1 class="mx-auto text-center md:text-2xl pb-1 md:pb-0 font-bold"
+				<h1 class="mx-auto text-center md:text-2xl pb-1 md:pb-0 pr-2 font-bold"
 					:class="loading ? 'italic text-base' : 'text-lg cursor-pointer'"
 					x-html="title"
 					@click="if (loading) {
@@ -478,7 +478,7 @@
 								<span x-html="'[Bookmarks]' + (readlater?.items?.length ? ' [' + readlater?.items?.length + ']' : '')" class="inline"></span>
 							</div>
 
-							<span class="ml-8 font-bold" x-text="expanded ? '▲' : '▼'"></span>
+							<span class="ml-8 font-bold pr-1" x-text="expanded ? '▲' : '▼'"></span>
 						</button>
 					</h3>
 					<div
@@ -661,7 +661,7 @@
 								<span x-html="'[Settings]' + (tasks?.length ? ' [' + tasks.length + ']' : '') + (loading ? ' (Loading...)' : '')" class="inline"></span>
 							</div>
 
-							<span class="ml-8 font-bold" x-text="expanded ? '▲' : '▼'"></span>
+							<span class="ml-8 font-bold pr-1" x-text="expanded ? '▲' : '▼'"></span>
 						</button>
 					</h3>
 
@@ -675,7 +675,7 @@
 						<template x-if="ready">
 							<div class="m-auto my-4 max-w-auto w-full">
 								<!-- Input -->
-								<div class="text-lg p-4 border-b flex relative justify-around">
+								<div class="text-lg p-4 flex relative justify-around">
 									<form @submit.prevent="addNewTask" class="min-w-9/10">
 										<input
 											x-on:input.change.debounce.300ms='reviewTask()'
@@ -687,9 +687,153 @@
 									<button class="px-2 py-1 font-bold cursor-pointer ml-3" @click="addNewTask">[Add]</button>
 								</div>
 
+								<!-- Preset Picker -->
+								<div class="pb-4 px-4"
+									x-data="{
+										presetCategories: [],
+										presetUrls: [],
+										loadingPresets: false,
+										selectedCategory: '',
+										initPresets: async function() {
+											this.loadingPresets = true;
+											try {
+												const resp = await fetch('/api/presets');
+												const data = await resp.json();
+												this.presetCategories = data.categories || [];
+											} catch (ex) {
+												console.error('Failed to load presets:', ex);
+											} finally {
+												this.loadingPresets = false;
+											}
+										},
+										loadPresetUrls: async function(category) {
+											this.selectedCategory = category;
+											this.presetUrls = [];
+											if (!category) return;
+											this.loadingPresets = true;
+											try {
+												const resp = await fetch(`/api/presets?category=${encodeURIComponent(category)}`);
+												const data = await resp.json();
+												this.presetUrls = (data.urls || []).map(url => ({
+													url: url,
+													selected: false,
+													exists: false
+												}));
+												// Check which URLs already exist in tasks
+												this.presetUrls.forEach(item => {
+													item.exists = this.tasks.some(x => x?.url == item.url);
+												});
+											} catch (ex) {
+												console.error('Failed to load preset URLs:', ex);
+											} finally {
+												this.loadingPresets = false;
+											}
+										},
+										toggleSelectAll: function() {
+											const allSelected = this.presetUrls.every(x => x.selected || x.exists);
+											this.presetUrls.forEach(item => {
+												if (!item.exists) {
+													item.selected = !allSelected;
+												}
+											});
+										},
+										getSelectedUrls: function() {
+											return this.presetUrls.filter(x => x.selected && !x.exists).map(x => x.url);
+										},
+										getSelectedCount: function() {
+											return this.presetUrls.filter(x => x.selected && !x.exists).length;
+										},
+										addSelectedPresetUrls: function() {
+											const selectedUrls = this.getSelectedUrls();
+											if (!selectedUrls.length) return;
+											let added = 0;
+											selectedUrls.forEach(url => {
+												this.tasks.push({ url, order: this.tasks.length, checked: false });
+												added++;
+											});
+											this.presetUrls = [];
+											this.selectedCategory = '';
+											if (added > 0) {
+												toast(`Added ${added} RSS feed(s)`);
+												this.saveTasks(true);
+											} else {
+												toast('No feeds selected');
+											}
+										}
+									}"
+									x-init="initPresets()">
+									<div class="flex flex-col space-y-2 w-full">
+										<div class="flex items-center space-x-2">
+											<label class="font-bold text-xl whitespace-nowrap">Presets:</label>
+											<select
+												class="border py-2 px-3 focus:outline-none flex-1"
+												:value="selectedCategory"
+												@change="loadPresetUrls($event.target.value)"
+												:disabled="loadingPresets"
+											>
+												<option :class="isDark() ? 'bg-black' : 'bg-white'" value="">---</option>
+												<template x-for="cat in presetCategories" :key="cat">
+													<option :value="cat" class="uppercase" :class="isDark() ? 'bg-black' : 'bg-white'"
+														x-text="cat">
+													</option>
+												</template>
+											</select>
+										</div>
+
+										<!-- URL List with Checkboxes -->
+										<div x-show="selectedCategory && presetUrls.length > 0" class="border rounded mt-2 p-2 max-h-64 overflow-y-auto">
+											<div class="flex items-center justify-between mb-2 pb-2 border-b">
+												<div class="flex items-center space-x-2">
+													<input type="checkbox"
+														:id="'select-all-' + selectedCategory"
+														@click="toggleSelectAll()"
+														class="cursor-pointer"
+													/>
+													<label :for="'select-all-' + selectedCategory" class="font-bold cursor-pointer text-sm">
+														All (<span x-text="getSelectedCount()"></span>/<span x-text="presetUrls.filter(x => !x.exists).length"></span>)
+													</label>
+												</div>
+												<button
+													class="px-4 py-1 font-bold cursor-pointer border text-sm"
+													:class="getSelectedCount() > 0 ? 'visible' : 'invisible opacity-50'"
+													@click="addSelectedPresetUrls()"
+													:disabled="getSelectedCount() === 0"
+												>
+													Add Selected (<span x-text="getSelectedCount()"></span>)
+												</button>
+											</div>
+
+											<div class="space-y-1">
+												<template x-for="(item, index) in presetUrls" :key="index">
+													<div class="flex items-start space-x-2 p-1"
+														:class="item.exists ? 'opacity-50' : ''">
+														<input type="checkbox"
+															:id="'preset-url-' + index"
+															:checked="item.selected"
+															@change="item.selected = $event.target.checked"
+															:disabled="item.exists"
+															class="mt-1 cursor-pointer"
+														/>
+														<label :for="'preset-url-' + index"
+															class="flex-1 text-sm break-all hover:underline cursor-pointer"
+															:class="item.exists ? 'line-through text-gray-500' : ''"
+														>
+															<span x-text="item.exists ? '[Already Added] ' : ''"></span>
+															<span x-text="item.url.replace(/https?\:\/\//, '')"></span>
+														</label>
+														<a :href="item.url" target="_blank" class="text-xs text-gray-500 hover:underline ml-2 whitespace-nowrap">
+															[Preview]
+														</a>
+													</div>
+												</template>
+											</div>
+										</div>
+									</div>
+								</div>
+
 								<!-- rss-review-item -->
 								<template id="tpl_review_feed" x-if="review_feed">
-									<section class="rss-feed border-b mb-4 italic">
+									<section class="rss-feed border-t border-b mb-4 italic">
 										<a :name="review_feed.anchor" :href="review_feed.rss_url" target="_blank">
 											<span class="inline-flex items-baseline pt-5 sm:pt-4 md:pt-8 px-5 sm:px-4 md:px-8">
 												<img width="24" height="24" class="rss-favicon self-center w-6 h-6 mr-2 md:mr-4"
@@ -761,14 +905,14 @@
 										@dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
 									>
 										<template x-for="(item, index) in tasks" :key="index">
-											<div class="rss-task-item p-2 mt-2 flex items-center relative hover:underline"
+											<div class="rss-task-item p-2 mt-2 flex items-center relative"
 												:class="{'italic underline font-bold': drag === index}"
 												style="overflow-wrap: anywhere;"
 												draggable="true" @dragstart="drag = index" @dragend="drag = null"
 											>
 												<span class="cursor-pointer text-xs font-bold min-w-10">[#]</span>
-												<div class="mx-2">
-													<a :href="item.url" target="_blank" class="hover:underline"><span x-text="'[' + (index+1) + '] '+ item.url"></span></a>
+												<div class="mx-2 hover:underline">
+													<a :href="item.url" target="_blank" class="hover:underline"><span x-text="'[' + (index+1) + '] '+ item.url.replace(/https?\:\/\//, '')"></span></a>
 												</div>
 												<span class="cursor-pointer font-bold ml-auto min-w-6"
 													@click="tasks.splice(index, 1);storageSet(K.tasks, tasks);"
@@ -974,7 +1118,7 @@
 					</a>
 				</template>
 			</div>
-			<div class="flex flex-row items-center border gap-2 pr-2" :class="isDark() ? 'bg-black' : 'bg-white'">
+			<div class="flex flex-row items-center border gap-2 pr-4" :class="isDark() ? 'bg-black' : 'bg-white'">
 				<button @click="is_open = !is_open" class="font-bold flex items-center justify-center h-10 w-10 cursor-pointer" >
 					<span x-text="is_open ? '▼' : '▲'"></span>
 				</button>
