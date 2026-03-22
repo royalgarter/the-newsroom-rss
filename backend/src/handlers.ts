@@ -4,7 +4,7 @@ import { fetchRSSLinks, saveFeedCache } from './rss.ts';
 import { authorize, verifyJwt } from './auth.ts';
 import CACHE from './cache.ts';
 import KV from './kv.ts';
-import presets from './preset.json' with { type: 'json' };
+import presets from '../../data/preset.json' with { type: 'json' };
 const crypto = await import('node:crypto');
 
 export function handlePresets(req: Request) {
@@ -351,31 +351,38 @@ export async function handleStatic(req: Request) {
     const { pathname } = new URL(req.url);
     const decodedPath = decodeURIComponent(pathname);
     const localpath = `./frontend${decodedPath}`;
+    const datapath = `./data${decodedPath}`;
+    let path = "";
 
     if (await exists(localpath)) {
-		const mimetypes = {
-			'.js': 'text/javascript',
-			'.mjs': 'text/javascript',
-			'.html': 'text/html',
-			'.css': 'text/css',
-			'.json': 'application/json',
-			'.png': 'image/png',
-			'.jpg': 'image/jpeg',
-			'.jpeg': 'image/jpeg',
-			'.gif': 'image/gif',
-			'.svg': 'image/svg+xml',
-			'.ico': 'image/x-icon',
-		};
-		const ext = extname(localpath);
-
-        return response(await Deno.readFile(localpath), {
-            headers: {
-                "Content-Type": `${mimetypes[ext] ?? "text/plain"}; charset=utf-8`,
-                "Cache-Control": "public, max-age=604800",
-            }
-        })
+        path = localpath;
+    } else if (await exists(datapath)) {
+        path = datapath;
+    } else {
+        return null;
     }
-    return null;
+
+    const mimetypes = {
+        '.js': 'text/javascript',
+        '.mjs': 'text/javascript',
+        '.html': 'text/html',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+    };
+    const ext = extname(path);
+
+    return response(await Deno.readFile(path), {
+        headers: {
+            "Content-Type": `${mimetypes[ext] ?? "text/plain"}; charset=utf-8`,
+            "Cache-Control": "public, max-age=604800",
+        }
+    })
 }
 
 const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);
