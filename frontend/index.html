@@ -218,7 +218,7 @@
 
 					<!-- feed rss -->
 					<div class="w-full mx-auto px-1 sm:px-8 md:px-10  pt-3 sm:pt-4 md:pt-6  pb-18 sm:pb-18 md:pb-18">
-						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
+						<div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
 							:class="params.s == 'tiny' ? '' : 'gap-6'"
 						>
 							<!-- rss-item -->
@@ -323,7 +323,7 @@
 									<!-- item article -->
 									<template x-if="style()?.preview">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
-											<div class="px-2 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full border-t">
+											<div class="px-2 py-1 flex flex-row items-center absolute bottom-0 left-0 w-full border-t">
 												<span class="cursor-pointer py-1 text-xs flex flex-row items-center px-1"
 													@click="item?.toggleReadmore?.()"
 													@mouseover="item?.prefetchContent?.()"
@@ -596,7 +596,7 @@
 									</div>
 									<!-- readlater article -->
 									<div :id="'rss-item-readlater-article-' + itemIndex">
-										<div class="cursor-pointer px-2 pb-1 flex flex-row items-center absolute bottom-0 left-0 w-full border-t">
+										<div class="cursor-pointer px-2 py-1 flex flex-row items-center absolute bottom-0 left-0 w-full border-t">
 											<template x-if="item.is_note">
 												<span @click="editNote(item)" class="py-1 text-xs flex items-center cursor-pointer px-1">
 													[Edit]
