@@ -210,7 +210,7 @@
 							<h2 class="text-base font-bold mx-auto text-gray-500"
 								:title="feed.rss_url"
 								:class="{'italic': (loading || feed.loading)}"
-								x-text="feed.short || feed.title">
+								x-text="(feed.short || feed.title)?.split('. ')?.[0]">
 							</h2>
 						</span>
 
@@ -287,7 +287,7 @@
 												:href="item.link" target="_blank"
 												:title="item.title"
 												x-html="(item.title_formatted || item.title) + (
-															style()?.img ? '' : (item.published_formatted && !item.published_formatted.includes('NaN') ? (' <sup class=&quot;italic text-xs font-light&quot;>' + item.published_formatted + '</sup>') : '')
+															style()?.img ? '' : (item.published_formatted && !item.published_formatted.includes('NaN') ? (' <sup class=&quot;italic text-gray-500 text-xs font-light&quot;>' + item.published_formatted + '</sup>') : '')
 														)"
 												rel="external"
 											></a>

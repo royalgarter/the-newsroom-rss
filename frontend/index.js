@@ -1090,7 +1090,7 @@ function alpineRSS() { return {
 											|| new Date(item.published).toString().split(' GMT').shift()
 											|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim();
 					item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
-					item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
+					item.description_formatted = (item.description ? this.decodeHTML(item.description) : '').substr(0, 300);
 					item.author_formatted = item.author?.toString().substr(0, 20).trim();
 					item.anchor = anchorling(item?.link);
 
