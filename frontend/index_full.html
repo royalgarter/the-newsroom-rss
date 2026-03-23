@@ -1062,9 +1062,11 @@
 					...[...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
 						href: '#' + a.name,
 						text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
-					})),
-				];
-			} }" 
+						})),
+						{href: '#settings', text: '# [Settings]'},
+						];
+						} }"
+ 
 			x-init="refresh()"
 			class="fixed left-2 bottom-2 text-sm z-100"
 		>

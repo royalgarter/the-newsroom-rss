@@ -4,8 +4,32 @@ import { fetchRSSLinks, saveFeedCache } from './rss.ts';
 import { authorize, verifyJwt } from './auth.ts';
 import CACHE from './cache.ts';
 import KV from './kv.ts';
-import presets from './preset.json' with { type: 'json' };
+import presets from '../../data/preset.json' with { type: 'json' };
 const crypto = await import('node:crypto');
+
+export function handlePresets(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get('category');
+
+    if (category) {
+        const presetUrls = (presets as any)[category];
+        if (presetUrls) {
+            return new Response(JSON.stringify({ category, urls: presetUrls }), {
+                headers: { ...head_json, ...cors }
+            });
+        }
+        return new Response(JSON.stringify({ error: 'Category not found' }), {
+            status: 404,
+            headers: { ...head_json, ...cors }
+        });
+    }
+
+    // Return all categories
+    const categories = Object.keys(presets);
+    return new Response(JSON.stringify({ categories }), {
+        headers: { ...head_json, ...cors }
+    });
+}
 
 const head_json = {
 	"Content-Type": "application/json; charset=utf-8"
@@ -39,21 +63,24 @@ export async function handleFeeds(req: Request) {
         data = await req.json();
     }
 
-    let { keys, batch, update } = data;
+    let { keys, batch, update, settings } = data;
 
     if (!keys?.length) {
         keys = batch || [];
     }
 
-    if (hash && !keys?.length) {
+    let userSettings = null;
+
+    if (hash) {
         const presetUrls = (presets as any)[hash];
         if (presetUrls) {
-            keys = presetUrls.map((url: string, order: number) => ({ url, order }));
+            keys = keys.length ? keys : presetUrls.map((url: string, order: number) => ({ url, order }));
         } else {
             let authorized = await authorize(hash, sig);
             if (authorized.public || authorized.valid) {
                 let tasks = (ver && (await KV.get(['/api/feeds', hash, ver]))?.value) || (await KV.get(['/api/feeds', hash]))?.value || [];
-                keys = tasks;
+                keys = keys.length ? keys : tasks;
+                userSettings = (await KV.get(['/api/settings', hash]))?.value;
             }
         }
     }
@@ -69,16 +96,26 @@ export async function handleFeeds(req: Request) {
     let key_feeds = 'CACHE_FEEDS:' + query_feeds.urls.map(x => x.url).join(':') + ':' + limit;
     let key_feeds_permanent = 'PERMANENT_' + key_feeds;
 
-    if (update && saved) {
+    if (update && (saved || settings)) {
         let v = (await KV.get(['/api/feeds', hash, 'version']))?.value || '0';
         v = (~~v) + 1;
-        let save_obj = saved.map((x, order) => ({ order, ...x }));
+        let save_obj = (saved || []).map((x, order) => ({ order, ...x }));
 
-        Promise.allSettled([
-            KV.set(['/api/feeds', hash], save_obj),
-            KV.set(['/api/feeds', hash, v], save_obj),
+        let tasks = [
             KV.set(['/api/feeds', hash, 'version'], v),
-        ]).then(r => console.log('saved', saved.length, '/api/feeds', hash, v, save_obj, r)).catch(console.error);
+        ];
+
+        if (saved) {
+            tasks.push(KV.set(['/api/feeds', hash], save_obj));
+            tasks.push(KV.set(['/api/feeds', hash, v], save_obj));
+        }
+
+        if (settings) {
+            tasks.push(KV.set(['/api/settings', hash], settings));
+            userSettings = settings;
+        }
+
+        Promise.allSettled(tasks).then(r => console.log('saved', (saved?.length || 0), '/api/feeds', hash, v, r)).catch(console.error);
 
         CACHE.del(key_feeds);
         CACHE.del(key_feeds_permanent);
@@ -88,7 +125,7 @@ export async function handleFeeds(req: Request) {
     if (params.is_tasks) {
         let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
         let feeds_cached = CACHE.get(key_feeds) || feeds_permanent || [];
-        feeds = saved.map((x, order) => ({ order, ...x }));
+        feeds = keys.map((x, order) => ({ order, ...x }));
 
         // Proactive refresh if cache is empty
         if (!feeds_cached?.length && !params.is_tasks_only) {
@@ -97,7 +134,7 @@ export async function handleFeeds(req: Request) {
                 .catch(e => console.dir({ query_feeds, e }))
         }
 
-        return response(JSON.stringify({ feeds, feeds_cached, hash }), {
+        return response(JSON.stringify({ feeds, feeds_cached, hash, settings: userSettings }), {
             headers: {
                 ...cors, ...head_json,
                 "Cache-Control": "public, max-age=300"
@@ -143,7 +180,7 @@ export async function handleFeeds(req: Request) {
         }
     }
 
-    return response(JSON.stringify({ feeds, hash }), {
+    return response(JSON.stringify({ feeds, hash, settings: userSettings }), {
         headers: {
             ...cors, ...head_json,
             "Cache-Control": "public, max-age=300"
@@ -314,31 +351,38 @@ export async function handleStatic(req: Request) {
     const { pathname } = new URL(req.url);
     const decodedPath = decodeURIComponent(pathname);
     const localpath = `./frontend${decodedPath}`;
+    const datapath = `./data${decodedPath}`;
+    let path = "";
 
     if (await exists(localpath)) {
-		const mimetypes = {
-			'.js': 'text/javascript',
-			'.mjs': 'text/javascript',
-			'.html': 'text/html',
-			'.css': 'text/css',
-			'.json': 'application/json',
-			'.png': 'image/png',
-			'.jpg': 'image/jpeg',
-			'.jpeg': 'image/jpeg',
-			'.gif': 'image/gif',
-			'.svg': 'image/svg+xml',
-			'.ico': 'image/x-icon',
-		};
-		const ext = extname(localpath);
-
-        return response(await Deno.readFile(localpath), {
-            headers: {
-                "Content-Type": `${mimetypes[ext] ?? "text/plain"}; charset=utf-8`,
-                "Cache-Control": "public, max-age=604800",
-            }
-        })
+        path = localpath;
+    } else if (await exists(datapath)) {
+        path = datapath;
+    } else {
+        return null;
     }
-    return null;
+
+    const mimetypes = {
+        '.js': 'text/javascript',
+        '.mjs': 'text/javascript',
+        '.html': 'text/html',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+    };
+    const ext = extname(path);
+
+    return response(await Deno.readFile(path), {
+        headers: {
+            "Content-Type": `${mimetypes[ext] ?? "text/plain"}; charset=utf-8`,
+            "Cache-Control": "public, max-age=604800",
+        }
+    })
 }
 
 const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);

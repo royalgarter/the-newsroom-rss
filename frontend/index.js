@@ -40,6 +40,7 @@ function alpineRSS() { return {
 		s: 'full',
 		k: '',
 	},
+	prev_style: 'full',
 
 	input: '',
 	tasks: [],
@@ -255,7 +256,7 @@ function alpineRSS() { return {
 
 	storageSet(key, val) {
 		try {
-			return localStorage.setItem(key, JSON.stringify(val));	
+			return localStorage.setItem(key, JSON.stringify(val));
 		} catch {}
 	},
 	storageGet(key) {
@@ -756,6 +757,21 @@ function alpineRSS() { return {
 				toast('Stale detected, refreshing...');
 			}
 
+			if (resp_tasks?.settings) {
+				const s = resp_tasks.settings;
+				if (s.k && !this.params.k) {
+					this.params.k = s.k;
+					this.storageSet(this.K.gemini_api_key, this.params.k);
+				}
+				if (s.s && !this.params.s) {
+					this.params.s = s.s;
+					this.storageSet(this.K.style, this.params.s);
+				}
+				if (s.l && !this.params.l) {
+					this.params.l = s.l;
+				}
+			}
+
 			if (resp_tasks?.feeds?.length) {
 				this.tasks = resp_tasks?.feeds;
 				urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
@@ -849,7 +865,7 @@ function alpineRSS() { return {
 					const remainingData = remainingResultsPrefetch.map(r => r.value);
 					const remainingResults = await fetchBatch(remainingData, urls);
 					const remainingFeeds = remainingResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
-					
+
 					if (remainingFeeds.length) {
 						remainingFeeds.forEach(rf => {
 							let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
@@ -861,7 +877,7 @@ function alpineRSS() { return {
 								this.feeds.push(rf);
 							}
 						});
-						
+
 						let finalFeeds = [];
 						urls.forEach(u => {
 							let found = this.feeds.find(f => f.rss_url === u);
@@ -870,7 +886,7 @@ function alpineRSS() { return {
 
 						this.feeds = finalFeeds;
 						this.postProcessFeeds({limit, auto_fetch_content: true});
-						
+
 						if (!this.params.topic) {
 							const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
 							this.storageSet(storageKey, this.feeds);
@@ -1020,7 +1036,15 @@ function alpineRSS() { return {
 						method: 'POST',
 						headers: {"content-type": "application/json"},
 						signal: AbortSignal.timeout(20e3),
-						body: JSON.stringify({batch: this.tasks, update: true}),
+						body: JSON.stringify({
+							batch: this.tasks,
+							update: true,
+							settings: {
+								k: this.params.k,
+								s: this.params.s,
+								l: this.params.l,
+							}
+						}),
 					})
 					.then(resp => resp.json())
 					.then(console.log)
@@ -1066,7 +1090,7 @@ function alpineRSS() { return {
 											|| new Date(item.published).toString().split(' GMT').shift()
 											|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim();
 					item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
-					item.description_formatted = item.description ? this.decodeHTML(item.description) : '';
+					item.description_formatted = (item.description ? this.decodeHTML(item.description) : '').substr(0, 300);
 					item.author_formatted = item.author?.toString().substr(0, 20).trim();
 					item.anchor = anchorling(item?.link);
 
@@ -1163,11 +1187,19 @@ function alpineRSS() { return {
 
 						feed.loading = false;
 
-						if (!resp || resp?.status >= 400) return (item.no_article = true);/*console.log(item.link, resp)*/;
+						if (!resp || resp?.status >= 400) {
+							item.no_article = true;
+							item.prefetching = false; // Reset prefetching flag on failure
+							return;
+						}
 
 						let html = await resp?.text?.().catch(null);
 
-						if (!html) return (item.no_article = true);
+						if (!html) {
+							item.no_article = true;
+							item.prefetching = false; // Reset prefetching flag on failure
+							return;
+						}
 
 						let doc = new DOMParser().parseFromString(html, "text/html");
 						item.article = new Readability(doc).parse();
@@ -1176,6 +1208,8 @@ function alpineRSS() { return {
 						if (content?.length) {
 							item.article.content = cleanContent(content);
 						}
+						item.prefetching = false; // Reset prefetching flag on success
+
 
 						// if (feed.items.filter(item => item.prefetching && item.article).length == feed.items.length) {
 						// 	let feedNext = this.feeds[feedIdx + 1];
@@ -1374,7 +1408,15 @@ function alpineRSS() { return {
 			const resp = await fetch(`/api/feeds?is_tasks=true&x=${this.params.x || ''}&log=savetasks`, {
 				method: 'POST',
 				headers: {"content-type": "application/json"},
-				body: JSON.stringify({batch: this.tasks, update: true}),
+				body: JSON.stringify({
+					batch: this.tasks,
+					update: true,
+					settings: {
+						k: this.params.k,
+						s: this.params.s,
+						l: this.params.l,
+					}
+				}),
 			});
 
 			const json = await resp.json();
@@ -1535,14 +1577,14 @@ function alpineRSS() { return {
 	async clusterItems() {
 		if (this.clustering) return;
 		this.clustering = true;
-		
+
 		let startTime = Date.now();
 		let stats = { method: 'none', total: 0, clusters: 0, hidden: 0 };
 
 		try {
 			let allItems = this.feeds.flatMap(f => f.items).filter(x => !x.disable);
 			stats.total = allItems.length;
-			
+
 			allItems.forEach(item => {
 				item.hidden_by_cluster = false;
 				item.related_sources = [];
@@ -1658,12 +1700,12 @@ function alpineRSS() { return {
 
 		for (let i = 0; i < allItems.length; i++) {
 			if (processed.has(i)) continue;
-			
+
 			let item = allItems[i];
 			let query = (item.title + item.description) || item.title.replace(/[^\w\s]/g, '').split(/\s+/)
 							.filter(word => word.length > 3)
 							.join(' ');
-			
+
 			if (!query) continue;
 
 			let selfResults = miniSearch.search(query);
@@ -1705,7 +1747,7 @@ function alpineRSS() { return {
 				source: item.author || new URL(item.link).hostname
 			};
 		});
-		
+
 		return primary.related_sources.length;
 	},
 
@@ -1732,7 +1774,7 @@ function alpineRSS() { return {
 
 			for (const code in clusters) {
 				const country = clusters[code];
-				
+
 				// Match by domain
 				if (country.domains.some(d => domain.includes(d.toLowerCase()))) {
 					country.count++;
@@ -1768,30 +1810,33 @@ function alpineRSS() { return {
 		toast('Digesting news with Gemini...');
 
 		try {
+			let COUNT = 20;
 			let titles = allItems.map(item => `- [${item.title}](${item.link})`).join('\n');
 			let prompt = [
 				`You are a professional news editor. Here is a list of today's news titles:`,
+				`---\n`,
 				`\n${titles}\n`,
-				`Select the top 10 most important and interesting news articles from this list.`,
+				`---\n`,
+				`Select the **top ${COUNT}** most important, impact and interesting news articles from this list.`,
 				`Provide a concise, engaging summary for each of the selected articles.`,
 				`Format the output as a **Markdown Ordered Lists** with titles as bold, url and summaries as text below each title.`,
 				`Start with a general overview of the news landscape today.`,
 				`Use **Heading 2 [title](link)** for titles.`,
-				`Response straight to the point, **NEVER** say foreword like "Here is the top 10 items...".`
+				`Response straight to the point, **NEVER** say foreword like "Here is the top ${COUNT} items...".`
 			].join('\n');
 
 			let digest = await window.generateContent(prompt, this.params.k);
 			if (digest) {
 				// Basic Markdown-ish to HTML conversion
 				let html = digest
-					.replace(/([\d\.\-\*\+]+\s*)\[([^\[\]]+)\]\s*\((http\S+)\)/g, 
-						'<a href="$3" class="cursor-pointer text-md underline font-bold my-2 mt-4" target="_blank">$1$2</a>')
+					.replace(/\[([^\[\]]+)\]\s*\((http\S+)\)/g,
+						'<a href="$2" class="cursor-pointer text-md underline font-bold my-2 mt-4 inline-block" target="_blank">$1</a>')
 					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
 					.replace(/\*(.*?)\*/g, '<i>$1</i>')
 					.replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
 					.replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-3 mb-1">$1</h2>')
 					.replace(/^### (.*$)/gm, '<h3 class="text-md font-bold mt-2 mb-1">$1</h3>')
-					.replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>');
+					.replace(/^[\d\.\-\*\+]+\s+(.*$)/gm, '<li class="ml-4">$1</li>');
 
 				this.modalShow('Daily News Digest', html, 'Cool', 'Close', () => {
 					// Add to notes if they want? Maybe another button for that.
@@ -1919,7 +1964,7 @@ function alpineRSS() { return {
 					let locale = new Intl.Locale(navigator.language);
 					let region = (locale.region || country || '').toUpperCase();
 					let language = locale.language.toUpperCase();
-					
+
 					let found = feedsByCountry.find(x => region == x.country)
 						|| feedsByCountry.find(x => (language == x.country) || navigator.language.includes(x.country));
 
