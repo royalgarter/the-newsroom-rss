@@ -218,8 +218,8 @@
 
 					<!-- feed rss -->
 					<div class="w-full mx-auto px-1 sm:px-8 md:px-10  pt-3 sm:pt-4 md:pt-6  pb-18 sm:pb-18 md:pb-18">
-						<div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
-							:class="params.s == 'tiny' ? '' : 'gap-6'"
+						<div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
+							:class="params.s == 'tiny' ? 'grid-cols-2' : 'grid-cols-1 gap-6'"
 						>
 							<!-- rss-item -->
 							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
