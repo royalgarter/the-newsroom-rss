@@ -39,6 +39,16 @@ function alpineRSS() { return {
 		l: 12,
 		s: 'full',
 		k: '',
+		u: false,
+	},
+	unifiedItems() {
+		return (this.feeds || []).flatMap(f => (f.items || []).map(i => ({...i, feed_favicon: f.favicon_url, feed_title: f.title}))).filter(x => !x?.disable).sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
+	},
+	loadMoreAll() {
+		(this.feeds || []).forEach(f => f.loadMore?.());
+	},
+	isAnyFeedLoading() {
+		return (this.feeds || []).some(f => f.loading);
 	},
 	prev_style: 'full',
 
@@ -1938,7 +1948,7 @@ function alpineRSS() { return {
 
 
 		this.profile = this.storageGet(this.K.profile) || {};
-		this.params = Object.fromEntries(new URLSearchParams(location.search));
+		this.params = { ...this.params, ...Object.fromEntries(new URLSearchParams(location.search)) };
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = (this.params.s && this.params.s !== 'null') ? this.params.s : (this.storageGet(this.K.style) || 'full');
 		this.params.k = this.params.k || this.storageGet(this.K.gemini_api_key) || '';
