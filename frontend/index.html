@@ -281,7 +281,7 @@
 													:src="item.feed_favicon"
 													onerror="this.src = '/favicons/ios/16.png';"
 												/>
-												<span class="text-[10px] uppercase font-bold" x-text="item.feed_title"></span>
+												<span class="text-xs uppercase font-bold" x-text="item.feed_title"></span>
 											</div>
 											<a :href="item.link" target="_blank" class="hover:text-gray-500">
 												<span x-show="item.image_thumb && !style()?.img">►</span>
@@ -317,7 +317,7 @@
 															class="flex items-center gap-2 hover:underline text-xs"
 															:title="source.title"
 														>
-															<img width="16" height="16" class="w-3 h-3 mr-2 grayscale opacity-70"
+															<img width="16" height="16" class="w-3 h-3 mr-2 opacity-70"
 																:src="'https://www.google.com/s2/favicons?domain=' + new URL(source.link).hostname +'&sz=64'"
 															/>
 															<span class="break-words italic opacity-80" x-text="source.title"></span>
@@ -390,7 +390,7 @@
 												<div x-show="item.show_ldjson"
 													class="px-4 py-2 border-t bg-gray-50/50 dark:bg-gray-900/20 max-w-full overflow-hidden"
 												>
-													<pre class="text-[10px] opacity-70 leading-tight whitespace-pre-wrap break-all" x-text="JSON.stringify(item.ldjson, null, 2)"></pre>
+													<pre class="text-xs opacity-70 leading-tight whitespace-pre-wrap break-all" x-text="JSON.stringify(item.ldjson, null, 2)"></pre>
 												</div>
 											</template>
 										</div>
@@ -594,7 +594,7 @@
 															class="flex items-center gap-2 hover:underline text-xs"
 															:title="source.title"
 														>
-															<img width="16" height="16" class="w-3 h-3 grayscale opacity-70"
+															<img width="16" height="16" class="w-3 h-3 opacity-70"
 																:src="'https://www.google.com/s2/favicons?domain=' + new URL(source.link).hostname +'&sz=64'"
 															/>
 															<span class="break-words italic opacity-80" x-text="source.title"></span>
@@ -1136,13 +1136,13 @@
 					<span x-text="is_open ? '▼' : '▲'"></span>
 				</button>
 				<button @click="if (_alBody.params.s != 'tiny') { _alBody.prev_style = _alBody.params.s; _alBody.params.s = 'tiny'; } else { _alBody.params.s = _alBody.prev_style || 'full'; }" class="font-bold flex items-center justify-center h-10 cursor-pointer">
-					<span x-text="_alBody.params.s != 'tiny' ? '/flash' : '/unflash' ">/flash</span>
+					<span x-text="_alBody.params.s != 'tiny' ? '/fla' : '/unflash' ">/fla</span>
 				</button>
 				<button @click="_alBody.params.u = !_alBody.params.u" class="font-bold flex items-center justify-center h-10 cursor-pointer">
 					<span x-text="_alBody.params.u ? '/normal' : '/uni' ">/uni</span>
 				</button>
 				<button @click="_alBody.digestNews()" class="font-bold flex items-center justify-center h-10 cursor-pointer" x-show="!loading">
-					<span>/digest</span>
+					<span>/dig</span>
 				</button>
 			</div>
 		</div>

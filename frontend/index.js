@@ -42,7 +42,15 @@ function alpineRSS() { return {
 		u: false,
 	},
 	get unifiedItems() {
-		return (this.feeds || []).flatMap(f => (f.items || []).map(i => ({...i, feed_favicon: f.favicon_url, feed_title: f.title}))).filter(x => !x?.disable).sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
+		return (this.feeds || [])
+			.flatMap(f => (f.items || []).map(i => ({
+					...i,
+					feed_favicon: f.favicon_url,
+					feed_title: f.title.split(' > ')[0]
+				}))
+			)
+			.filter(x => !x?.disable)
+			.sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
 	},
 	loadMoreAll() {
 		(this.feeds || []).forEach(f => f.loadMore?.());
