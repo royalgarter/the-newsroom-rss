@@ -41,13 +41,13 @@ function alpineRSS() { return {
 		k: '',
 		u: false,
 	},
-	unifiedItems() {
+	get unifiedItems() {
 		return (this.feeds || []).flatMap(f => (f.items || []).map(i => ({...i, feed_favicon: f.favicon_url, feed_title: f.title}))).filter(x => !x?.disable).sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
 	},
 	loadMoreAll() {
 		(this.feeds || []).forEach(f => f.loadMore?.());
 	},
-	isAnyFeedLoading() {
+	get isAnyFeedLoading() {
 		return (this.feeds || []).some(f => f.loading);
 	},
 	prev_style: 'full',
@@ -1013,7 +1013,7 @@ function alpineRSS() { return {
 		this.feeds.forEach((feed, feedIdx) => {
 			// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 			feed.short_title = new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0];
-			feed.favicon_url = 'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128';
+			feed.favicon_url = feed.link ? ('https://www.google.com/s2/favicons?domain=' + newURL(feed.link).hostname +'&sz=128') : '/favicon.ico';
 			feed.anchor = anchorling(feed?.rss_url);
 
 			feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
@@ -2252,6 +2252,12 @@ navigator?.serviceWorker?.register?.('./sw.js').then(registration => {
 		}).catch(console.error);
 	}
 });
+
+function newURL(link) {
+	try {
+		return new URL(link);
+	} catch (ex) { new URL(location.origin) }
+}
 
 function handleGoogle1TapSignin(response) {
 	let jwt = response?.credential;
