@@ -39,6 +39,24 @@ function alpineRSS() { return {
 		l: 12,
 		s: 'full',
 		k: '',
+		u: false,
+	},
+	get unifiedItems() {
+		return (this.feeds || [])
+			.flatMap(f => (f.items || []).map(i => ({
+					...i,
+					feed_favicon: f.favicon_url,
+					feed_title: f.title.split(' > ')[0]
+				}))
+			)
+			.filter(x => !x?.disable)
+			.sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
+	},
+	loadMoreAll() {
+		(this.feeds || []).forEach(f => f.loadMore?.());
+	},
+	get isAnyFeedLoading() {
+		return (this.feeds || []).some(f => f.loading);
 	},
 	prev_style: 'full',
 
@@ -1003,7 +1021,7 @@ function alpineRSS() { return {
 		this.feeds.forEach((feed, feedIdx) => {
 			// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 			feed.short_title = new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0];
-			feed.favicon_url = 'https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128';
+			feed.favicon_url = feed.link ? ('https://www.google.com/s2/favicons?domain=' + newURL(feed.link).hostname +'&sz=128') : '/favicon.ico';
 			feed.anchor = anchorling(feed?.rss_url);
 
 			feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
@@ -1938,7 +1956,7 @@ function alpineRSS() { return {
 
 
 		this.profile = this.storageGet(this.K.profile) || {};
-		this.params = Object.fromEntries(new URLSearchParams(location.search));
+		this.params = { ...this.params, ...Object.fromEntries(new URLSearchParams(location.search)) };
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = (this.params.s && this.params.s !== 'null') ? this.params.s : (this.storageGet(this.K.style) || 'full');
 		this.params.k = this.params.k || this.storageGet(this.K.gemini_api_key) || '';
@@ -2242,6 +2260,12 @@ navigator?.serviceWorker?.register?.('./sw.js').then(registration => {
 		}).catch(console.error);
 	}
 });
+
+function newURL(link) {
+	try {
+		return new URL(link);
+	} catch (ex) { new URL(location.origin) }
+}
 
 function handleGoogle1TapSignin(response) {
 	let jwt = response?.credential;
