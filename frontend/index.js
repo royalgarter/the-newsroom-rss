@@ -1919,6 +1919,9 @@ function alpineRSS() { return {
 
 		this.$watch('loading', value => {
 			this.title = this.theTitle();
+
+			return;
+
 			if (value === false) {
 				// Trigger clustering when all feeds are loaded
 				setTimeout(() => {

@@ -46,7 +46,7 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 
 			let key_rss = 'RSS:' + url;
 
-			console.time('>> parseRSS.' + url);
+			// console.time('>> parseRSS.' + url);
 			content = await Promise.any([
 				new Promise((resolve, reject) => {
 					let cached = CACHE.get(key_rss);
@@ -69,7 +69,7 @@ async function parseRSS(url: string, content: string, pioneer: Boolean) {
 						});
 				}),
 			]);
-			console.timeEnd('>> parseRSS.' + url);
+			// console.timeEnd('>> parseRSS.' + url);
 		}
 
 		if (!content) return {rss_url: url};

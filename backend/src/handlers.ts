@@ -78,9 +78,9 @@ export async function handleFeeds(req: Request) {
         } else {
             let authorized = await authorize(hash, sig);
             if (authorized.public || authorized.valid) {
-                let tasks = (ver && (await KV.get(['/api/feeds', hash, ver]))?.value) || (await KV.get(['/api/feeds', hash]))?.value || [];
+                let tasks = (ver && (await KV.safeGet(['/api/feeds', hash, ver]))?.value) || (await KV.safeGet(['/api/feeds', hash]))?.value || [];
                 keys = keys.length ? keys : tasks;
-                userSettings = (await KV.get(['/api/settings', hash]))?.value;
+                userSettings = (await KV.safeGet(['/api/settings', hash]))?.value;
             }
         }
     }
@@ -97,21 +97,21 @@ export async function handleFeeds(req: Request) {
     let key_feeds_permanent = 'PERMANENT_' + key_feeds;
 
     if (update && (saved || settings)) {
-        let v = (await KV.get(['/api/feeds', hash, 'version']))?.value || '0';
+        let v = (await KV.safeGet(['/api/feeds', hash, 'version']))?.value || '0';
         v = (~~v) + 1;
         let save_obj = (saved || []).map((x, order) => ({ order, ...x }));
 
         let tasks = [
-            KV.set(['/api/feeds', hash, 'version'], v),
+            KV.safeSet(['/api/feeds', hash, 'version'], v),
         ];
 
         if (saved) {
-            tasks.push(KV.set(['/api/feeds', hash], save_obj));
-            tasks.push(KV.set(['/api/feeds', hash, v], save_obj));
+            tasks.push(KV.safeSet(['/api/feeds', hash], save_obj));
+            tasks.push(KV.safeSet(['/api/feeds', hash, v], save_obj));
         }
 
         if (settings) {
-            tasks.push(KV.set(['/api/settings', hash], settings));
+            tasks.push(KV.safeSet(['/api/settings', hash], settings));
             userSettings = settings;
         }
 
@@ -123,7 +123,7 @@ export async function handleFeeds(req: Request) {
     }
 
     if (params.is_tasks) {
-        let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
+        let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.safeGet([key_feeds_permanent]))?.value;
         let feeds_cached = CACHE.get(key_feeds) || feeds_permanent || [];
         feeds = keys.map((x, order) => ({ order, ...x }));
 
@@ -141,7 +141,7 @@ export async function handleFeeds(req: Request) {
             },
         });
     } else {
-        let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.get([key_feeds_permanent]))?.value;
+        let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.safeGet([key_feeds_permanent]))?.value;
         feeds = CACHE.get(key_feeds);
 
         // console.dir({cachy, query_feeds, key_feeds, key_feeds_permanent})
@@ -270,11 +270,11 @@ export async function handleReadLater(req: Request) {
                 existingItems;
 
             // First, get the article to see if it has chunks
-            const article = (await KV.get([pathname, hash, link]))?.value;
+            const article = (await KV.safeGet([pathname, hash, link]))?.value;
             if (article?.chunks) {
                 let currentChunkKey = article.chunks;
                 while (currentChunkKey) {
-                    const chunk = (await KV.get(currentChunkKey))?.value;
+                    const chunk = (await KV.safeGet(currentChunkKey))?.value;
                     await KV.delete(currentChunkKey);
                     if (chunk) {
                         currentChunkKey = chunk.next;
@@ -484,7 +484,7 @@ async function saveBookmarks(kvkeys, updatedItems) {
         .filter(x => (!x?.skip_article) && x?.article?.content)
         .map(x => ({ link: x.link, article: x.article }));
 
-    await KV.set(kvkeys, items);
+    await KV.safeSet(kvkeys, items);
 
     for (let a of articles) {
         delete a.article.title;
@@ -508,24 +508,24 @@ async function saveBookmarks(kvkeys, updatedItems) {
                 if (currentChunk === 1) {
                     a.article.content = null;
                     a.article.chunks = chunkKey;
-                    await KV.set([...kvkeys, a.link], a.article);
+                    await KV.safeSet([...kvkeys, a.link], a.article);
                 }
 
-                await KV.set(chunkKey, chunkData);
+                await KV.safeSet(chunkKey, chunkData);
                 currentChunk++;
             }
         } else {
-            await KV.set([...kvkeys, a.link], a.article);
+            await KV.safeSet([...kvkeys, a.link], a.article);
         }
     }
 }
 
 async function getBookmarks(kvkeys) {
-	let items = (await KV.get(kvkeys)) || {value: []};
+	let items = (await KV.safeGet(kvkeys)) || {value: []};
 
 	// await Promise.allSettled(
 	// 	Object.keys(items?.value || {}).map(i =>
-	// 		KV.get([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a?.value})
+	// 		KV.safeGet([...kvkeys, items.value[i].link]).then(a => {items.value[i].article = a?.value})
 	// 	)
 	// )
 	
@@ -533,13 +533,13 @@ async function getBookmarks(kvkeys) {
 }
 
 async function getBookmarkArticle(kvkeys, link) {
-    let article = (await KV.get([...kvkeys, link]))?.value;
+    let article = (await KV.safeGet([...kvkeys, link]))?.value;
 
     if (article?.chunks) {
         let content = '';
         let currentChunkKey = article.chunks;
         while (currentChunkKey) {
-            const chunk = (await KV.get(currentChunkKey))?.value;
+            const chunk = (await KV.safeGet(currentChunkKey))?.value;
             if (chunk) {
                 content += chunk.content;
                 currentChunkKey = chunk.next;

@@ -1,5 +1,26 @@
 const KV = await Deno.openKv(Deno.env.get('DENO_KV_URL'));
 
+
+KV.safeGet = async (key) => {
+    try {
+        let result = await KV.get(key);
+        return result;
+    } catch (ex) {
+        console.log(ex.message || ex)
+        return null
+    }
+}
+
+KV.safeSet = async (key, value) => {
+    try {
+        let result = await KV.set(key, value);
+        return result;
+    } catch (ex) {
+        console.log(ex.message || ex)
+        return null
+    }
+}
+
 export default KV;
 
 // Backup all KV data to database folder on startup
@@ -21,7 +42,9 @@ async function backupKvData() {
 
         const backupData: { key: string[]; value: unknown }[] = [];
         const expiredKeys: string[][] = [];
+        const oversizedKeys: string[][] = [];
         const now = Math.floor(Date.now() / 1000);
+        const MAX_VALUE_SIZE = 2000; // ~2KB limit (Deno KV read limit is ~2049 bytes)
 
         // List all entries with empty prefix to get everything
         const iter = KV.list({ prefix: [] });
@@ -39,8 +62,17 @@ async function backupKvData() {
             if (entry.key.find(k => k?.includes?.('_CACHE_'))
                 || (entry.key.length > 2 && Number.isFinite(entry.key[3]))
             ) {
-                console.log(entry.key)
+                await KV.delete(entry.key);
+                console.log('Skipping cache/temp:', entry.key);
                 continue;
+            }
+
+            // Check for oversized values
+            const valueSize = new TextEncoder().encode(JSON.stringify(entry.value)).length;
+            if (valueSize > MAX_VALUE_SIZE) {
+                console.log(`Found oversized entry ${JSON.stringify(entry.key)} (${valueSize} bytes)`);
+                oversizedKeys.push(entry.key);
+                continue; // Don't backup oversized entries
             }
 
             backupData.push({
@@ -49,13 +81,17 @@ async function backupKvData() {
             });
         }
 
-        // Delete expired entries
-        for (const key of expiredKeys) {
+        // Delete expired and oversized entries
+        const keysToDelete = [...expiredKeys, ...oversizedKeys];
+        for (const key of keysToDelete) {
             await KV.delete(key);
         }
 
         if (expiredKeys.length > 0) {
             console.log(`Deleted ${expiredKeys.length} expired signature(s)`);
+        }
+        if (oversizedKeys.length > 0) {
+            console.log(`Deleted ${oversizedKeys.length} oversized entry/entries`);
         }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -92,11 +128,23 @@ async function restoreFromLatestBackup() {
         const content = await Deno.readTextFile(latestPath);
         const backupData: { key: string[]; value: unknown }[] = JSON.parse(content);
 
+        const MAX_VALUE_SIZE = 2000; // ~2KB limit (Deno KV read limit is ~2049 bytes)
+        let restored = 0;
+        let skipped = 0;
+
         for (const item of backupData) {
+            // Skip oversized values
+            const valueSize = new TextEncoder().encode(JSON.stringify(item.value)).length;
+            if (valueSize > MAX_VALUE_SIZE) {
+                console.log(`Skipping oversized entry ${JSON.stringify(item.key)} (${valueSize} bytes)`);
+                skipped++;
+                continue;
+            }
             await KV.set(item.key, item.value);
+            restored++;
         }
 
-        console.log(`Restored ${backupData.length} entries from ${latestPath}`);
+        console.log(`Restored ${restored} entries from ${latestPath}${skipped > 0 ? ` (skipped ${skipped} oversized)` : ''}`);
     } catch (error) {
         console.error('Failed to restore from backup:', error);
     }
