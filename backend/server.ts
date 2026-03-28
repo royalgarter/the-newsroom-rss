@@ -43,12 +43,6 @@ async function handleRequest(req: Request) {
     return new Response(JSON.stringify({ error: 'E404' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 }
 
-console.log(Deno.env.get('GEMINI_API_KEY'))
-console.log(Deno.env.get('GOOGLE_CLIENT_ID'))
-console.log(Deno.env.get('GOOGLE_CLIENT_REDIRECT_URI'))
-console.log(Deno.env.get('GOOGLE_CLIENT_SECRET'))
-
-
 const PORT = Number(Deno.env.get('PORT')) || 17385;
 console.log(`Server starting on port ${PORT}`);
 Deno.serve({ port: PORT }, handleRequest);
