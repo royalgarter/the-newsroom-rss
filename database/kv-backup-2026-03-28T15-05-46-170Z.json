@@ -1,0 +1,2221 @@
+[
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      },
+      {
+        "order": 4,
+        "url": "https://www.etonline.com/news/rss"
+      },
+      {
+        "order": 5,
+        "url": "https://www.buzzfeed.com/index.xml"
+      },
+      {
+        "order": 6,
+        "url": "https://screenrant.com/feed/"
+      },
+      {
+        "order": 7,
+        "url": "https://www.dailyentertainmentworld.com/blog-feed.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      "version"
+    ],
+    "value": 9
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      1
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.tmz.com/rss.xml"
+      },
+      {
+        "order": 1,
+        "url": "https://feeds.people.com/people/headlines"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/celebrity_news/rss"
+      },
+      {
+        "order": 3,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 4,
+        "url": "https://www.thesun.co.uk/sol/homepage/rss/"
+      },
+      {
+        "order": 5,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 6,
+        "url": "https://img.perezhilton.com/?feed=rss2"
+      },
+      {
+        "order": 7,
+        "url": "https://gawker.com/rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      2
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      3
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      4
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      },
+      {
+        "order": 4,
+        "url": "https://www.etonline.com/news/rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      5
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      },
+      {
+        "order": 4,
+        "url": "https://www.etonline.com/news/rss"
+      },
+      {
+        "order": 5,
+        "url": "https://www.buzzfeed.com/index.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      6
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      },
+      {
+        "order": 4,
+        "url": "https://www.etonline.com/news/rss"
+      },
+      {
+        "order": 5,
+        "url": "https://www.buzzfeed.com/index.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      7
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      },
+      {
+        "order": 4,
+        "url": "https://www.etonline.com/news/rss"
+      },
+      {
+        "order": 5,
+        "url": "https://www.buzzfeed.com/index.xml"
+      },
+      {
+        "order": 6,
+        "url": "https://screenrant.com/feed/"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      8
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      },
+      {
+        "order": 4,
+        "url": "https://www.etonline.com/news/rss"
+      },
+      {
+        "order": 5,
+        "url": "https://www.buzzfeed.com/index.xml"
+      },
+      {
+        "order": 6,
+        "url": "https://screenrant.com/feed/"
+      },
+      {
+        "order": 7,
+        "url": "https://www.dailyentertainmentworld.com/blog-feed.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "entertainment",
+      9
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://www.hollywoodreporter.com/taxonomy/term/59/0/feed"
+      },
+      {
+        "order": 2,
+        "url": "https://www.usmagazine.com/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.indiewire.com/feed/"
+      },
+      {
+        "order": 4,
+        "url": "https://www.etonline.com/news/rss"
+      },
+      {
+        "order": 5,
+        "url": "https://www.buzzfeed.com/index.xml"
+      },
+      {
+        "order": 6,
+        "url": "https://screenrant.com/feed/"
+      },
+      {
+        "order": 7,
+        "url": "https://www.dailyentertainmentworld.com/blog-feed.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+      },
+      {
+        "order": 1,
+        "url": "http://feeds.bbci.co.uk/news/health/rss.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://kffhealthnews.org/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.sciencedaily.com/rss/top/health.xml"
+      },
+      {
+        "order": 4,
+        "url": "https://www.iarc.who.int/feed/?post_type=news-events"
+      },
+      {
+        "order": 5,
+        "url": "https://www.emro.who.int/index.php?option=com_mediarss&feed_id=2&format=raw&utm_source=rss&utm_medium=rssfeeds&utm_campaign=emronews"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health",
+      "version"
+    ],
+    "value": 6
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health",
+      1
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health",
+      2
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+      },
+      {
+        "order": 1,
+        "url": "http://feeds.bbci.co.uk/news/health/rss.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health",
+      3
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+      },
+      {
+        "order": 1,
+        "url": "http://feeds.bbci.co.uk/news/health/rss.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://kffhealthnews.org/feed/"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health",
+      4
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+      },
+      {
+        "order": 1,
+        "url": "http://feeds.bbci.co.uk/news/health/rss.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://kffhealthnews.org/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.sciencedaily.com/rss/top/health.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health",
+      5
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+      },
+      {
+        "order": 1,
+        "url": "http://feeds.bbci.co.uk/news/health/rss.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://kffhealthnews.org/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.sciencedaily.com/rss/top/health.xml"
+      },
+      {
+        "order": 4,
+        "url": "https://www.iarc.who.int/feed/?post_type=news-events"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "health",
+      6
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+      },
+      {
+        "order": 1,
+        "url": "http://feeds.bbci.co.uk/news/health/rss.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://kffhealthnews.org/feed/"
+      },
+      {
+        "order": 3,
+        "url": "https://www.sciencedaily.com/rss/top/health.xml"
+      },
+      {
+        "order": 4,
+        "url": "https://www.iarc.who.int/feed/?post_type=news-events"
+      },
+      {
+        "order": 5,
+        "url": "https://www.emro.who.int/index.php?option=com_mediarss&feed_id=2&format=raw&utm_source=rss&utm_medium=rssfeeds&utm_campaign=emronews"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "photo"
+    ],
+    "value": [
+      {
+        "url": "https://admiringlight.com/blog/feed/",
+        "order": 0
+      },
+      {
+        "url": "https://www.dpreview.com/feeds/reviews.xml",
+        "order": 1
+      },
+      {
+        "url": "https://digital-photography-school.com/feed/",
+        "order": 2
+      },
+      {
+        "url": "https://www.ephotozine.com/full.xml",
+        "order": 3
+      },
+      {
+        "url": "https://fstoppers.com/feed",
+        "order": 4
+      },
+      {
+        "url": "https://www.lightstalking.com/feed/",
+        "order": 5
+      },
+      {
+        "url": "https://petapixel.com/feed/",
+        "order": 6
+      },
+      {
+        "url": "https://phillipreeve.net/blog/feed/",
+        "order": 7
+      },
+      {
+        "url": "https://photographylife.com/feed/",
+        "order": 8
+      },
+      {
+        "url": "https://photofocus.com/feed/",
+        "order": 9
+      },
+      {
+        "url": "https://feeds.feedburner.com/picturecorrect",
+        "order": 10
+      },
+      {
+        "url": "https://www.shutterbug.com/rss.xml",
+        "order": 11
+      },
+      {
+        "url": "https://www.thephotoargus.com/feed/",
+        "order": 12
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "royalgarter"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://www.reddit.com/user/royalgarter/m/the_newsroom_rss.rss",
+        "checked": false
+      },
+      {
+        "order": 1,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml",
+        "checked": false
+      },
+      {
+        "order": 2,
+        "url": "https://news.google.com/rss?hl=en-US&amp;gl=US&amp;ceid=US:en",
+        "checked": false
+      },
+      {
+        "order": 3,
+        "url": "https://www.theguardian.com/uk/rss",
+        "checked": false
+      },
+      {
+        "order": 4,
+        "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
+        "checked": false
+      },
+      {
+        "order": 5,
+        "url": "https://rss.dw.com/rdf/rss-en-all",
+        "checked": false
+      },
+      {
+        "order": 6,
+        "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+        "checked": false
+      },
+      {
+        "order": 7,
+        "url": "https://moxie.foxnews.com/google-publisher/latest.xml",
+        "checked": false
+      },
+      {
+        "order": 8,
+        "url": "https://www.cbc.ca/webfeed/rss/rss-topstories",
+        "checked": false
+      },
+      {
+        "order": 9,
+        "url": "https://rthk9.rthk.hk/rthk/news/rss/e_expressnews_efinance.xml",
+        "checked": false
+      },
+      {
+        "order": 10,
+        "url": "https://www.theverge.com/rss/index.xml",
+        "checked": false
+      },
+      {
+        "order": 11,
+        "url": "https://techcrunch.com/feed/",
+        "checked": false
+      },
+      {
+        "order": 12,
+        "url": "https://www.forbes.com/innovation/feed2",
+        "checked": false
+      },
+      {
+        "order": 13,
+        "url": "https://news.ycombinator.com/rss",
+        "checked": false
+      },
+      {
+        "order": 14,
+        "url": "https://www.producthunt.com/feed",
+        "checked": false
+      },
+      {
+        "order": 15,
+        "url": "https://www.techradar.com/feeds.xml",
+        "checked": false
+      },
+      {
+        "order": 16,
+        "url": "https://mashable.com/feeds/rss/all",
+        "checked": false
+      },
+      {
+        "order": 17,
+        "url": "https://scitechdaily.com/feed/",
+        "checked": false
+      },
+      {
+        "order": 18,
+        "url": "https://feeds.arstechnica.com/arstechnica/features",
+        "checked": false
+      },
+      {
+        "order": 19,
+        "url": "https://news.google.com/rss/search?q=ai+cloud&amp;hl=en-US&amp;gl=US&amp;ceid=US:en",
+        "checked": false
+      },
+      {
+        "order": 20,
+        "url": "https://www.bing.com/news/search?q=ai&amp;format=rss",
+        "checked": false
+      },
+      {
+        "order": 21,
+        "url": "https://feeds.bbci.co.uk/vietnamese/rss.xml",
+        "checked": false
+      },
+      {
+        "order": 22,
+        "url": "https://www.rfa.org/vietnamese/rss2.xml",
+        "checked": false
+      },
+      {
+        "order": 23,
+        "url": "https://news.google.com/rss?hl=vi&amp;gl=VN&amp;ceid=VN:vi",
+        "checked": false
+      },
+      {
+        "order": 24,
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 25,
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 26,
+        "url": "https://thanhnien.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 27,
+        "url": "https://voz.vn/f/diem-bao.33/index.rss",
+        "checked": false
+      },
+      {
+        "order": 28,
+        "url": "https://voz.vn/f/chuyen-tro-linh-tinh.17/index.rss",
+        "checked": false
+      },
+      {
+        "order": 29,
+        "url": "https://blog.google/technology/google-deepmind/rss/",
+        "checked": false
+      },
+      {
+        "order": 30,
+        "url": "https://rss.beehiiv.com/feeds/fMHDv0Uk41.xml",
+        "checked": false
+      },
+      {
+        "order": 31,
+        "url": "https://cloudblog.withgoogle.com/rss/",
+        "checked": false
+      },
+      {
+        "order": 32,
+        "url": "https://www.emerj.com/feed/",
+        "checked": false
+      },
+      {
+        "order": 33,
+        "url": "https://towardsdatascience.com/feed",
+        "checked": false
+      },
+      {
+        "order": 34,
+        "url": "https://machinelearningmastery.com/feed/",
+        "checked": false
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 1,
+        "url": "https://www.science.org/rss/news_current.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sciencedaily.com/rss/top/science.xml"
+      },
+      {
+        "order": 3,
+        "url": "http://feeds.nature.com/nature/rss/current"
+      },
+      {
+        "order": 4,
+        "url": "https://www.science.org/rss/express.xml"
+      },
+      {
+        "order": 5,
+        "url": "https://www.cell.com/cell/inpress.rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science",
+      "version"
+    ],
+    "value": 6
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science",
+      1
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://feeds.wired.com/wired/index"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science",
+      2
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 1,
+        "url": "https://www.science.org/rss/news_current.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science",
+      3
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 1,
+        "url": "https://www.science.org/rss/news_current.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sciencedaily.com/rss/top/science.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science",
+      4
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 1,
+        "url": "https://www.science.org/rss/news_current.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sciencedaily.com/rss/top/science.xml"
+      },
+      {
+        "order": 3,
+        "url": "http://feeds.nature.com/nature/rss/current"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science",
+      5
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 1,
+        "url": "https://www.science.org/rss/news_current.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sciencedaily.com/rss/top/science.xml"
+      },
+      {
+        "order": 3,
+        "url": "http://feeds.nature.com/nature/rss/current"
+      },
+      {
+        "order": 4,
+        "url": "https://www.science.org/rss/express.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "science",
+      6
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 1,
+        "url": "https://www.science.org/rss/news_current.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sciencedaily.com/rss/top/science.xml"
+      },
+      {
+        "order": 3,
+        "url": "http://feeds.nature.com/nature/rss/current"
+      },
+      {
+        "order": 4,
+        "url": "https://www.science.org/rss/express.xml"
+      },
+      {
+        "order": 5,
+        "url": "https://www.cell.com/cell/inpress.rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "sports"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://sports.espn.go.com/espn/rss/news"
+      },
+      {
+        "order": 1,
+        "url": "https://sports.yahoo.com/general/news/rss/"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sbnation.com/rss/index.xml"
+      },
+      {
+        "order": 3,
+        "url": "https://api.foxsports.com/v2/content/optimized-rss?partnerKey=MB0Wehpmuj2lUhuRhQaafhBjAJqaPU244mlTDK1i&size=30"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "sports",
+      "version"
+    ],
+    "value": 4
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "sports",
+      1
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://sports.espn.go.com/espn/rss/news"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "sports",
+      2
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://sports.espn.go.com/espn/rss/news"
+      },
+      {
+        "order": 1,
+        "url": "https://sports.yahoo.com/general/news/rss/"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "sports",
+      3
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://sports.espn.go.com/espn/rss/news"
+      },
+      {
+        "order": 1,
+        "url": "https://sports.yahoo.com/general/news/rss/"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sbnation.com/rss/index.xml"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "sports",
+      4
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://sports.espn.go.com/espn/rss/news"
+      },
+      {
+        "order": 1,
+        "url": "https://sports.yahoo.com/general/news/rss/"
+      },
+      {
+        "order": 2,
+        "url": "https://www.sbnation.com/rss/index.xml"
+      },
+      {
+        "order": 3,
+        "url": "https://api.foxsports.com/v2/content/optimized-rss?partnerKey=MB0Wehpmuj2lUhuRhQaafhBjAJqaPU244mlTDK1i&size=30"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "technology"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://hnrss.org/frontpage"
+      },
+      {
+        "order": 1,
+        "url": "https://www.producthunt.com/feed?category=undefined"
+      },
+      {
+        "order": 2,
+        "url": "https://feeds.arstechnica.com/arstechnica/technology-lab"
+      },
+      {
+        "order": 3,
+        "url": "https://www.techradar.com/feeds.xml"
+      },
+      {
+        "order": 4,
+        "url": "https://techresearchonline.com/feed/"
+      },
+      {
+        "order": 5,
+        "url": "https://techcrunch.com/feed/"
+      },
+      {
+        "order": 6,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 7,
+        "url": "https://www.chinanews.com/rss/it.xml"
+      },
+      {
+        "order": 8,
+        "url": "https://blog.pragmaticengineer.com/rss/"
+      },
+      {
+        "order": 9,
+        "url": "http://news.mit.edu/rss/topic/artificial-intelligence2"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "technology",
+      "version"
+    ],
+    "value": 3
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "technology",
+      1
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://techcrunch.com/feed/"
+      },
+      {
+        "order": 1,
+        "url": "https://feeds.wired.com/wired/index"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "technology",
+      2
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://techcrunch.com/feed/"
+      },
+      {
+        "order": 1,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 2,
+        "url": "https://feeds.arstechnica.com/arstechnica/technology-lab"
+      },
+      {
+        "order": 3,
+        "url": "https://www.techradar.com/feeds.xml"
+      },
+      {
+        "order": 4,
+        "url": "https://techresearchonline.com/feed/"
+      },
+      {
+        "order": 5,
+        "url": "https://hnrss.org/frontpage"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "technology",
+      3
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://hnrss.org/frontpage"
+      },
+      {
+        "order": 1,
+        "url": "https://www.producthunt.com/feed?category=undefined"
+      },
+      {
+        "order": 2,
+        "url": "https://feeds.arstechnica.com/arstechnica/technology-lab"
+      },
+      {
+        "order": 3,
+        "url": "https://www.techradar.com/feeds.xml"
+      },
+      {
+        "order": 4,
+        "url": "https://techresearchonline.com/feed/"
+      },
+      {
+        "order": 5,
+        "url": "https://techcrunch.com/feed/"
+      },
+      {
+        "order": 6,
+        "url": "https://feeds.wired.com/wired/index"
+      },
+      {
+        "order": 7,
+        "url": "https://www.chinanews.com/rss/it.xml"
+      },
+      {
+        "order": 8,
+        "url": "https://blog.pragmaticengineer.com/rss/"
+      },
+      {
+        "order": 9,
+        "url": "http://news.mit.edu/rss/topic/artificial-intelligence2"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 1,
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 2,
+        "url": "https://thanhnien.vn/rss.html",
+        "checked": false
+      },
+      {
+        "order": 3,
+        "url": "https://congan.com.vn/rss/tin-chinh",
+        "checked": false
+      },
+      {
+        "order": 4,
+        "url": "https://dantri.com.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 5,
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss",
+        "checked": false
+      },
+      {
+        "order": 6,
+        "url": "https://kenh14.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 7,
+        "url": "https://nld.com.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 8,
+        "url": "https://soha.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 9,
+        "url": "https://tinhte.vn/rss/",
+        "checked": false
+      },
+      {
+        "order": 10,
+        "url": "https://voz.vn/f/diem-bao.33/index.rss",
+        "checked": false,
+        "tags": []
+      },
+      {
+        "order": 11,
+        "url": "https://vietnamnews.vn/rss/world.rss",
+        "checked": false
+      },
+      {
+        "order": 12,
+        "url": "https://kienthuc.net.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 13,
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml",
+        "checked": false
+      },
+      {
+        "order": 14,
+        "url": "https://vietnaminsiders.com/feed/atom/",
+        "checked": false
+      },
+      {
+        "order": 15,
+        "url": "https://www.scmp.com/rss/91/feed",
+        "checked": false
+      },
+      {
+        "order": 16,
+        "url": "https://nhandan.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 17,
+        "url": "https://eva.vn/rss/rss.php",
+        "checked": false
+      },
+      {
+        "order": 18,
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 19,
+        "url": "https://mic.gov.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 20,
+        "url": "https://tinhte.vn/rss",
+        "checked": false
+      },
+      {
+        "order": 21,
+        "url": "http://www.techrum.vn/forums/-/index.rss",
+        "checked": false
+      },
+      {
+        "order": 22,
+        "url": "https://www.phunuonline.com.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 23,
+        "url": "https://www.nguoiduatin.vn/trang-chu.rss",
+        "checked": false
+      },
+      {
+        "order": 24,
+        "url": "https://genk.vn/rss/home.rss",
+        "checked": false
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      "version"
+    ],
+    "value": 8
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      2
+    ],
+    "value": [
+      {
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "order": 0
+      },
+      {
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss",
+        "order": 1
+      },
+      {
+        "url": "https://thanhnien.vn/rss.html",
+        "order": 2
+      },
+      {
+        "url": "https://congan.com.vn/rss/tin-chinh",
+        "order": 3
+      },
+      {
+        "url": "https://dantri.com.vn/rss/home.rss",
+        "order": 4
+      },
+      {
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss",
+        "order": 5
+      },
+      {
+        "url": "https://infonet.vietnamnet.vn/rss/the-gioi.rss",
+        "order": 6
+      },
+      {
+        "url": "https://kenh14.vn/rss/home.rss",
+        "order": 7
+      },
+      {
+        "url": "https://nld.com.vn/rss/home.rss",
+        "order": 8
+      },
+      {
+        "url": "https://soha.vn/rss/home.rss",
+        "order": 9
+      },
+      {
+        "url": "https://tinhte.vn/rss/",
+        "order": 10
+      },
+      {
+        "url": "https://voz.vn/f/diem-bao.33/index.rss",
+        "order": 11
+      },
+      {
+        "url": "https://vietnamnews.vn/rss/world.rss",
+        "order": 12
+      },
+      {
+        "url": "https://kienthuc.net.vn/rss/home.rss",
+        "order": 13
+      },
+      {
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml",
+        "order": 14
+      },
+      {
+        "url": "https://vietnaminsiders.com/feed/atom/",
+        "order": 15
+      },
+      {
+        "url": "https://www.scmp.com/rss/91/feed",
+        "order": 16
+      },
+      {
+        "url": "https://nhandan.vn/rss/home.rss",
+        "order": 17
+      },
+      {
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss",
+        "order": 18
+      },
+      {
+        "url": "https://mic.gov.vn/rss/home.rss",
+        "order": 19
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      3
+    ],
+    "value": [
+      {
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "order": 0
+      },
+      {
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss",
+        "order": 1
+      },
+      {
+        "url": "https://thanhnien.vn/rss.html",
+        "order": 2
+      },
+      {
+        "url": "https://congan.com.vn/rss/tin-chinh",
+        "order": 3
+      },
+      {
+        "url": "https://dantri.com.vn/rss/home.rss",
+        "order": 4
+      },
+      {
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss",
+        "order": 5
+      },
+      {
+        "url": "https://infonet.vietnamnet.vn/rss/the-gioi.rss",
+        "order": 6
+      },
+      {
+        "url": "https://kenh14.vn/rss/home.rss",
+        "order": 7
+      },
+      {
+        "url": "https://nld.com.vn/rss/home.rss",
+        "order": 8
+      },
+      {
+        "url": "https://soha.vn/rss/home.rss",
+        "order": 9
+      },
+      {
+        "url": "https://tinhte.vn/rss/",
+        "order": 10
+      },
+      {
+        "url": "https://voz.vn/f/diem-bao.33/index.rss",
+        "order": 11
+      },
+      {
+        "url": "https://vietnamnews.vn/rss/world.rss",
+        "order": 12
+      },
+      {
+        "url": "https://kienthuc.net.vn/rss/home.rss",
+        "order": 13
+      },
+      {
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml",
+        "order": 14
+      },
+      {
+        "url": "https://vietnaminsiders.com/feed/atom/",
+        "order": 15
+      },
+      {
+        "url": "https://www.scmp.com/rss/91/feed",
+        "order": 16
+      },
+      {
+        "url": "https://nhandan.vn/rss/home.rss",
+        "order": 17
+      },
+      {
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss",
+        "order": 18
+      },
+      {
+        "url": "https://mic.gov.vn/rss/home.rss",
+        "order": 19
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      4
+    ],
+    "value": [
+      {
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "order": 0
+      },
+      {
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss",
+        "order": 1
+      },
+      {
+        "url": "https://thanhnien.vn/rss.html",
+        "order": 2
+      },
+      {
+        "url": "https://congan.com.vn/rss/tin-chinh",
+        "order": 3
+      },
+      {
+        "url": "https://dantri.com.vn/rss/home.rss",
+        "order": 4
+      },
+      {
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss",
+        "order": 5
+      },
+      {
+        "url": "https://kenh14.vn/rss/home.rss",
+        "order": 6
+      },
+      {
+        "url": "https://nld.com.vn/rss/home.rss",
+        "order": 7
+      },
+      {
+        "url": "https://soha.vn/rss/home.rss",
+        "order": 8
+      },
+      {
+        "url": "https://tinhte.vn/rss/",
+        "order": 9
+      },
+      {
+        "url": "https://voz.vn/f/diem-bao.33/index.rss",
+        "order": 10
+      },
+      {
+        "url": "https://vietnamnews.vn/rss/world.rss",
+        "order": 11
+      },
+      {
+        "url": "https://kienthuc.net.vn/rss/home.rss",
+        "order": 12
+      },
+      {
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml",
+        "order": 13
+      },
+      {
+        "url": "https://vietnaminsiders.com/feed/atom/",
+        "order": 14
+      },
+      {
+        "url": "https://www.scmp.com/rss/91/feed",
+        "order": 15
+      },
+      {
+        "url": "https://nhandan.vn/rss/home.rss",
+        "order": 16
+      },
+      {
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss",
+        "order": 17
+      },
+      {
+        "url": "https://mic.gov.vn/rss/home.rss",
+        "order": 18
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      5
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss"
+      },
+      {
+        "order": 2,
+        "url": "https://thanhnien.vn/rss.html"
+      },
+      {
+        "order": 3,
+        "url": "https://congan.com.vn/rss/tin-chinh"
+      },
+      {
+        "order": 4,
+        "url": "https://dantri.com.vn/rss/home.rss"
+      },
+      {
+        "order": 5,
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss"
+      },
+      {
+        "order": 6,
+        "url": "https://kenh14.vn/rss/home.rss"
+      },
+      {
+        "order": 7,
+        "url": "https://nld.com.vn/rss/home.rss"
+      },
+      {
+        "order": 8,
+        "url": "https://soha.vn/rss/home.rss"
+      },
+      {
+        "order": 9,
+        "url": "https://tinhte.vn/rss/"
+      },
+      {
+        "order": 10,
+        "url": "https://voz.vn/f/diem-bao.33/index.rss"
+      },
+      {
+        "order": 11,
+        "url": "https://vietnamnews.vn/rss/world.rss"
+      },
+      {
+        "order": 12,
+        "url": "https://kienthuc.net.vn/rss/home.rss"
+      },
+      {
+        "order": 13,
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml"
+      },
+      {
+        "order": 14,
+        "url": "https://vietnaminsiders.com/feed/atom/"
+      },
+      {
+        "order": 15,
+        "url": "https://www.scmp.com/rss/91/feed"
+      },
+      {
+        "order": 16,
+        "url": "https://nhandan.vn/rss/home.rss"
+      },
+      {
+        "order": 17,
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss"
+      },
+      {
+        "order": 18,
+        "url": "https://mic.gov.vn/rss/home.rss"
+      },
+      {
+        "order": 19,
+        "url": "https://eva.vn/rss/rss.php"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      6
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss"
+      },
+      {
+        "order": 2,
+        "url": "https://thanhnien.vn/rss.html"
+      },
+      {
+        "order": 3,
+        "url": "https://congan.com.vn/rss/tin-chinh"
+      },
+      {
+        "order": 4,
+        "url": "https://dantri.com.vn/rss/home.rss"
+      },
+      {
+        "order": 5,
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss"
+      },
+      {
+        "order": 6,
+        "url": "https://kenh14.vn/rss/home.rss"
+      },
+      {
+        "order": 7,
+        "url": "https://nld.com.vn/rss/home.rss"
+      },
+      {
+        "order": 8,
+        "url": "https://soha.vn/rss/home.rss"
+      },
+      {
+        "order": 9,
+        "url": "https://tinhte.vn/rss/"
+      },
+      {
+        "order": 10,
+        "url": "https://voz.vn/f/diem-bao.33/index.rss"
+      },
+      {
+        "order": 11,
+        "url": "https://vietnamnews.vn/rss/world.rss"
+      },
+      {
+        "order": 12,
+        "url": "https://kienthuc.net.vn/rss/home.rss"
+      },
+      {
+        "order": 13,
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml"
+      },
+      {
+        "order": 14,
+        "url": "https://vietnaminsiders.com/feed/atom/"
+      },
+      {
+        "order": 15,
+        "url": "https://www.scmp.com/rss/91/feed"
+      },
+      {
+        "order": 16,
+        "url": "https://nhandan.vn/rss/home.rss"
+      },
+      {
+        "order": 17,
+        "url": "https://eva.vn/rss/rss.php"
+      },
+      {
+        "order": 18,
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss"
+      },
+      {
+        "order": 19,
+        "url": "https://mic.gov.vn/rss/home.rss"
+      },
+      {
+        "order": 20,
+        "url": "https://tinhte.vn/rss"
+      },
+      {
+        "order": 21,
+        "url": "http://www.techrum.vn/forums/-/index.rss"
+      },
+      {
+        "order": 22,
+        "url": "https://www.phunuonline.com.vn/rss/home.rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      7
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss"
+      },
+      {
+        "order": 1,
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss"
+      },
+      {
+        "order": 2,
+        "url": "https://thanhnien.vn/rss.html"
+      },
+      {
+        "order": 3,
+        "url": "https://congan.com.vn/rss/tin-chinh"
+      },
+      {
+        "order": 4,
+        "url": "https://dantri.com.vn/rss/home.rss"
+      },
+      {
+        "order": 5,
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss"
+      },
+      {
+        "order": 6,
+        "url": "https://kenh14.vn/rss/home.rss"
+      },
+      {
+        "order": 7,
+        "url": "https://nld.com.vn/rss/home.rss"
+      },
+      {
+        "order": 8,
+        "url": "https://soha.vn/rss/home.rss"
+      },
+      {
+        "order": 9,
+        "url": "https://tinhte.vn/rss/"
+      },
+      {
+        "order": 10,
+        "url": "https://voz.vn/f/diem-bao.33/index.rss"
+      },
+      {
+        "order": 11,
+        "url": "https://vietnamnews.vn/rss/world.rss"
+      },
+      {
+        "order": 12,
+        "url": "https://kienthuc.net.vn/rss/home.rss"
+      },
+      {
+        "order": 13,
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml"
+      },
+      {
+        "order": 14,
+        "url": "https://vietnaminsiders.com/feed/atom/"
+      },
+      {
+        "order": 15,
+        "url": "https://www.scmp.com/rss/91/feed"
+      },
+      {
+        "order": 16,
+        "url": "https://nhandan.vn/rss/home.rss"
+      },
+      {
+        "order": 17,
+        "url": "https://eva.vn/rss/rss.php"
+      },
+      {
+        "order": 18,
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss"
+      },
+      {
+        "order": 19,
+        "url": "https://mic.gov.vn/rss/home.rss"
+      },
+      {
+        "order": 20,
+        "url": "https://tinhte.vn/rss"
+      },
+      {
+        "order": 21,
+        "url": "http://www.techrum.vn/forums/-/index.rss"
+      },
+      {
+        "order": 22,
+        "url": "https://www.phunuonline.com.vn/rss/home.rss"
+      },
+      {
+        "order": 23,
+        "url": "https://www.nguoiduatin.vn/trang-chu.rss"
+      },
+      {
+        "order": 24,
+        "url": "https://genk.vn/rss/home.rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "vietnam",
+      8
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 1,
+        "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 2,
+        "url": "https://thanhnien.vn/rss.html",
+        "checked": false
+      },
+      {
+        "order": 3,
+        "url": "https://congan.com.vn/rss/tin-chinh",
+        "checked": false
+      },
+      {
+        "order": 4,
+        "url": "https://dantri.com.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 5,
+        "url": "https://cdn.24h.com.vn/upload/rss/trangchu24h.rss",
+        "checked": false
+      },
+      {
+        "order": 6,
+        "url": "https://kenh14.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 7,
+        "url": "https://nld.com.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 8,
+        "url": "https://soha.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 9,
+        "url": "https://tinhte.vn/rss/",
+        "checked": false
+      },
+      {
+        "order": 10,
+        "url": "https://voz.vn/f/diem-bao.33/index.rss",
+        "checked": false,
+        "tags": []
+      },
+      {
+        "order": 11,
+        "url": "https://vietnamnews.vn/rss/world.rss",
+        "checked": false
+      },
+      {
+        "order": 12,
+        "url": "https://kienthuc.net.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 13,
+        "url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/topic/destination/vietnam/rss.xml",
+        "checked": false
+      },
+      {
+        "order": 14,
+        "url": "https://vietnaminsiders.com/feed/atom/",
+        "checked": false
+      },
+      {
+        "order": 15,
+        "url": "https://www.scmp.com/rss/91/feed",
+        "checked": false
+      },
+      {
+        "order": 16,
+        "url": "https://nhandan.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 17,
+        "url": "https://eva.vn/rss/rss.php",
+        "checked": false
+      },
+      {
+        "order": 18,
+        "url": "https://baotintuc.vn/tin-moi-nhat.rss",
+        "checked": false
+      },
+      {
+        "order": 19,
+        "url": "https://mic.gov.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 20,
+        "url": "https://tinhte.vn/rss",
+        "checked": false
+      },
+      {
+        "order": 21,
+        "url": "http://www.techrum.vn/forums/-/index.rss",
+        "checked": false
+      },
+      {
+        "order": 22,
+        "url": "https://www.phunuonline.com.vn/rss/home.rss",
+        "checked": false
+      },
+      {
+        "order": 23,
+        "url": "https://www.nguoiduatin.vn/trang-chu.rss",
+        "checked": false
+      },
+      {
+        "order": 24,
+        "url": "https://genk.vn/rss/home.rss",
+        "checked": false
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "world"
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://news.google.com/rss?hl=en-US"
+      },
+      {
+        "order": 1,
+        "url": "https://feeds.bbci.co.uk/news/rss.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://feeds.nbcnews.com/feeds/topstories"
+      },
+      {
+        "order": 3,
+        "url": "https://www.business-standard.com/rss/latest.rss"
+      },
+      {
+        "order": 4,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+      },
+      {
+        "order": 5,
+        "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+      },
+      {
+        "order": 6,
+        "url": "https://time.com/feed/"
+      },
+      {
+        "order": 7,
+        "url": "https://nypost.com/news/feed/"
+      },
+      {
+        "order": 8,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 9,
+        "url": "https://www.telegraph.co.uk/news/rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "world",
+      "version"
+    ],
+    "value": 1
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "world",
+      1
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://news.google.com/rss?hl=en-US"
+      },
+      {
+        "order": 1,
+        "url": "https://feeds.bbci.co.uk/news/rss.xml"
+      },
+      {
+        "order": 2,
+        "url": "https://feeds.nbcnews.com/feeds/topstories"
+      },
+      {
+        "order": 3,
+        "url": "https://www.business-standard.com/rss/latest.rss"
+      },
+      {
+        "order": 4,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+      },
+      {
+        "order": 5,
+        "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+      },
+      {
+        "order": 6,
+        "url": "https://time.com/feed/"
+      },
+      {
+        "order": 7,
+        "url": "https://nypost.com/news/feed/"
+      },
+      {
+        "order": 8,
+        "url": "https://www.dailymail.co.uk/news/index.rss"
+      },
+      {
+        "order": 9,
+        "url": "https://www.telegraph.co.uk/news/rss"
+      }
+    ]
+  },
+  {
+    "key": [
+      "/api/feeds",
+      "world",
+      3
+    ],
+    "value": [
+      {
+        "order": 0,
+        "url": "https://news.google.com/rss?hl=en-US",
+        "checked": false
+      },
+      {
+        "order": 1,
+        "url": "https://feeds.bbci.co.uk/news/rss.xml",
+        "checked": false
+      },
+      {
+        "order": 2,
+        "url": "https://feeds.nbcnews.com/feeds/topstories",
+        "checked": false
+      },
+      {
+        "order": 3,
+        "url": "https://www.business-standard.com/rss/latest.rss",
+        "checked": false
+      },
+      {
+        "order": 4,
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+        "checked": false
+      },
+      {
+        "order": 5,
+        "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+        "checked": false
+      },
+      {
+        "order": 6,
+        "url": "https://time.com/feed/",
+        "checked": false
+      },
+      {
+        "order": 7,
+        "url": "https://nypost.com/news/feed/",
+        "checked": false
+      },
+      {
+        "order": 8,
+        "url": "https://www.dailymail.co.uk/news/index.rss",
+        "checked": false
+      },
+      {
+        "order": 9,
+        "url": "https://www.telegraph.co.uk/news/rss",
+        "checked": false
+      },
+      {
+        "order": 10,
+        "url": "https://blog.google/technology/google-deepmind/rss/",
+        "checked": false
+      }
+    ]
+  }
+]
