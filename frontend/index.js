@@ -260,6 +260,8 @@ function alpineRSS() { return {
 		profile: VERSION + '_profile_',
 		readlater: VERSION + '_readlater_',
 
+		mode: VERSION + '_mode_',
+
 		noClientFetch: VERSION + '_ncf_',
 
 		persona: VERSION + '_persona_',
@@ -1882,6 +1884,27 @@ function alpineRSS() { return {
 		}
 	},
 
+	syncMode() {
+		let mode = '';
+		if (this.params.s === 'tiny') mode += 'f';
+		if (this.params.u) mode += 'u';
+		
+		const url = new URL(location.href);
+		if (mode) {
+			this.params.mode = mode;
+			url.searchParams.set('mode', mode);
+			url.searchParams.delete('s');
+			url.searchParams.delete('u');
+			this.storageSet(this.K.mode, mode);
+		} else {
+			delete this.params.mode;
+			url.searchParams.delete('mode');
+			this.storageDel(this.K.mode);
+		}
+		
+		history.replaceState(null, '', url.toString());
+	},
+
 	async init() {
 		// console.log('init')
 
@@ -1908,9 +1931,11 @@ function alpineRSS() { return {
 		// };
 
 		this.$watch('params.s', value => {
-			const url = new URL(location.href);
-			url.searchParams.set('s', this.params.s);
-			history.replaceState(null, '', url.toString());
+			this.syncMode();
+		});
+
+		this.$watch('params.u', value => {
+			this.syncMode();
 		});
 
 		this.$watch('params.k', value => {
@@ -1960,6 +1985,15 @@ function alpineRSS() { return {
 
 		this.profile = this.storageGet(this.K.profile) || {};
 		this.params = { ...this.params, ...Object.fromEntries(new URLSearchParams(location.search)) };
+
+		const mode = this.params.mode || this.storageGet(this.K.mode);
+		if (mode) {
+			if (mode.includes('f')) this.params.s = 'tiny';
+			if (mode.includes('u')) this.params.u = true;
+		} else {
+			this.params.u = (this.params.u === 'true' || this.params.u === true);
+		}
+
 		this.params.x = this.params.x || this.profile.username || this.storageGet(this.K.hash);
 		this.params.s = (this.params.s && this.params.s !== 'null') ? this.params.s : (this.storageGet(this.K.style) || 'full');
 		this.params.k = this.params.k || this.storageGet(this.K.gemini_api_key) || '';

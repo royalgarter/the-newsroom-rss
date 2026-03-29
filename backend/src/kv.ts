@@ -150,7 +150,7 @@ async function restoreFromLatestBackup() {
     }
 }
 
-backupKvData();
+// backupKvData();
 
 // async function rollbackHamburgerFeed(feed='world', old=1, remove=2) {
 // 	await KV.set(['/api/feeds', feed, 'version'], old);
