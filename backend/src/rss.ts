@@ -216,10 +216,10 @@ async function processRssItem(item, head, pioneer) {
 		}
 
 		if (images.length == 0) {
-			images = ['https://static.photos/640x360/' + encodeURIComponent(link || Math.random())];
-			let hostname = safeHost(link);
-			if (hostname) images.push(`https://www.google.com/s2/favicons?domain=https://${hostname}&sz=256`);
-			images.push(head.image);
+			images = ['https://static.photos/640x360/' + ((item?.title?.value + link)?.length || Date.now())];
+			// let hostname = safeHost(link);
+			// if (hostname) images.push(`https://www.google.com/s2/favicons?domain=https://${hostname}&sz=256`);
+			// images.push(head.image);
 		}
 
 		// console.log('processRssItem', link, images);
