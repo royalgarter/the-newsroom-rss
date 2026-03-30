@@ -108,7 +108,7 @@ async function processRssItem(item, head, pioneer) {
         try { urlParams = new URL(link).searchParams; } catch {}
         let url = urlParams?.get('url');
 
-        if (link.includes('news.google.com/rss/articles/')) {
+        if (false && link.includes('news.google.com/rss/articles/')) {
             let key_gnews = 'GOOGLE_NEWS:' + link;
             let gn_link = CACHE.get(key_gnews);
 
@@ -133,7 +133,7 @@ async function processRssItem(item, head, pioneer) {
             }
         }
 
-        if (link.includes('bing.com/news') && url) {
+        if (url && (link.includes('news.google.com/rss/articles/')|| link.includes('bing.com/news'))) {
             link = url;
             images = [];
         }
@@ -196,6 +196,7 @@ async function processRssItem(item, head, pioneer) {
         }
 
         if (images.length == 0) {
+            images = ['https://static.photos/640x360/' + encodeURIComponent(item.title || Math.random())];
             let hostname = safeHost(link);
             if (hostname) images.push(`https://www.google.com/s2/favicons?domain=https://${hostname}&sz=256`);
             images.push(head.image);
