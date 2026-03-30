@@ -167,7 +167,7 @@ async function processRssItem(item, head, pioneer) {
 						let CFBR_ACCOUNT = process.env.CLOUDFLARE_BROWSER_RENDERING_ACCOUNT;
 						let CFBR_BEARER = process.env.CLOUDFLARE_BROWSER_RENDERING_BEARER;
 
-						let promise = (CFBR_ACCOUNT && CFBR_BEARER && link.includes('news.google.com/rss/articles/'))
+						let promise = (false && CFBR_ACCOUNT && CFBR_BEARER && link.includes('news.google.com/rss/articles/'))
 						  ? fetch(`https://api.cloudflare.com/client/v4/accounts/${CFBR_ACCOUNT}/browser-rendering/content`, {
 							  method: 'POST',
 							  headers: {
