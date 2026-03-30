@@ -2049,7 +2049,7 @@ function alpineRSS() { return {
 			share_url = share_url?.split(/\s/)?.[0]?.filter?.(x => x)?.find?.(x => x.startsWith('http') || x.includes('://') || ~x.search(/[^.]+\.[^.]+\//)) || share_url;
 
 			const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
-			const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+			const REGEX_IMAGE = /<meta[^>]*property=["'\\]+\w+:image["'\\]+[^>]*content=["'\\]+([^"'\\]*)["'\\]+[^>]*>/i;
 			const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
 			let html = '', item = {};

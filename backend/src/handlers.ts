@@ -231,7 +231,7 @@ export async function handleReadLater(req: Request) {
 
             if (!item?.image_thumb || !item?.description) {
                 const REGEX_TITLE = /<meta[^>]*property=["']\w+:title["'][^>]*content=["']([^"']*)["'][^>]*>/i;
-                const REGEX_IMAGE = /<meta[^>]*property=["']\w+:image["'][^>]*content=["']([^"']*)["'][^>]*>/i;
+                const REGEX_IMAGE = /<meta[^>]*property=["'\\]+\w+:image["'\\]+[^>]*content=["'\\]+([^"'\\]*)["'\\]+[^>]*>/i;
                 const REGEX_DESC = /<meta[^>]*property=["']\w+:description["'][^>]*content=["']([^"']*)["'][^>]*>/i;
 
                 let key_html = 'HTML:' + item.link;
