@@ -108,7 +108,11 @@ async function processRssItem(item, head, pioneer) {
 		try { urlParams = new URL(link).searchParams; } catch {}
 		let url = urlParams?.get('url');
 
-		if (false && link.includes('news.google.com/rss/articles/')) {
+		let isGoogle = link.includes('news.google.com/rss/articles/');
+		let isReddit = link.includes('reddit.com/');
+		let isBing = link.includes('bing.com/news');
+
+		if (false && isGoogle) {
 			let key_gnews = 'GOOGLE_NEWS:' + link;
 			let gn_link = CACHE.get(key_gnews);
 
@@ -133,7 +137,7 @@ async function processRssItem(item, head, pioneer) {
 			}
 		}
 
-		if (url && (link.includes('news.google.com/rss/articles/') || link.includes('bing.com/news'))) {
+		if (url && (isGoogle || isBing)) {
 			link = url;
 			images = [];
 		}
@@ -141,7 +145,8 @@ async function processRssItem(item, head, pioneer) {
 		images = images.filter(x => x);
 
 		let ldjson = null;
-		if (link) {
+
+		if (link && !isGoogle) {
 			try {
 				let key_html = 'HTML:' + link;
 				let key_image = 'HTML_IMAGE:' + link;
@@ -167,7 +172,7 @@ async function processRssItem(item, head, pioneer) {
 						let CFBR_ACCOUNT = process.env.CLOUDFLARE_BROWSER_RENDERING_ACCOUNT;
 						let CFBR_BEARER = process.env.CLOUDFLARE_BROWSER_RENDERING_BEARER;
 
-						let promise = (false && CFBR_ACCOUNT && CFBR_BEARER && link.includes('news.google.com/rss/articles/'))
+						let promise = (false && CFBR_ACCOUNT && CFBR_BEARER && isGoogle)
 						  ? fetch(`https://api.cloudflare.com/client/v4/accounts/${CFBR_ACCOUNT}/browser-rendering/content`, {
 							  method: 'POST',
 							  headers: {
