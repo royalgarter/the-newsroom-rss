@@ -187,6 +187,9 @@
 		></div>
 
 		<main id="main" class="w-full mx-auto flex-1 md:px-2">
+			<div id="toast" class="fixed -mt-1 right-0 border text-sm pb-1 pt-2 px-2 max-w-sm" :class="isDark() ? 'bg-black' : 'bg-white'">
+				<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
+			</div>
 			<!-- feeds -->
 			<template id="tpl_feeds" x-for="(feed, index) in (params.u ? [{items: unifiedItems, anchor: 'uni', title: 'Unified View', loading: isAnyFeedLoading}] : feeds)" :key="index">
 				<section class="rss-feed relative border-b mb-4"
@@ -1049,9 +1052,7 @@
 			</footer>
 		</template>
 
-		<div id="toast" class="fixed bottom-0 right-0 border text-sm pb-1 pt-2 px-2 max-w-sm" :class="isDark() ? 'bg-black' : 'bg-white'">
-			<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
-		</div>
+		
 
 		<div id="modal" x-show="modal_showed" class="relative z-10" aria-labelledby="modal-prompt" role="dialog" aria-modal="true">
 			<div class="fixed inset-0 border"></div>
@@ -1110,7 +1111,7 @@
 
 			x-init="refresh()"
 		>
-			<div x-show="is_open" @click.away="is_open = false" class="border mb-2 overflow-y-auto max-h-128" :class="isDark() ? 'bg-black' : 'bg-white'">
+			<div x-show="is_open" @click.away="is_open = false" class="border overflow-y-auto max-h-128" :class="isDark() ? 'bg-black' : 'bg-white'">
 				<template x-for="(anchor, index) in anchors" :key="index">
 					<a :href="anchor.href" class="block p-2 hover:underline" x-text="anchor.text" 
 						@click="
@@ -1135,13 +1136,13 @@
 				<button @click="is_open = !is_open" class="font-bold flex items-center justify-center h-10 w-10 cursor-pointer" >
 					<span x-text="is_open ? '▼' : '▲'"></span>
 				</button>
-				<button @click="if (_alBody.params.s != 'tiny') { _alBody.prev_style = _alBody.params.s; _alBody.params.s = 'tiny'; } else { _alBody.params.s = _alBody.prev_style || 'full'; }" class="font-bold flex items-center justify-center h-10 cursor-pointer">
+				<button @click="if (_alBody.params.s != 'tiny') { _alBody.prev_style = _alBody.params.s; _alBody.params.s = 'tiny'; } else { _alBody.params.s = _alBody.prev_style || 'full'; }" class="font-bold flex items-center hover:underline justify-center h-10 cursor-pointer">
 					<span x-text="_alBody.params.s != 'tiny' ? '/fla' : '/unflash' ">/fla</span>
 				</button>
-				<button @click="_alBody.params.u = !_alBody.params.u" class="font-bold flex items-center justify-center h-10 cursor-pointer">
+				<button @click="_alBody.params.u = !_alBody.params.u" class="font-bold flex items-center hover:underline justify-center h-10 cursor-pointer">
 					<span x-text="_alBody.params.u ? '/normal' : '/uni' ">/uni</span>
 				</button>
-				<button @click="_alBody.digestNews()" class="font-bold flex items-center justify-center h-10 cursor-pointer" x-show="!loading">
+				<button @click="_alBody.digestNews()" class="font-bold flex items-center hover:underline justify-center h-10 cursor-pointer" x-show="!loading">
 					<span>/dig</span>
 				</button>
 			</div>
