@@ -2181,9 +2181,9 @@ function alpineRSS() { return {
 			if (this.params.topic) {
 				this.feeds = [];
 			} else {
-				this.feeds = this.storageGet(this.K.feeds) || [];
-				if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
-					this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
+				// this.feeds = this.storageGet(this.K.feeds) || [];
+				// if (this.params.x && this.storageGet(this.K.feeds + this.params.x))
+				// 	this.feeds = this.storageGet(this.K.feeds + this.params.x) || this.feeds;
 			}
 
 			// Render cached content immediately
