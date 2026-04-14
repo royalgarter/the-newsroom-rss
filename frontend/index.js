@@ -978,6 +978,10 @@ function alpineRSS() { return {
 		return decoded || '';
 	},
 
+	timeSinceItem(item) {
+		return item?.published ? (this.timeSince(new Date(item.published)) + ' ago') : '';
+	},
+
 	timeSince(date) {
 		if (!date) return '';
 

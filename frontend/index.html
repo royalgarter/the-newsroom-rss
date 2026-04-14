@@ -264,7 +264,7 @@
 											<a class="rss-author" :href="item.link" target="_blank">
 												<div class="text-xs font-semibold p-1 border absolute top-0 right-0 flex flex-col items-center justify-center mt-3 mr-2 hover:underline">
 													<small class="break-words text-center"
-														x-html="item.published_formatted">
+														x-html="timeSinceItem(item)">
 													</small>
 												</div>
 											</a>
@@ -298,7 +298,7 @@
 												:href="item.link" target="_blank"
 												:title="item.title"
 												x-html="(item.title_formatted || item.title) + (
-															style()?.img ? '' : (item.published_formatted && !item.published_formatted.includes('NaN') ? (' <sup class=&quot;italic text-gray-500 text-xs font-light&quot;>' + item.published_formatted + '</sup>') : '')
+															style()?.img ? '' : (item.published ? (' <sup class=&quot;italic text-gray-500 text-xs font-light&quot;>' + timeSinceItem(item) + '</sup>') : '')
 														)"
 												rel="external"
 											></a>
@@ -571,8 +571,8 @@
 											:href="item.link" target="_blank"
 											:title="item.title"
 											x-html="(item.title_formatted || item.title) + (
-														(style()?.title && item.published_formatted && !item.published_formatted.includes('NaN'))
-															? (' <sup class=&quot;text-xs font-light&quot;>[' + item.published_formatted + ']</sup>')
+														(style()?.title && item.published)
+															? (' <sup class=&quot;text-xs font-light&quot;>[' + timeSinceItem(item) + ']</sup>')
 															: ''
 													)"
 											rel="external"
