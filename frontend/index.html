@@ -186,7 +186,7 @@
 			:class="(loadingPercent > 0 && loadingPercent < 0.99) ? ('visible w-' + loadingFraction) : 'invisible'"
 		></div>
 
-		<main id="main" class="w-full mx-auto flex-1 md:px-2">
+		<main id="main" class="w-full mx-auto flex-1 md:px-2 content-end">
 			<div id="toast" class="fixed -mt-1 right-0 border text-sm pb-1 pt-2 px-2 max-w-sm" :class="isDark() ? 'bg-black' : 'bg-white'">
 				<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
 			</div>
@@ -466,7 +466,7 @@
 			</template>
 
 			<!-- expanders -->
-			<div class="divide-y px-2">
+			<div class="divide-y px-2 bottom-0">
 
 				<!-- readlater -->
 				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds || !!~location.hash.search(/\#.*note/)) }" class="py-2">
