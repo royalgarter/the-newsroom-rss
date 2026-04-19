@@ -760,9 +760,9 @@ function alpineRSS() { return {
 			// console.timeEnd('>> load.tasks')
 			toast('RSS list loaded');
 
-			let is_stale = false;
+			let is_stale = (!this.feeds?.length) || false;
 			const STALE_THRESHOLD = 4 * 60 * 60 * 1000;
-			if (this.feeds?.length) {
+			if (!is_stale && this.feeds?.length) {
 				for (const f of this.feeds) {
 					const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
 					if (lastPub && (Date.now() - lastPub > STALE_THRESHOLD)) {
