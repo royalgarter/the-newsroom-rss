@@ -1,4 +1,5 @@
 const VERSION = 'v2';
+const STALE_THRESHOLD = 4 * 60 * 60 * 1e3;
 
 function alpineHead() { return {
 	title: 'The Newsroom RSS',
@@ -760,23 +761,6 @@ function alpineRSS() { return {
 			// console.timeEnd('>> load.tasks')
 			toast('RSS list loaded');
 
-			let is_stale = (!this.feeds?.length) || false;
-			const STALE_THRESHOLD = 4 * 60 * 60 * 1000;
-			if (!is_stale && this.feeds?.length) {
-				for (const f of this.feeds) {
-					const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
-					if (lastPub && (Date.now() - lastPub > STALE_THRESHOLD)) {
-						is_stale = true;
-						break;
-					}
-				}
-			}
-
-			if (is_stale) {
-				this.pioneer = true;
-				toast('Stale detected, refreshing...');
-			}
-
 			if (resp_tasks?.settings) {
 				const s = resp_tasks.settings;
 				if (s.k && !this.params.k) {
@@ -859,7 +843,7 @@ function alpineRSS() { return {
 			const remainingUrls = urls.slice(CRITICAL_COUNT);
 
 			// Step 1: Prefetch and fetch critical feeds
-			Promise.allSettled(criticalUrls.map(prefetch)).then(async (results) => {
+			await Promise.allSettled(criticalUrls.map(prefetch)).then(async (results) => {
 				const criticalData = results.map(r => r.value);
 				const criticalResults = await fetchBatch(criticalData, urls);
 				const respFeeds = criticalResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
@@ -2200,9 +2184,27 @@ function alpineRSS() { return {
 
 		this.loadFeedsWithContent({limit})
 			.then(done => {
+				let is_stale = false;
+
 				if (!this.tasks?.length) {
 					this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
 					console.log('default tasks', this.tasks.length)
+				}
+
+				if (this.feeds?.length) {
+					for (const f of this.feeds) {
+						const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
+						if (lastPub && (Date.now() - lastPub > STALE_THRESHOLD)) {
+							is_stale = true;
+							break;
+						}
+					}
+				}
+
+				if (is_stale) {
+					this.pioneer = true;
+					toast('Stale detected, refreshing...');
+					this.loadFeedsWithContent({limit, force_update: true});
 				}
 
 				this.loadReadLaterItems();
