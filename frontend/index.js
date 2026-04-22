@@ -1,5 +1,5 @@
 const VERSION = 'v2';
-const STALE_THRESHOLD = 4 * 60 * 60 * 1e3;
+const STALE_THRESHOLD_HOUR = 4;
 
 function alpineHead() { return {
 	title: 'The Newsroom RSS',
@@ -2195,22 +2195,22 @@ function alpineRSS() { return {
 				if (this.feeds?.length) {
 					for (const f of this.feeds) {
 						const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
-						const deltaPub = Date.now() - lastPub;
+						const deltaPub = (Date.now() - lastPub) / (60*60e3);
 						console.log({lastPub, deltaPub})
-						if (lastPub && (deltaPub > STALE_THRESHOLD)) {
+						if (lastPub && (deltaPub > STALE_THRESHOLD_HOUR)) {
 							is_stale = true;
 							break;
 						}
 					}
 				}
-				console.log({STALE_THRESHOLD})
+				console.log({STALE_THRESHOLD_HOUR})
 				toast('Stale checking... feeds.length: ' + this.feeds?.length + ' is_stale: '+ is_stale);
 
 				if (is_stale) setTimeout(() => {
 					this.pioneer = true;
 					toast('Stale detected, refreshing...');
 					this.loadFeedsWithContent({limit, force_update: true});
-				}, 5e3);
+				}, 3e3);
 			})
 			.catch(null);
 		// console.log('inited contents')
