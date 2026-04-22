@@ -1,4 +1,4 @@
-import { handleFeeds, handleReadLater, handleJwtVerify, handleHtml, handleStatic, handleIndex, handleEmbedding, handleLLM, handlePresets } from './src/handlers.ts';
+import { handleFeeds, handleReadLater, handleJwtVerify, handleHtml, handleStatic, handleIndex, handleEmbedding, handleLLM, handlePresets, handleProxyImage } from './src/handlers.ts';
 
 async function handleRequest(req: Request) {
     const { pathname } = new URL(req.url);
@@ -13,6 +13,10 @@ async function handleRequest(req: Request) {
 
     if (pathname === "/api/presets") {
         return handlePresets(req);
+    }
+
+    if (pathname === "/proxy/image") {
+        return handleProxyImage(req);
     }
 
     if (pathname === "/api/jwt/verify") {

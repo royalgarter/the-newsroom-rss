@@ -1011,7 +1011,7 @@ function alpineRSS() { return {
 		this.feeds.forEach((feed, feedIdx) => {
 			// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 			feed.short_title = new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0];
-			feed.favicon_url = feed.link ? ('https://www.google.com/s2/favicons?domain=' + newURL(feed.link).hostname +'&sz=128') : '/favicon.ico';
+			feed.favicon_url = feed.link ? ('https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128') : '/favicon.ico';
 			feed.anchor = anchorling(feed?.rss_url);
 
 			feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
@@ -1090,7 +1090,7 @@ function alpineRSS() { return {
 
 					let img0 = item.images?.[0];
 
-					item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
+					item.image_thumb = (feed.link && img0 && img0.startsWith('/') && !img0.startsWith('/proxy/'))
 						? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
 						: img0;
 

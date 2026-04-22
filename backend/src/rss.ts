@@ -169,8 +169,8 @@ async function processRssItem(item, head, pioneer) {
 					let html = CACHE.get(key_html);
 
 					if (!html && (images.length == 0)) { // Skip HTML fetch if images already found
-						let CFBR_ACCOUNT = process.env.CLOUDFLARE_BROWSER_RENDERING_ACCOUNT;
-						let CFBR_BEARER = process.env.CLOUDFLARE_BROWSER_RENDERING_BEARER;
+						let CFBR_ACCOUNT = Deno.env.get('CLOUDFLARE_BROWSER_RENDERING_ACCOUNT');
+						let CFBR_BEARER = Deno.env.get('CLOUDFLARE_BROWSER_RENDERING_BEARER');
 
 						let promise = (false && CFBR_ACCOUNT && CFBR_BEARER && isGoogle)
 						  ? fetch(`https://api.cloudflare.com/client/v4/accounts/${CFBR_ACCOUNT}/browser-rendering/content`, {
@@ -227,7 +227,15 @@ async function processRssItem(item, head, pioneer) {
 			// images.push(head.image);
 		}
 
-		// console.log('processRssItem', link, images);
+		images = images.filter(x => x && (typeof x == 'string'));
+
+		// Rewrite image URLs to use our proxy
+		images = images.map(url => {
+			if (url.startsWith('http') && !url.includes('/proxy/image')) {
+				return `/proxy/image?origin=${encodeURIComponent(url)}`;
+			}
+			return url;
+		});
 
 		let processed = {
 			link,
@@ -236,7 +244,7 @@ async function processRssItem(item, head, pioneer) {
 			description: item?.description?.value || item?.content?.value || item?.['media:description']?.value || '',
 			published: item?.published,
 			updated: item?.updated,
-			images: images.filter(x => x && (typeof x == 'string')),
+			images,
 			categories: item?.categories?.map?.(x => x.label || x.term),
 			link_author: item?.author?.url || item?.author?.uri,
 			source: item?.source?.url,
@@ -286,7 +294,7 @@ export async function fetchRSSLinks({urls, limit=12, pioneer=false}) {
 				title: data.description || data.title?.value || data.rss_url,
 				link: data.links?.[0] || data.rss_url,
 				rss_url: data.rss_url,
-				image: data.image?.url,
+				image: data.image?.url && data.image?.url.startsWith('http') ? `/proxy/image?origin=${encodeURIComponent(data.image.url)}` : data.image?.url,
 				order,
 			};
 
