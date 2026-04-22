@@ -1088,11 +1088,7 @@ function alpineRSS() { return {
 						.trim()
 					|| '';
 
-					let img0 = item.images?.[0];
-
-					item.image_thumb = (feed.link && img0 && img0.startsWith('/') && !img0.startsWith('/proxy/'))
-						? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
-						: img0;
+					item.image_thumb = item.images?.[0];
 
 					item.published_formatted = (this.timeSince(new Date(item.published)) + ' ago')
 											|| new Date(item.published).toString().split(' GMT').shift()
