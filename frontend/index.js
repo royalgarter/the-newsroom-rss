@@ -733,13 +733,13 @@ function alpineRSS() { return {
 		limit = limit || (this.params.topic ? 100 : (this.params.l || this.K.LIMIT));
 		limit_adjust = (limit_adjust !== undefined) ? limit_adjust : (this.params.topic ? 0 : this.K.LIMIT);
 
+		console.log('loadFeedsWithContent', limit, limit_adjust, force_update);
+
 		if (this.is_hide_feeds) return;
 
 		if (this.loading && !force_update) return;
 
 		this.loading = true;
-
-		console.log('loadFeedsWithContent', limit, limit_adjust);
 
 		try {
 			this.loadingPercent = 0;
@@ -2184,30 +2184,33 @@ function alpineRSS() { return {
 
 		this.loadFeedsWithContent({limit})
 			.then(done => {
-				let is_stale = false;
+				this.loadReadLaterItems();
 
 				if (!this.tasks?.length) {
 					this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
 					console.log('default tasks', this.tasks.length)
 				}
 
+				let is_stale = false;
 				if (this.feeds?.length) {
 					for (const f of this.feeds) {
 						const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
-						if (lastPub && (Date.now() - lastPub > STALE_THRESHOLD)) {
+						const deltaPub = Date.now() - lastPub;
+						console.log({lastPub, deltaPub})
+						if (lastPub && (deltaPub > STALE_THRESHOLD)) {
 							is_stale = true;
 							break;
 						}
 					}
 				}
+				console.log({STALE_THRESHOLD})
+				toast('Stale checking... feeds.length: ' + this.feeds?.length + ' is_stale: '+ is_stale);
 
-				if (is_stale) {
+				if (is_stale) setTimeout(() => {
 					this.pioneer = true;
 					toast('Stale detected, refreshing...');
 					this.loadFeedsWithContent({limit, force_update: true});
-				}
-
-				this.loadReadLaterItems();
+				}, 5e3);
 			})
 			.catch(null);
 		// console.log('inited contents')
