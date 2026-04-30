@@ -1,4 +1,5 @@
 const VERSION = 'v2';
+const STALE_THRESHOLD_HOUR = 4;
 
 function alpineHead() { return {
 	title: 'The Newsroom RSS',
@@ -732,13 +733,13 @@ function alpineRSS() { return {
 		limit = limit || (this.params.topic ? 100 : (this.params.l || this.K.LIMIT));
 		limit_adjust = (limit_adjust !== undefined) ? limit_adjust : (this.params.topic ? 0 : this.K.LIMIT);
 
+		console.log('loadFeedsWithContent', limit, limit_adjust, force_update);
+
 		if (this.is_hide_feeds) return;
 
 		if (this.loading && !force_update) return;
 
 		this.loading = true;
-
-		console.log('loadFeedsWithContent', limit, limit_adjust);
 
 		try {
 			this.loadingPercent = 0;
@@ -759,23 +760,6 @@ function alpineRSS() { return {
 			.catch(null);
 			// console.timeEnd('>> load.tasks')
 			toast('RSS list loaded');
-
-			let is_stale = false;
-			const STALE_THRESHOLD = 4 * 60 * 60 * 1000;
-			if (this.feeds?.length) {
-				for (const f of this.feeds) {
-					const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
-					if (lastPub && (Date.now() - lastPub > STALE_THRESHOLD)) {
-						is_stale = true;
-						break;
-					}
-				}
-			}
-
-			if (is_stale) {
-				this.pioneer = true;
-				toast('Stale detected, refreshing...');
-			}
 
 			if (resp_tasks?.settings) {
 				const s = resp_tasks.settings;
@@ -859,7 +843,7 @@ function alpineRSS() { return {
 			const remainingUrls = urls.slice(CRITICAL_COUNT);
 
 			// Step 1: Prefetch and fetch critical feeds
-			Promise.allSettled(criticalUrls.map(prefetch)).then(async (results) => {
+			await Promise.allSettled(criticalUrls.map(prefetch)).then(async (results) => {
 				const criticalData = results.map(r => r.value);
 				const criticalResults = await fetchBatch(criticalData, urls);
 				const respFeeds = criticalResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
@@ -1027,7 +1011,7 @@ function alpineRSS() { return {
 		this.feeds.forEach((feed, feedIdx) => {
 			// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 			feed.short_title = new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0];
-			feed.favicon_url = feed.link ? ('https://www.google.com/s2/favicons?domain=' + newURL(feed.link).hostname +'&sz=128') : '/favicon.ico';
+			feed.favicon_url = feed.link ? ('https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128') : '/favicon.ico';
 			feed.anchor = anchorling(feed?.rss_url);
 
 			feed.tags = this.tasks?.find(t => t.url == feed.rss_url)?.tags || [
@@ -1104,11 +1088,7 @@ function alpineRSS() { return {
 						.trim()
 					|| '';
 
-					let img0 = item.images?.[0];
-
-					item.image_thumb = (feed.link && img0 && img0.startsWith('/'))
-						? (new URL(feed.link).origin.replace('http:', 'https:') + img0)
-						: img0;
+					item.image_thumb = item.images?.[0];
 
 					item.published_formatted = (this.timeSince(new Date(item.published)) + ' ago')
 											|| new Date(item.published).toString().split(' GMT').shift()
@@ -2200,12 +2180,33 @@ function alpineRSS() { return {
 
 		this.loadFeedsWithContent({limit})
 			.then(done => {
+				this.loadReadLaterItems();
+
 				if (!this.tasks?.length) {
 					this.tasks = this.K.DEFAULTS.map((x, i) => ({url: x, order: i, checked: false}));
 					console.log('default tasks', this.tasks.length)
 				}
 
-				this.loadReadLaterItems();
+				let is_stale = false;
+				if (this.feeds?.length) {
+					for (const f of this.feeds) {
+						const lastPub = f.items?.[0]?.published ? new Date(f.items[0].published).getTime() : 0;
+						const deltaPub = (Date.now() - lastPub) / (60*60e3);
+						console.log({lastPub, deltaPub})
+						if (lastPub && (deltaPub > STALE_THRESHOLD_HOUR)) {
+							is_stale = true;
+							break;
+						}
+					}
+				}
+				console.log({STALE_THRESHOLD_HOUR})
+				toast('Stale checking... feeds.length: ' + this.feeds?.length + ' is_stale: '+ is_stale);
+
+				if (is_stale) setTimeout(() => {
+					this.pioneer = true;
+					toast('Stale detected, refreshing...');
+					this.loadFeedsWithContent({limit, force_update: true});
+				}, 3e3);
 			})
 			.catch(null);
 		// console.log('inited contents')

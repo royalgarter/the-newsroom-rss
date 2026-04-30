@@ -46,6 +46,52 @@ const response = (data, options) => {
 
 const FETCH_INTERVAL = {};
 
+export async function handleProxyImage(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const origin = searchParams.get('origin');
+
+    if (!origin) {
+        return new Response(JSON.stringify({ error: 'Origin URL missing' }), {
+            status: 400,
+            headers: { ...head_json, ...cors }
+        });
+    }
+
+    try {
+        const resp = await fetch(origin, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
+            redirect: 'follow',
+            signal: AbortSignal.timeout(10e3)
+        });
+
+        if (!resp.ok) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch origin image' }), {
+                status: resp.status,
+                headers: { ...head_json, ...cors }
+            });
+        }
+
+        const contentType = resp.headers.get('Content-Type');
+        const buffer = await resp.arrayBuffer();
+
+        return new Response(buffer, {
+            headers: {
+                'Content-Type': contentType || 'image/jpeg',
+                'Cache-Control': 'public, max-age=604800, immutable',
+                ...cors
+            }
+        });
+    } catch (error) {
+        console.error('Proxy image error:', error);
+        return new Response(JSON.stringify({ error: 'Internal server error' }), {
+            status: 500,
+            headers: { ...head_json, ...cors }
+        });
+    }
+}
+
 export async function handleFeeds(req: Request) {
     const { searchParams } = new URL(req.url);
     let params = Object.fromEntries(searchParams);
@@ -244,7 +290,12 @@ export async function handleReadLater(req: Request) {
 
                 item.title = html?.match(REGEX_TITLE)?.[1] || item.title;
                 item.description = html?.match(REGEX_DESC)?.[1] || item.description;
-                item.image_thumb = html?.match(REGEX_IMAGE)?.[1] || item.image_thumb;
+                const image_thumb = html?.match(REGEX_IMAGE)?.[1] || item.image_thumb;
+                if (image_thumb && image_thumb.startsWith('http') && !image_thumb.includes('/proxy/image')) {
+                    item.image_thumb = `/proxy/image?origin=${encodeURIComponent(image_thumb)}`;
+                } else {
+                    item.image_thumb = image_thumb;
+                }
             }
 
             const existingItems = (await getBookmarks([pathname, hash]))?.value || [];
