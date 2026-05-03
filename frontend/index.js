@@ -1823,10 +1823,15 @@ function alpineRSS() { return {
 				`---\n`,
 				`Select the **top ${COUNT}** most important, impact and interesting news articles from this list.`,
 				`Provide a concise, engaging summary for each of the selected articles.`,
-				`Format the output as a **Markdown Ordered Lists** with titles as bold, url and summaries as text below each title.`,
-				`Start with a general overview of the news landscape today.`,
-				`Use **Heading 2 [title](link)** for titles.`,
-				`Response straight to the point, **NEVER** say foreword like "Here is the top ${COUNT} items...".`
+				`Response straight to the point, **NEVER** say foreword like "Here is the top ${COUNT} items...".`,
+				`First, start with a general overview of the news landscape today into 3-5 brief bullet points. Then add a markdown section breaker "\\n---\\n".`,
+				`Second format the selected articles as a **Markdown Ordered Lists** with titles as bold, url and summaries as text below each title.`,
+				`Use this format to each item:`,
+				`**[1. title no.1](article's link)**`,
+				`> article's content`,
+				`**[2. title no.2](article's link)**`,
+				`> article's content`,
+				`... etc`,
 			].join('\n');
 
 			let digest = await window.generateContent(prompt, this.params.k);
@@ -1834,7 +1839,7 @@ function alpineRSS() { return {
 				// Basic Markdown-ish to HTML conversion
 				let html = digest
 					.replace(/\[([^\[\]]+)\]\s*\((http\S+)\)/g,
-						'<a href="$2" class="cursor-pointer text-md underline font-bold my-2 mt-4 inline-block" target="_blank">$1</a>')
+						'<a href="$2" class="cursor-pointer text-md font-bold my-2 mt-4 inline" target="_blank">$1</a>')
 					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
 					.replace(/\*(.*?)\*/g, '<i>$1</i>')
 					.replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
@@ -1842,7 +1847,7 @@ function alpineRSS() { return {
 					.replace(/^### (.*$)/gm, '<h3 class="text-md font-bold mt-2 mb-1">$1</h3>')
 					.replace(/^[\d\.\-\*\+]+\s+(.*$)/gm, '<li class="ml-4">$1</li>');
 
-				this.modalShow('Daily News Digest', html, 'Cool', 'Close', () => {
+				this.modalShow('Daily News Digest', html, 'Done', 'Close', () => {
 					// Add to notes if they want? Maybe another button for that.
 				});
 			} else {
