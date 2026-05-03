@@ -1815,37 +1815,48 @@ function alpineRSS() { return {
 
 		try {
 			let COUNT = 20;
-			let titles = allItems.map(item => `- [${item.title}](${item.link})`).join('\n');
+			// Provide more context by including descriptions and sources
+			let titles = allItems.slice(0, 100).map(item => {
+				let desc = item.description ? ` (${this.decodeHTML(item.description).replace(/<[^>]*>/g, '').substring(0, 120).trim()}...)` : '';
+				return `- [${item.title}](${item.link})${desc} [Source: ${item.source || 'Unknown'}]`;
+			}).join('\n');
+
 			let prompt = [
-				`You are a professional news editor. Here is a list of today's news titles:`,
-				`---\n`,
-				`\n${titles}\n`,
-				`---\n`,
-				`Select the **top ${COUNT}** most important, impact and interesting news articles from this list.`,
-				`Provide a concise, engaging summary for each of the selected articles.`,
-				`Response straight to the point, **NEVER** say foreword like "Here is the top ${COUNT} items...".`,
-				`First, start with a general overview of the news landscape today into 3-5 brief bullet points. Then add a markdown section breaker "\\n---\\n".`,
-				`Second format the selected articles as a **Markdown Ordered Lists** with titles as bold, url and summaries as text below each title.`,
-				`Use this format to each item:`,
-				`**[1. title no.1](article's link)**`,
-				`> article's content`,
-				`**[2. title no.2](article's link)**`,
-				`> article's content`,
-				`... etc`,
+				`You are a professional news editor. Here is a list of today's news items (titles, descriptions and sources):`,
+				`---`,
+				`${titles}`,
+				`---`,
+				`Create a "Daily News Digest" that is engaging and informative.`,
+				`1. **Executive Briefing**: Start with 3-5 punchy bullet points summarizing the most important global trends or recurring themes from today's news.`,
+				`2. **Section Break**: Use "---" to separate the briefing from the top stories.`,
+				`3. **Top ${COUNT} Stories**: Select the most impactful articles and format each as:`,
+				`   **[N. Article Title](URL)**`,
+				`   > A 1-2 sentence insightful summary. Highlight the key takeaway and why it matters.`,
+				`4. **Tone & Style**:`,
+				`   - Professional, sharp, and objective.`,
+				`   - NO introductory or concluding remarks.`,
+				`   - Response should be pure Markdown.`,
 			].join('\n');
 
 			let digest = await window.generateContent(prompt, this.params.k);
 			if (digest) {
-				// Basic Markdown-ish to HTML conversion
+				// Enhanced Markdown-to-HTML conversion
 				let html = digest
-					.replace(/\[([^\[\]]+)\]\s*\((http\S+)\)/g,
-						'<a href="$2" class="cursor-pointer text-md font-bold my-2 mt-4 inline" target="_blank">$1</a>')
-					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-					.replace(/\*(.*?)\*/g, '<i>$1</i>')
 					.replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
 					.replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-3 mb-1">$1</h2>')
 					.replace(/^### (.*$)/gm, '<h3 class="text-md font-bold mt-2 mb-1">$1</h3>')
-					.replace(/^[\d\.\-\*\+]+\s+(.*$)/gm, '<li class="ml-4">$1</li>');
+					.replace(/^---\s*$/gm, '<hr class="my-4 border-gray-300">')
+					.replace(/\[([^\[\]]+)\]\s*\((http\S+)\)/g,
+						'<a href="$2" class="cursor-pointer text-md font-bold my-2 mt-4 inline text-blue-600 hover:underline" target="_blank">$1</a>')
+					.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+					.replace(/\*(.*?)\*/g, '<i>$1</i>')
+					.replace(/^>\s*(.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 my-2 italic text-gray-700">$1</blockquote>')
+					.replace(/^[\d\.\-\*\+]+\s+(.*$)/gm, '<li class="ml-4 mb-1 list-none leading-relaxed">• $1</li>')
+					.split('\n').map(line => {
+						line = line.trim();
+						if (!line || line.startsWith('<')) return line;
+						return `<p class="mb-2">${line}</p>`;
+					}).join('\n');
 
 				this.modalShow('Daily News Digest', html, 'Done', 'Close', () => {
 					// Add to notes if they want? Maybe another button for that.
