@@ -190,16 +190,42 @@ function alpineRSS() { return {
 
 	review_feed: null,
 
-	style() { return {...this.style_flags[this.params?.s || 'full'], s: this.params?.s}; },
-	style_flags: {
-		full: {title: 1, desc: 1, img: 1, preview: 1},
-		tiny: {title: 1, desc: 0, img: 0, preview: 0},
-		title: {title: 1, desc: 0, img: 1, preview: 0},
-		noimg: {title: 1, desc: 1, img: 0, preview: 1},
-		nopreview: {title: 1, desc: 1, img: 1, preview: 0},
-	},
+ 	style() { return {...this.style_flags[this.params?.s || 'full'], s: this.params?.s}; },
+ 	style_flags: {
+ 		full: {title: 1, desc: 1, img: 1, preview: 1},
+ 		tiny: {title: 1, desc: 0, img: 0, preview: 0},
+ 		title: {title: 1, desc: 0, img: 1, preview: 0},
+ 		noimg: {title: 1, desc: 1, img: 0, preview: 1},
+ 		nopreview: {title: 1, desc: 1, img: 1, preview: 0},
+ 	},
 
-	google: null,
+ 	itemClasses(item, feed) {
+ 		const params = this.params || {};
+ 		const style = this.style();
+ 		
+ 		let base = params.s == 'tiny' ? '' : 'border p-2 ';
+ 		if (item.viewed) base += 'italic ';
+ 		if (style?.preview) base += 'pb-8 ';
+ 		if (params?.f === 'single_view') base += 'col-span-full ';
+ 		
+ 		return base.trim();
+ 	},
+
+ 	readlaterItemClasses(item) {
+ 		const style = this.style();
+ 		
+ 		let classes = 'rss-item p-2 relative pb-8';
+ 		if (item.image_thumb && !style?.img) classes += ' pointer-events-none';
+ 			classes += item.is_note ? '' : '';
+ 		
+ 		return classes;
+ 	},
+
+ 	visibleItemFilter() {
+ 		return (item) => !item?.disable && !item?.hidden_by_cluster && !item?.is_note;
+ 	},
+
+ 	google: null,
 	profile: null,
 	persona: null,
 	editor_options: null,

@@ -226,16 +226,10 @@
 							:class="params.s == 'tiny' ? 'grid-cols-2' : 'grid-cols-1 gap-6'"
 						>
 							<!-- rss-item -->
-							<template x-for="(item, itemIndex) in feed.items.filter(x => !x?.disable)" :key="itemIndex">
+							<template x-for="(item, itemIndex) in feed.items" :key="itemIndex">
 								<div class="rss-item relative"
-									x-show="!item.hidden_by_cluster"
-									:class="[
-										params.s == 'tiny' ? '' : 'border p-2',
-										item.viewed ? 'italic' : '',
-										style()?.preview ? 'pb-8' : '',
-										'single_view' == params?.f ? 'col-span-full' : '',
-									].join(' ')
-									"
+									x-show="!item.hidden_by_cluster && !item.disable && !item.is_note"
+									:class="itemClasses(item)"
 								>
 									<!-- thumbnail -->
 									<template x-if="style()?.img && item.image_thumb">
@@ -290,11 +284,7 @@
 												<span x-show="item.image_thumb && !style()?.img">►</span>
 											</a>
 											<a class="rss-title inline max-w-full mb-2 hover:underline"
-
-												:class="[
-													(item.image_thumb && !style()?.img) ? 'pointer-events-none' : '',
-													params.s == 'tiny' ? 'text-sm' : 'font-semibold text-lg ',
-												].join(' ')"
+												:class="item.image_thumb && !style()?.img ? 'pointer-events-none' : ''"
 												:href="item.link" target="_blank"
 												:title="item.title"
 												x-html="(item.title_formatted || item.title) + (
@@ -338,10 +328,7 @@
 												<span class="cursor-pointer py-1 text-xs flex flex-row items-center px-1"
 													@click="item?.toggleReadmore?.()"
 													@mouseover="item?.prefetchContent?.()"
-													:class="[
-														(item.article ? 'visible' : 'disable__invisible'),
-														(item.prefetching && item.no_article ? 'invisible' : '')
-													].join(' ')"
+													:class="item.article ? 'visible' : 'disable__invisible'"
 												>
 												<span x-text="item.read_more ? '[Collapse]' : (item.no_article ? '[N/A]' : (item.prefetching && !item.no_article && !item.article?.content ? '[Loading]' : '[Preview]'))"></span>
 												</span>
@@ -533,7 +520,8 @@
 						<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
 							<!-- readlater item -->
 							<template x-for="(item, itemIndex) in readlater.items" :key="itemIndex">
-								<div class="rss-item p-2 relative pb-8">
+								<div class="rss-item p-2 relative pb-8"
+									:class="readlaterItemClasses(item)">
 									
 									<!-- readlater thumbnail -->
 									<template x-if="!item.is_note && style()?.img && item.image_thumb">
