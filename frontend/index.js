@@ -1538,6 +1538,91 @@ function alpineRSS() { return {
 		}
 	},
 
+	exportOPML() {
+		const header = `<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+	<head>
+		<title>The Newsroom RSS Export</title>
+		<dateCreated>${new Date().toUTCString()}</dateCreated>
+	</head>
+	<body>
+		<outline text="Subscriptions" title="Subscriptions">`;
+		
+		const body = this.tasks.map(task => {
+			const feed = this.feeds.find(f => f.rss_url === task.url);
+			const title = feed?.title || task.url;
+			return `			<outline type="rss" text="${this.escapeXML(title)}" title="${this.escapeXML(title)}" xmlUrl="${this.escapeXML(task.url)}" />`;
+		}).join('\n');
+		
+		const footer = `
+		</outline>
+	</body>
+</opml>`;
+
+		const opml = header + '\n' + body + footer;
+		const filename = `${this.params.x || 'feeds'}.opml`;
+		const blob = new Blob([opml], {type: 'text/x-opml'});
+
+		if(window.navigator.msSaveOrOpenBlob) {
+			window.navigator.msSaveBlob(blob, filename);
+		} else {
+			const elem = window.document.createElement('a');
+			elem.href = window.URL.createObjectURL(blob);
+			elem.download = filename;
+			document.body.appendChild(elem);
+			elem.click();
+			document.body.removeChild(elem);
+		}
+	},
+
+	importOPML() {
+		if (this.params.topic) return toast('Settings are read-only in topic view');
+
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.opml,text/x-opml,application/xml,text/xml';
+		input.onchange = e => {
+			const file = e.target.files[0];
+			if (!file) return;
+			const reader = new FileReader();
+			reader.onload = e => {
+				const content = e.target.result;
+				const parser = new DOMParser();
+				const xmlDoc = parser.parseFromString(content, "text/xml");
+				const outlines = xmlDoc.querySelectorAll('outline[xmlUrl]');
+				let importedCount = 0;
+				outlines.forEach(outline => {
+					const url = outline.getAttribute('xmlUrl');
+					if (url && !this.tasks.find(t => t.url === url)) {
+						this.tasks.push({ url, order: this.tasks.length, checked: false });
+						importedCount++;
+					}
+				});
+				if (importedCount > 0) {
+					toast(`Imported ${importedCount} feeds`);
+					this.saveTasks(true);
+				} else {
+					toast('No new feeds found in OPML');
+				}
+			};
+			reader.readAsText(file);
+		};
+		input.click();
+	},
+
+	escapeXML(str) {
+		return str?.replace(/[<>&"']/g, m => {
+			switch (m) {
+				case '<': return '&lt;';
+				case '>': return '&gt;';
+				case '&': return '&amp;';
+				case '"': return '&quot;';
+				case "'": return '&apos;';
+				default: return m;
+			}
+		}) || '';
+	},
+
 	async embedSentence(text) {
 		if (!window.embedder) return null;
 		const vector = await window.embedder(text, { pooling: 'mean', normalize: true });

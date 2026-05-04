@@ -992,6 +992,12 @@
 										[Import Sample RSS]
 									</button>
 									<button
+										class="cursor-pointer focus:outline-none uppercase text-xs p-2 font-bold"
+										@click="importOPML()"
+									>
+										[Import OPML]
+									</button>
+									<button
 										class="cursor-pointer focus:outline-none uppercase text-xs px-4 py-2 font-bold"
 										x-show="tasks.length > 0"
 										@click="clearAllTasks()"
@@ -1003,7 +1009,14 @@
 										x-show="tasks.length > 0"
 										@click="exportTasks()"
 									>
-										[Export]
+										[Export CSV]
+									</button>
+									<button
+										class="cursor-pointer focus:outline-none uppercase text-xs px-4 py-2 font-bold"
+										x-show="tasks.length > 0"
+										@click="exportOPML()"
+									>
+										[Export OPML]
 									</button>
 									<button
 										class="cursor-pointer focus:outline-none uppercase text-xs px-4 py-2 font-bold"
