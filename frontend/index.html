@@ -233,7 +233,7 @@
 								>
 									<!-- thumbnail -->
 									<template x-if="style()?.img && item.image_thumb">
-										<div class="rss-meta relative min-h-36 border-b">
+										<div class="rss-meta relative min-h-36">
 											<a class="rss-thumb" 
 												:href="'#' + item.anchor" 
 												:name="item.anchor"
@@ -324,7 +324,7 @@
 									<!-- item article -->
 									<template x-if="style()?.preview">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
-											<div class="px-2 py-1 flex flex-row items-center absolute bottom-0 left-0 w-full border-t">
+											<div class="px-2 py-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
 												<span class="cursor-pointer py-1 text-xs flex flex-row items-center px-1"
 													@click="item?.toggleReadmore?.()"
 													@mouseover="item?.prefetchContent?.()"
@@ -525,7 +525,7 @@
 									
 									<!-- readlater thumbnail -->
 									<template x-if="!item.is_note && style()?.img && item.image_thumb">
-										<div class="rss-meta relative min-h-36 border-b"
+										<div class="rss-meta relative min-h-36"
 											@click="location.hash = '#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
 										>
 											<a :href="'#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"

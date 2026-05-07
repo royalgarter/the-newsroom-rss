@@ -203,7 +203,7 @@ function alpineRSS() { return {
  		const params = this.params || {};
  		const style = this.style();
  		
- 		let base = params.s == 'tiny' ? '' : 'border p-2 ';
+ 		let base = params.s == 'tiny' ? '' : 'p-2 ';
  		if (item.viewed) base += 'italic ';
  		if (style?.preview) base += 'pb-8 ';
  		if (params?.f === 'single_view') base += 'col-span-full ';
