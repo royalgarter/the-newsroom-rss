@@ -1,25 +1,181 @@
-const KV = await Deno.openKv(Deno.env.get('DENO_KV_URL'));
+let KV: any;
 
+const useCloudflareKV = Deno.env.get('PUBLISH_USE_CLOUDFLAREKV') === 'true';
 
-KV.safeGet = async (key) => {
-    try {
-        let result = await KV.get(key);
-        return result;
-    } catch (ex) {
-        console.log(ex.message || ex)
-        return null
-    }
+if (useCloudflareKV) {
+	console.log('Initializing Cloudflare KV...');
+	const accountId = Deno.env.get('CLOUDFLARE_ACCOUNT_ID');
+	const apiToken = Deno.env.get('CLOUDFLARE_API_TOKEN');
+	const namespaceId = Deno.env.get('CLOUDFLARE_KV_NAMESPACE_ID');
+
+	if (!accountId || !apiToken || !namespaceId) {
+		console.error('ERROR: Cloudflare KV is enabled but required environment variables are missing.');
+		console.error('Please ensure CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, and CLOUDFLARE_KV_NAMESPACE_ID are set.');
+	}
+
+	const HOST = (k: string) => `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(k)}`;
+	const HEADERS = {
+		'Authorization': `Bearer ${apiToken}`,
+	};
+
+	const serializeKey = (key: unknown): string => {
+		if (Array.isArray(key)) {
+			return key.map(k => String(k)).join(':');
+		}
+		return String(key);
+	};
+
+	const deserializeValue = (valueStr: string | null): unknown => {
+		if (valueStr === null || valueStr === undefined) return null;
+		try {
+			return JSON.parse(valueStr);
+		} catch {
+			return valueStr;
+		}
+	};
+
+	const serializeValue = (value: unknown): string => {
+		if (typeof value === 'string') {
+			return value;
+		}
+		return JSON.stringify(value);
+	};
+
+	KV = {
+		get: async (key: unknown[]) => {
+			const sKey = serializeKey(key);
+			try {
+				const response = await fetch(HOST(sKey), {
+					method: 'GET',
+					headers: HEADERS,
+				});
+				if (response.status === 404) {
+					return { key, value: null };
+				}
+				if (!response.ok) {
+					throw new Error(`Cloudflare KV GET failed: ${response.status} ${response.statusText}`);
+				}
+				const text = await response.text();
+				return { key, value: deserializeValue(text) };
+			} catch (ex: any) {
+				console.error(`Cloudflare KV GET error for key ${sKey}:`, ex.message || ex);
+				throw ex;
+			}
+		},
+
+		set: async (key: unknown[], value: unknown) => {
+			const sKey = serializeKey(key);
+			const sValue = serializeValue(value);
+			try {
+				const response = await fetch(HOST(sKey), {
+					method: 'PUT',
+					headers: {
+						...HEADERS,
+						'Content-Type': 'text/plain; charset=utf-8'
+					},
+					body: sValue,
+				});
+				if (!response.ok) {
+					const errText = await response.text().catch(() => '');
+					throw new Error(`Cloudflare KV PUT failed: ${response.status} ${response.statusText}. Response: ${errText}`);
+				}
+				return { ok: true };
+			} catch (ex: any) {
+				console.error(`Cloudflare KV PUT error for key ${sKey}:`, ex.message || ex);
+				throw ex;
+			}
+		},
+
+		delete: async (key: unknown[]) => {
+			const sKey = serializeKey(key);
+			try {
+				const response = await fetch(HOST(sKey), {
+					method: 'DELETE',
+					headers: HEADERS,
+				});
+				if (!response.ok && response.status !== 404) {
+					throw new Error(`Cloudflare KV DELETE failed: ${response.status} ${response.statusText}`);
+				}
+				return { ok: true };
+			} catch (ex: any) {
+				console.error(`Cloudflare KV DELETE error for key ${sKey}:`, ex.message || ex);
+				throw ex;
+			}
+		},
+
+		async *list(selector: { prefix: unknown[] }) {
+			const prefixStr = selector.prefix && selector.prefix.length > 0
+				? selector.prefix.map(k => String(k)).join(':') + ':'
+				: '';
+
+			let cursor = '';
+			let hasMore = true;
+
+			while (hasMore) {
+				let url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/keys?limit=1000`;
+				if (prefixStr) {
+					url += `&prefix=${encodeURIComponent(prefixStr)}`;
+				}
+				if (cursor) {
+					url += `&cursor=${encodeURIComponent(cursor)}`;
+				}
+
+				const response = await fetch(url, { headers: HEADERS });
+				if (!response.ok) {
+					throw new Error(`Cloudflare KV list failed: ${response.status} ${response.statusText}`);
+				}
+
+				const data = await response.json();
+				if (!data.success) {
+					throw new Error(`Cloudflare KV list success is false: ${JSON.stringify(data.errors)}`);
+				}
+
+				for (const keyObj of data.result) {
+					const rawKey = keyObj.name;
+					const keyArray = rawKey.split(':');
+					const valueEntry = await KV.get(keyArray);
+					yield {
+						key: keyArray,
+						value: valueEntry ? valueEntry.value : null
+					};
+				}
+
+				cursor = data.result_info?.cursor || '';
+				hasMore = !!cursor;
+			}
+		}
+	};
+} else {
+	console.log('Initializing Deno KV...');
+	const denoKvUrl = Deno.env.get('DENO_KV_URL');
+	const denoKv = await Deno.openKv(denoKvUrl);
+	KV = {
+		get: (key: any[]) => denoKv.get(key),
+		set: (key: any[], value: unknown) => denoKv.set(key, value),
+		delete: (key: any[]) => denoKv.delete(key),
+		list: (selector: any, options?: any) => denoKv.list(selector, options),
+	};
 }
 
-KV.safeSet = async (key, value) => {
-    try {
-        let result = await KV.set(key, value);
-        return result;
-    } catch (ex) {
-        console.log(ex.message || ex)
-        return null
-    }
-}
+KV.safeGet = async (key: unknown[]) => {
+	try {
+		let result = await KV.get(key);
+		return result;
+	} catch (ex: any) {
+		console.log(ex.message || ex);
+		return null;
+	}
+};
+
+KV.safeSet = async (key: unknown[], value: unknown) => {
+	try {
+		let result = await KV.set(key, value);
+		return result;
+	} catch (ex: any) {
+		console.log(ex.message || ex);
+		return null;
+	}
+};
 
 export default KV;
 
@@ -59,7 +215,7 @@ async function backupKvData() {
                 }
             }
 
-            if (entry.key.find(k => k?.includes?.('_CACHE_'))
+            if (entry.key.find((k: any) => k?.includes?.('_CACHE_'))
                 || (entry.key.length > 2 && Number.isFinite(entry.key[3]))
             ) {
                 await KV.delete(entry.key);
