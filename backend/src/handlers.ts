@@ -165,11 +165,11 @@ export async function handleFeeds(req: Request) {
 
         CACHE.del(key_feeds);
         CACHE.del(key_feeds_permanent);
-        KV.delete([key_feeds_permanent]).then().catch();
+
     }
 
     if (params.is_tasks) {
-        let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.safeGet([key_feeds_permanent]))?.value;
+        let feeds_permanent = CACHE.get(key_feeds_permanent);
         let feeds_cached = CACHE.get(key_feeds) || feeds_permanent || [];
         feeds = keys.map((x, order) => ({ order, ...x }));
 
@@ -187,7 +187,6 @@ export async function handleFeeds(req: Request) {
             },
         });
     } else {
-        let feeds_permanent = CACHE.get(key_feeds_permanent) || (await KV.safeGet([key_feeds_permanent]))?.value;
         feeds = CACHE.get(key_feeds);
 
         // console.dir({cachy, query_feeds, key_feeds, key_feeds_permanent})

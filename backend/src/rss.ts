@@ -1,7 +1,6 @@
 import { parseFeed } from "https://deno.land/x/rss/mod.ts";
 import { titleCase, upperCase } from "https://deno.land/x/case/mod.ts";
 import CACHE from './cache.ts';
-import KV from './kv.ts';
 
 const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);
 const EMBEDDED = new Map();
@@ -348,5 +347,4 @@ export async function saveFeedCache({limit=6, feeds, key_feeds, key_feeds_perman
 	f.cache = 'CACHE_KV';
 	f.items = f.items.slice(0, limit);
   });
-  KV.set([key_feeds_permanent], feeds).catch(() => {});
 }
