@@ -165,11 +165,10 @@ export async function handleFeeds(req: Request) {
 
         CACHE.del(key_feeds);
         CACHE.del(key_feeds_permanent);
-
     }
 
+    let feeds_permanent = CACHE.get(key_feeds_permanent);
     if (params.is_tasks) {
-        let feeds_permanent = CACHE.get(key_feeds_permanent);
         let feeds_cached = CACHE.get(key_feeds) || feeds_permanent || [];
         feeds = keys.map((x, order) => ({ order, ...x }));
 
