@@ -49,19 +49,19 @@
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
 		<!-- Critical CSS -->
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.29">
+		<link rel="stylesheet" type="text/css" href="index.css?v=1.30">
 
 		<!-- Preload Critical Scripts -->
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" />
-		<link rel="preload" as="script" href="index.js?v=1.29" />
+		<link rel="preload" as="script" href="index.js?v=1.30" />
 
 		<!-- Deferred Scripts -->
 		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-		<script id="version" src="index.js?v=1.29"></script>
-		<script type="module" src="./js/module.mjs?v=1.29"></script>
+		<script id="version" src="index.js?v=1.30"></script>
+		<script type="module" src="./js/module.mjs?v=1.30"></script>
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden font-mono">
 		<template id="tpl_header" x-if="ready">
@@ -197,7 +197,7 @@
 				<span id="toast-message" class="inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full"></span>
 			</div>
 			<!-- feeds -->
-			<template id="tpl_feeds" x-for="(feed, index) in (params.u ? [{items: unifiedItems, anchor: 'uni', title: 'Unified View', loading: isAnyFeedLoading}] : feeds)" :key="index">
+			<template id="tpl_feeds" x-for="(feed, index) in (params.u ? [{items: unifiedItems, anchor: 'uni', title: 'Unified View', loading: isAnyFeedLoading}] : visibleFeeds)" :key="index">
 				<section class="rss-feed relative border-b mb-4"
 					:class="(loading || feed.loading) ? 'cursor-wait': ''"
 					x-cloak
@@ -457,6 +457,13 @@
 					</div>
 				</section>
 			</template>
+
+			<!-- feed virtualization sentinel: loads 10 more feeds as user scrolls -->
+			<div x-intersect="loadMoreFeeds()"
+				x-show="!params.u && !is_hide_feeds && visibleFeedsLimit < feeds.length"
+				class="text-center py-6 text-sm italic opacity-50">
+				[Loading more feeds...]
+			</div>
 
 			<!-- expanders -->
 			<div class="divide-y px-2 bottom-0">

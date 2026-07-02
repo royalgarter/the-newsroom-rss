@@ -22,6 +22,15 @@ function alpineRSS() { return {
 
 	feeds: [],
 	is_hide_feeds: false,
+	visibleFeedsLimit: 6,
+	get visibleFeeds() {
+		return this.feeds.slice(0, this.visibleFeedsLimit);
+	},
+	loadMoreFeeds() {
+		if (this.visibleFeedsLimit < this.feeds.length) {
+			this.visibleFeedsLimit = Math.min(this.visibleFeedsLimit + 10, this.feeds.length);
+		}
+	},
 
 	loading: false,
 	loadingPercent: 0,
@@ -30,6 +39,7 @@ function alpineRSS() { return {
 
 	linkToItemMap: new Map(),
 	viewedItemsCache: {},
+	_viewedMap: null,
 
 	countryClusters: [],
 	showWorldMap: false,
@@ -570,10 +580,12 @@ function alpineRSS() { return {
 	saveViewedItemsCache() {
 		for (const link in this.viewedItemsCache) {
 			if (Object.hasOwnProperty.call(this.viewedItemsCache, link)) {
-				this.storageSet(this.K.viewed + link, this.viewedItemsCache[link]);
+				const val = this.viewedItemsCache[link];
+				this.storageSet(this.K.viewed + link, val);
+				this._viewedMap?.set(link, val);
 			}
 		}
-		this.viewedItemsCache = {}; // Clear cache after saving
+		this.viewedItemsCache = {};
 	},
 
 	async saveReadLater(item, is_remove) {
@@ -980,12 +992,11 @@ function alpineRSS() { return {
 		);
 	},
 
+	_decodeTxt: null,
 	decodeHTML(html) {
-		var txt = document.createElement('textarea');
-		txt.innerHTML = html;
-		let decoded = txt.value;
-		delete txt;
-		return decoded || '';
+		if (!this._decodeTxt) this._decodeTxt = document.createElement('textarea');
+		this._decodeTxt.innerHTML = html;
+		return this._decodeTxt.value || '';
 	},
 
 	timeSinceItem(item) {
@@ -1100,7 +1111,7 @@ function alpineRSS() { return {
 					item.show_ldjson = false;
 
 					this.linkToItemMap.set(item.link, item);
-					item.viewed = this.storageGet(this.K.viewed + item.link);
+					item.viewed = this._viewedMap ? (this._viewedMap.get(item.link) ?? null) : this.storageGet(this.K.viewed + item.link);
 
 					if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
 						item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
@@ -1283,17 +1294,14 @@ function alpineRSS() { return {
 						}
 					};
 
-					this.embedSentence(item.title).then(v => {
-						if (!v) return;
-
-						item.vector = v;
-
-						if (Array.isArray(this.persona?.vector)) {
+					if (window.embedder && Array.isArray(this.persona?.vector)) {
+						this.embedSentence(item.title).then(v => {
+							if (!v) return;
+							item.vector = v;
 							let similarity = this.similarity(item.vector, this.persona.vector);
-
 							item.author = similarity ? Number(similarity).toFixed(2) : item.author;
-						}
-					});
+						});
+					}
 				});
 
 				// console.log('viewed_0', feed.items.length, limit)
@@ -2351,13 +2359,21 @@ function alpineRSS() { return {
 		}
 		// console.log('inited persona')
 
-		Object.entries({...localStorage})
+		const allLS = Object.entries({...localStorage});
+		allLS
 			.filter(
 				([k, v]) => ( k.includes(this.K.viewed) && (new Date(v) < new Date(Date.now() - 24*60*60e3)) )
 						|| ( Number(k.split('_').shift().replace('v', '')) < Number(VERSION.replace('v', '')) )
 			)
 			.forEach( ([k, v]) => localStorage.removeItem(k) )
 		;
+
+		// Batch load all viewed keys into memory Map (avoids per-item localStorage reads)
+		this._viewedMap = new Map(
+			allLS
+				.filter(([k]) => k.startsWith(this.K.viewed))
+				.map(([k, v]) => [k.slice(this.K.viewed.length), JSON.parse(v || 'null')])
+		);
 		// console.log('inited old localStorage')
 
 		window.addEventListener('params-x-changed', function(event) {
