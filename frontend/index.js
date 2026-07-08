@@ -1,6 +1,24 @@
 const VERSION = 'v2';
 const STALE_THRESHOLD_HOUR = 4;
 
+const _DECODE_CACHE = new Map();
+const _DECODE_CACHE_MAX = 1000;
+function decodeHTMLMemo(html) {
+	if (typeof html !== 'string' || !html) return html || '';
+	const cached = _DECODE_CACHE.get(html);
+	if (cached !== undefined) return cached;
+	let el = _DECODE_CACHE._el || (_DECODE_CACHE._el = document.createElement('textarea'));
+	el.innerHTML = html;
+	const out = el.value || '';
+	if (_DECODE_CACHE.size >= _DECODE_CACHE_MAX) {
+		// Drop oldest entry (Map iteration is insertion order)
+		const first = _DECODE_CACHE.keys().next().value;
+		if (first !== undefined && first !== '_el') _DECODE_CACHE.delete(first);
+	}
+	_DECODE_CACHE.set(html, out);
+	return out;
+}
+
 function alpineHead() { return {
 	title: 'The Newsroom RSS',
 	description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
@@ -23,12 +41,23 @@ function alpineRSS() { return {
 	feeds: [],
 	is_hide_feeds: false,
 	visibleFeedsLimit: 6,
+	_loadingMore: false,
 	get visibleFeeds() {
 		return this.feeds.slice(0, this.visibleFeedsLimit);
 	},
+	get hasMore() {
+		return this.visibleFeedsLimit < this.feeds.length;
+	},
 	loadMoreFeeds() {
+		if (this._loadingMore) return;
 		if (this.visibleFeedsLimit < this.feeds.length) {
-			this.visibleFeedsLimit = Math.min(this.visibleFeedsLimit + 10, this.feeds.length);
+			this._loadingMore = true;
+			// Use rAF + microtask to coalesce rapid intersection events
+			requestAnimationFrame(() => {
+				this.visibleFeedsLimit = Math.min(this.visibleFeedsLimit + 10, this.feeds.length);
+				// Clear guard after Alpine has rendered the new batch
+				this.$nextTick(() => { this._loadingMore = false; });
+			});
 		}
 	},
 
@@ -40,6 +69,9 @@ function alpineRSS() { return {
 	linkToItemMap: new Map(),
 	viewedItemsCache: {},
 	_viewedMap: null,
+
+	_unifiedCache: null,
+	_unifiedSig: '',
 
 	countryClusters: [],
 	showWorldMap: false,
@@ -53,7 +85,16 @@ function alpineRSS() { return {
 		u: false,
 	},
 	get unifiedItems() {
-		return (this.feeds || [])
+		// Build a cheap signature based on feed count + item count + last item id per feed
+		const feeds = this.feeds || [];
+		let sig = feeds.length + ':';
+		for (const f of feeds) {
+			sig += (f.items?.length || 0) + ':';
+			const last = f.items?.[f.items.length - 1];
+			sig += (last?.link || '') + ',';
+		}
+		if (sig === this._unifiedSig && this._unifiedCache) return this._unifiedCache;
+		const result = feeds
 			.flatMap(f => (f.items || []).map(i => ({
 					...i,
 					feed_favicon: f.favicon_url,
@@ -62,6 +103,9 @@ function alpineRSS() { return {
 			)
 			.filter(x => !x?.disable)
 			.sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
+		this._unifiedCache = result;
+		this._unifiedSig = sig;
+		return result;
 	},
 	loadMoreAll() {
 		(this.feeds || []).forEach(f => f.loadMore?.());
@@ -578,12 +622,14 @@ function alpineRSS() { return {
 
 	// Periodically save viewed items from cache to localStorage
 	saveViewedItemsCache() {
-		for (const link in this.viewedItemsCache) {
-			if (Object.hasOwnProperty.call(this.viewedItemsCache, link)) {
-				const val = this.viewedItemsCache[link];
-				this.storageSet(this.K.viewed + link, val);
-				this._viewedMap?.set(link, val);
-			}
+		if (!Object.keys(this.viewedItemsCache).length) return;
+		// Merge pending viewed items into the existing batched blob
+		let batch = {};
+		try { batch = JSON.parse(localStorage.getItem(this.K.viewed) || '{}') || {}; } catch {}
+		Object.assign(batch, this.viewedItemsCache);
+		this.storageSet(this.K.viewed, batch);
+		for (const [link, val] of Object.entries(this.viewedItemsCache)) {
+			this._viewedMap?.set(link, val);
 		}
 		this.viewedItemsCache = {};
 	},
@@ -776,6 +822,9 @@ function alpineRSS() { return {
 		if (this.is_hide_feeds) return;
 
 		if (this.loading && !force_update) return;
+
+		this.visibleFeedsLimit = 6;
+		this.linkToItemMap = new Map();
 
 		this.loading = true;
 
@@ -992,11 +1041,8 @@ function alpineRSS() { return {
 		);
 	},
 
-	_decodeTxt: null,
 	decodeHTML(html) {
-		if (!this._decodeTxt) this._decodeTxt = document.createElement('textarea');
-		this._decodeTxt.innerHTML = html;
-		return this._decodeTxt.value || '';
+		return decodeHTMLMemo(html);
 	},
 
 	timeSinceItem(item) {
@@ -1137,14 +1183,15 @@ function alpineRSS() { return {
 
 					item.processed = true;
 
-					/*item.vector = this.storageGet(this.K.embedding + item.link);
-					if (!item.vector) {
-						embeddingText(`${item.title} - ${item.description}`).then(vector => {
+					const cacheKey = this.K.embedding + item.link;
+					item.vector = this.storageGet(cacheKey);
+					if (!item.vector && window.embedSentence) {
+						this.embedSentence(`${item.title} - ${item.description}`).then(vector => {
 							if (!vector) return;
 							item.vector = vector;
-							this.storageSet(this.K.embedding + item.link, vector);
+							this.storageSet(cacheKey, vector);
 						});
-					}*/
+					}
 
 					item.toggleReadmore = (force_flag) => item.prefetchContent().then(_ => {
 						item.read_more = force_flag || (!item.read_more);
@@ -1295,12 +1342,24 @@ function alpineRSS() { return {
 					};
 
 					if (window.embedder && Array.isArray(this.persona?.vector)) {
-						this.embedSentence(item.title).then(v => {
-							if (!v) return;
-							item.vector = v;
+						if (!item.vector) {
+							const cacheKey = this.K.embedding + item.link;
+							item.vector = this.storageGet(cacheKey);
+						}
+						if (!item.vector) {
+							this.embedSentence(item.title).then(v => {
+								if (!v) return;
+								item.vector = v;
+								const cacheKey = this.K.embedding + item.link;
+								this.storageSet(cacheKey, v);
+								let similarity = this.similarity(item.vector, this.persona.vector);
+								item.author = similarity ? Number(similarity).toFixed(2) : item.author;
+							});
+						} else {
+							// Reuse cached vector for persona scoring
 							let similarity = this.similarity(item.vector, this.persona.vector);
 							item.author = similarity ? Number(similarity).toFixed(2) : item.author;
-						});
+						}
 					}
 				});
 
@@ -1379,6 +1438,13 @@ function alpineRSS() { return {
 		if (!this.loading && this.params.a) {
 			toast('Go to: ' + this.params.a);
 			let found = document.querySelector(`[href*="${this.params.a}"]`) || document.querySelector(`[name*="${this.params.a}"]`);
+			if (!found) {
+				const idx = (this.feeds || []).findIndex(f => f.anchor === this.params.a);
+				if (idx >= 0 && idx >= this.visibleFeedsLimit) {
+					this.visibleFeedsLimit = idx + 2;
+					found = document.querySelector(`[href*="${this.params.a}"]`) || document.querySelector(`[name*="${this.params.a}"]`);
+				}
+			}
 			if (found) found.scrollIntoView({ behavior: 'smooth' });
 		}
 
@@ -2360,21 +2426,78 @@ function alpineRSS() { return {
 		// console.log('inited persona')
 
 		const allLS = Object.entries({...localStorage});
+		const STALE = Date.now() - 24*60*60e3;
 		allLS
-			.filter(
-				([k, v]) => ( k.includes(this.K.viewed) && (new Date(v) < new Date(Date.now() - 24*60*60e3)) )
-						|| ( Number(k.split('_').shift().replace('v', '')) < Number(VERSION.replace('v', '')) )
-			)
-			.forEach( ([k, v]) => localStorage.removeItem(k) )
+			.filter(([k, v]) => {
+				// Legacy per-item viewed keys: value is a timestamp string
+				if (k.startsWith(this.K.viewed) && k !== this.K.viewed) {
+					try {
+						const ts = new Date(JSON.parse(v)).getTime();
+						if (!isNaN(ts) && ts < STALE) return true;
+					} catch {}
+				}
+				// Old-version prefix cleanup
+				const prefix = k.split('_').shift();
+				if (prefix.startsWith('v') && Number(prefix.slice(1)) < Number(VERSION.replace('v', ''))) return true;
+				return false;
+			})
+			.forEach(([k]) => localStorage.removeItem(k))
 		;
 
-		// Batch load all viewed keys into memory Map (avoids per-item localStorage reads)
-		this._viewedMap = new Map(
-			allLS
-				.filter(([k]) => k.startsWith(this.K.viewed))
-				.map(([k, v]) => [k.slice(this.K.viewed.length), JSON.parse(v || 'null')])
-		);
+		// Also prune stale entries from the batched key
+		const batchKey = this.K.viewed;
+		const batchRaw2 = localStorage.getItem(batchKey);
+		if (batchRaw2) {
+			try {
+				const batch = JSON.parse(batchRaw2) || {};
+				let pruned = false;
+				for (const [link, ts] of Object.entries(batch)) {
+					const t = new Date(ts).getTime();
+					if (isNaN(t) || t < STALE) { delete batch[link]; pruned = true; }
+				}
+				if (pruned) this.storageSet(batchKey, batch);
+			} catch {}
+		}
+
+		// Load viewed items into memory Map. Supports both:
+		// - new batched format: a single key `this.K.viewed` holding {link: ts, ...}
+		// - legacy per-item format: `this.K.viewed + link` holding a timestamp string
+		this._viewedMap = new Map();
+		const batchRaw = localStorage.getItem(this.K.viewed);
+		if (batchRaw) {
+			try {
+				const batch = JSON.parse(batchRaw) || {};
+				for (const [link, ts] of Object.entries(batch)) {
+					this._viewedMap.set(link, ts);
+				}
+			} catch {}
+		}
+		for (const [k, v] of allLS) {
+			if (k === this.K.viewed) continue;  // already handled above
+			if (!k.startsWith(this.K.viewed)) continue;
+			const link = k.slice(this.K.viewed.length);
+			if (this._viewedMap.has(link)) continue;  // batched entry wins
+			try { this._viewedMap.set(link, JSON.parse(v || 'null')); } catch {}
+		}
 		// console.log('inited old localStorage')
+
+		// Cross-tab sync: refresh _viewedMap when another tab writes a viewed key
+		window.addEventListener('storage', (e) => {
+			if (!e.key || !this.K?.viewed || !e.key.startsWith(this.K.viewed)) return;
+			const link = e.key.slice(this.K.viewed.length);
+			if (e.newValue === null) {
+				this._viewedMap?.delete(link);
+			} else {
+				try { this._viewedMap?.set(link, JSON.parse(e.newValue)); } catch {}
+			}
+		});
+
+		// Flush viewed items when tab is hidden or closed
+		const flushViewed = () => this.saveViewedItemsCache?.();
+		window.addEventListener('pagehide', flushViewed);
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'hidden') flushViewed();
+		});
 
 		window.addEventListener('params-x-changed', function(event) {
 			// console.log('params-x-changed', event?.detail);

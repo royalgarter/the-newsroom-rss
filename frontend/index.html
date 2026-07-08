@@ -459,10 +459,16 @@
 			</template>
 
 			<!-- feed virtualization sentinel: loads 10 more feeds as user scrolls -->
-			<div x-intersect="loadMoreFeeds()"
-				x-show="!params.u && !is_hide_feeds && visibleFeedsLimit < feeds.length"
-				class="text-center py-6 text-sm italic opacity-50">
-				[Loading more feeds...]
+			<div x-show="!params.u && !is_hide_feeds && hasMore"
+				class="text-center py-6 text-sm italic opacity-75 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+				<div x-intersect="loadMoreFeeds()"
+					x-text="`[Showing ${visibleFeedsLimit} of ${feeds.length} feeds — scroll for more]`">
+				</div>
+				<button type="button"
+					@click="visibleFeedsLimit = feeds.length"
+					class="not-italic font-semibold border px-2 py-1 cursor-pointer hover:underline">
+					[Load all]
+				</button>
 			</div>
 
 			<!-- expanders -->

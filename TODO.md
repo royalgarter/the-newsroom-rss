@@ -115,3 +115,25 @@ Of course. I've reviewed the loadFeedsWithContent function in frontend/index.js,
   these two pieces of logic would need to be ported from V1 into V2 before you make the switch.
 
 Using: 1 GEMINI.md file
+
+## d9ac87d follow-ups — perf/UX hardening
+Tracked from review of `d9ac87d perf: virtual feed rendering + DOM/localStorage optimizations`.
+
+### Must-fix correctness
+- [ ] **#1 Auto-extend `visibleFeedsLimit` on anchor jump.** In `postProcessFeeds` success path (or wherever `params.a` is consumed), if target feed index >= `visibleFeedsLimit`, set `visibleFeedsLimit = idx + 2` so the anchor's DOM exists before `scrollIntoView`.
+- [ ] **#2 Reset `visibleFeedsLimit` when `this.feeds` is swapped.** Either at the start of `loadFeedsWithContent` or via a `$watch` on `feeds.length`. Prevents stale-window state across idle/hourly refreshes.
+- [ ] **#3 Cross-tab sync for `_viewedMap`.** Add `window.addEventListener('storage', …)` to refresh `_viewedMap` when another tab writes a viewed key.
+- [ ] **#4 Flush `viewedItemsCache` on `pagehide` / `visibilitychange===hidden`.** Closes the 5s loss window when the tab is closed soon after viewing an item.
+
+### High-impact, low-risk
+- [ ] **#5 Batch `viewedItemsCache` writes into a single localStorage key.** Keep `_viewedMap` as the in-memory source of truth, flush one `K.viewed_batch` blob every 5s and on `pagehide`.
+- [ ] **#6 Restore the embedding cache** via `K.embedding + item.link` (the commented-out path at `feed.postProcessItems`); avoids re-embedding the same title across sessions.
+- [ ] **#7 Debounce / one-shot `loadMoreFeeds`.** Add an in-flight guard, or `observer.unobserve(sentinel)` after firing, so bouncing scrolls don't re-render 10 sections at a time.
+- [ ] **#8 Memoize `decodeHTML`** with a bounded module-level `Map<string,string>` cache (cap ~1000). Cuts redundant work for identical titles/descriptions across feeds.
+- [ ] **#9 Memoize `unifiedItems`.** Cache the `flatMap`+`sort` result; invalidate when `feeds` length or item identity changes.
+- [ ] **#10 Garbage-collect `linkToItemMap`** when `this.feeds` is replaced. Currently grows unboundedly.
+
+### Nice-to-have polish
+- [ ] **Polish A** Sentinel label: render `[Showing N of M — scroll for more]` instead of plain `[Loading more feeds…]`. Sets expectations.
+- [ ] **Polish B** Expose a `hasMore` getter (or computed) for the template to bind against, decoupling display from `visibleFeedsLimit < feeds.length`.
+- [ ] **Polish C** Add a "Load all" button for users on fast connections who don't want staggered rendering.
