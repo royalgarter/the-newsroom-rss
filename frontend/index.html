@@ -239,14 +239,15 @@
 								>
 									<!-- thumbnail -->
 									<template x-if="style()?.img && item.image_thumb">
-										<div class="rss-meta relative min-h-36">
-											<a class="rss-thumb" 
-												:href="'#' + item.anchor" 
+										<div class="rss-meta relative min-h-36" style="aspect-ratio: 16 / 9;">
+											<a class="rss-thumb"
+												:href="'#' + item.anchor"
 												:name="item.anchor"
 											>
 
-												<img width="320" height="320"
-													class="rss-thumb w-full min-h-36 max-h-80"
+												<img width="320" height="180"
+													class="rss-thumb w-full h-full"
+													decoding="async"
 													:loading="(index <= 1) ? 'eager' : 'lazy'"
 													:fetchpriority="(index <= 1) ? 'high' : 'low'"
 													:alt="item.title"
@@ -544,14 +545,17 @@
 									
 									<!-- readlater thumbnail -->
 									<template x-if="!item.is_note && style()?.img && item.image_thumb">
-										<div class="rss-meta relative min-h-36"
+										<div class="rss-meta relative min-h-36" style="aspect-ratio: 16 / 9;"
 											@click="location.hash = '#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
 										>
 											<a :href="'#bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
-												:name="'bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')" 
+												:name="'bookmark'+item.link?.replace(/(https?|[^\w\d])/g, '')"
 											>
-												<img width="320" height="320"
-													class="rss-thumb w-full min-h-36 max-h-80"
+												<img width="320" height="180"
+													class="rss-thumb w-full h-full"
+													decoding="async"
+													loading="lazy"
+													fetchpriority="low"
 													:alt="item.title"
 													:domain="new URL(item.link).hostname"
 													:src="item.image_thumb"
@@ -869,9 +873,10 @@
 												<div class="rss-item border overflow-hidden p-2">
 													<!-- thumbnail -->
 													<template x-if="item.images?.[0]?.length">
-														<div class="rss-meta relative min-h-48 border-b">
-															<img width="240" height="240"
-																class="rss-thumb w-full min-h-24 max-h-48"
+														<div class="rss-meta relative min-h-48 border-b" style="aspect-ratio: 16 / 9;">
+															<img width="320" height="180"
+																class="rss-thumb w-full h-full"
+																decoding="async"
 																loading="eager"
 																fetchpriority="high"
 																:src="item.images[0]"

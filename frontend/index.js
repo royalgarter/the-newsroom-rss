@@ -19,6 +19,38 @@ function decodeHTMLMemo(html) {
 	return out;
 }
 
+// Bounded-concurrency embedding queue. Each `embedSentence` call is a Transformers.js
+// inference pass; firing one per item during a refresh easily hits 50+ concurrent
+// Web Worker inferences and freezes the UI. Cap at 2 in-flight, queue the rest.
+const _EMBED_INFLIGHT = new Set();
+const _EMBED_PENDING = [];
+const _EMBED_MAX = 2;
+
+function _drainEmbedQueue() {
+	while (_EMBED_INFLIGHT.size < _EMBED_MAX && _EMBED_PENDING.length) {
+		const task = _EMBED_PENDING.shift();
+		const p = (async () => {
+			try { await task.fn(); } catch {}
+		})().finally(() => {
+			_EMBED_INFLIGHT.delete(p);
+			_drainEmbedQueue();
+		});
+		_EMBED_INFLIGHT.add(p);
+	}
+}
+
+function enqueueEmbedding(embedFn, text, onResult) {
+	_EMBED_PENDING.push({
+		fn: async () => {
+			try {
+				const v = await embedFn(text);
+				if (v) onResult(v);
+			} catch {}
+		}
+	});
+	_drainEmbedQueue();
+}
+
 function alpineHead() { return {
 	title: 'The Newsroom RSS',
 	description: 'We just decided: The first step in fixing the world is to Be Informed. Get curated news, delivered your way: fast, personalized RSS.',
@@ -908,8 +940,11 @@ function alpineRSS() { return {
 			const fetchBatch = async (batchData, allUrls) => {
 				if (!batchData.length) return [];
 				let batchLimit = parseInt(limit) + parseInt(limit_adjust);
-				let batchKeys = allUrls.map(u => ({url: u}));
-				
+
+				// Send a single key per request. The backend derives its CACHE_FEEDS cache
+				// key from `keys` (not `batch`), so per-request payloads are correctly
+				// cached while the wire size drops from O(N^2) keys to O(N). `batch` is
+				// kept as a single-entry list for back-compat with older backend handlers.
 				return await Promise.allSettled(
 					batchData.map((item) => {
 						let fetch_url = `/api/feeds?type=keys&sig=${sig}&l=${batchLimit}&x=${hash}&pioneer=${this.pioneer || ''}`;
@@ -917,94 +952,173 @@ function alpineRSS() { return {
 							method: 'POST',
 							headers: {"content-type": "application/json"},
 							signal: AbortSignal.timeout(60e3),
-							body: JSON.stringify({batch: batchKeys, keys: [item]}),
+							body: JSON.stringify({batch: [{url: item.url, content: item.content}], keys: [item]}),
 						}).then(resp => resp.json()).catch(null);
 					})
 				);
+			};
+
+			const appendFeed = (rf) => {
+				if (!rf?.rss_url) return;
+				let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
+				if (existing) {
+					const existingLinks = new Set(existing.items.map(i => i.link));
+					const newItems = (rf.items || []).filter(i => !existingLinks.has(i.link));
+					existing.items = [...newItems, ...existing.items];
+				} else {
+					this.feeds.push(rf);
+				}
+			};
+
+			// Streaming NDJSON consumer. Opens ONE connection to `/api/feeds?type=keys&stream=1`
+			// and reads parsed feeds as they arrive — the first feed can render in ~200ms
+			// instead of waiting for the slowest in a critical group. Calls
+			// `postProcessFeeds` on each emission so the UI updates incrementally. Falls back
+			// to the legacy critical/remaining fetchBatch if the backend doesn't speak
+			// NDJSON (older deploys) or the body doesn't expose a reader.
+			const streamFeeds = async (allUrls) => {
+				const batchLimit = parseInt(limit) + parseInt(limit_adjust);
+				const streamUrl = `/api/feeds?type=keys&stream=1&sig=${sig}&l=${batchLimit}&x=${hash}&pioneer=${this.pioneer || ''}`;
+				const ctrl = new AbortController();
+				const t = setTimeout(() => ctrl.abort(), 60e3);
+
+				let resp;
+				try {
+					resp = await fetch(streamUrl, {
+						method: 'POST',
+						headers: { "content-type": "application/json" },
+						signal: ctrl.signal,
+						body: JSON.stringify({
+							batch: allUrls.map(u => ({ url: u })),
+							keys: allUrls.map(u => ({ url: u })),
+						}),
+					});
+				} catch (ex) {
+					clearTimeout(t);
+					return null;
+				}
+				clearTimeout(t);
+
+				if (!resp.ok || !resp.body || typeof resp.body.getReader !== 'function') return null;
+
+				const reader = resp.body.getReader();
+				const decoder = new TextDecoder();
+				let buf = '';
+				let meta = null;
+				let firstFeedSeen = false;
+				let feedsEmitted = 0;
+
+				try {
+					while (true) {
+						const { done, value } = await reader.read();
+						if (done) break;
+						buf += decoder.decode(value, { stream: true });
+
+						let nl;
+						while ((nl = buf.indexOf('\n')) >= 0) {
+							const line = buf.slice(0, nl).trim();
+							buf = buf.slice(nl + 1);
+							if (!line) continue;
+							let msg;
+							try { msg = JSON.parse(line); } catch { continue; }
+							if (!msg || typeof msg !== 'object') continue;
+
+							if (msg.type === 'meta') {
+								meta = msg;
+								if (meta.settings) {
+									const s = meta.settings;
+									if (s.k && !this.params.k) { this.params.k = s.k; this.storageSet(this.K.gemini_api_key, this.params.k); }
+									if (s.s && !this.params.s) { this.params.s = s.s; this.storageSet(this.K.style, this.params.s); }
+									if (s.l && !this.params.l) { this.params.l = s.l; }
+								}
+							} else if (msg.type === 'feed' && msg.feed) {
+								appendFeed(msg.feed);
+								feedsEmitted++;
+								this.postProcessFeeds({ limit, auto_fetch_content: true });
+								if (!firstFeedSeen) {
+									firstFeedSeen = true;
+									toast('First feed loaded');
+								}
+							} else if (msg.type === 'error') {
+								console.warn('stream feed error', msg.url, msg.error);
+							}
+						}
+					}
+				} catch (ex) {
+					console.warn('stream read error', ex);
+					return meta || null;
+				}
+
+				toast('All feeds loaded');
+				return meta || { hash, settings: null, emitted: feedsEmitted };
 			};
 
 			const CRITICAL_COUNT = 4;
 			const criticalUrls = urls.slice(0, CRITICAL_COUNT);
 			const remainingUrls = urls.slice(CRITICAL_COUNT);
 
-			// Step 1: Prefetch and fetch critical feeds
-			await Promise.allSettled(criticalUrls.map(prefetch)).then(async (results) => {
-				const criticalData = results.map(r => r.value);
+			// Legacy two-phase waterfall (critical first, then remaining). Used only as a
+			// fallback when the streaming endpoint isn't reachable. Returns an array
+			// matching the shape of the old critical+remaining results for the hash
+			// extraction below.
+			const legacyFetch = async () => {
+				const criticalResultsPrefetch = await Promise.allSettled(criticalUrls.map(prefetch));
+				const criticalData = criticalResultsPrefetch.map(r => r.value);
 				const criticalResults = await fetchBatch(criticalData, urls);
 				const respFeeds = criticalResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
 
 				if (respFeeds.length) {
-					respFeeds.forEach(rf => {
-						let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
-						if (existing) {
-							const existingLinks = new Set(existing.items.map(i => i.link));
-							const newItems = (rf.items || []).filter(i => !existingLinks.has(i.link));
-							existing.items = [...newItems, ...existing.items];
-						} else {
-							this.feeds.push(rf);
-						}
-					});
-					this.postProcessFeeds({limit, auto_fetch_content: true});
+					respFeeds.forEach(appendFeed);
+					this.postProcessFeeds({ limit, auto_fetch_content: true });
 					toast('Critical feeds loaded');
 				}
 
-				// Step 2: Background prefetch and fetch remaining feeds
-				(async () => {
-					const remainingResultsPrefetch = await Promise.allSettled(remainingUrls.map(prefetch));
-					const remainingData = remainingResultsPrefetch.map(r => r.value);
-					const remainingResults = await fetchBatch(remainingData, urls);
-					const remainingFeeds = remainingResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
+				const remainingResultsPrefetch = await Promise.allSettled(remainingUrls.map(prefetch));
+				const remainingData = remainingResultsPrefetch.map(r => r.value);
+				const remainingResults = await fetchBatch(remainingData, urls);
+				const remainingFeeds = remainingResults.filter(p => p.status == 'fulfilled').map(p => p.value?.feeds || []).flat().filter(x => x);
 
-					if (remainingFeeds.length) {
-						remainingFeeds.forEach(rf => {
-							let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
-							if (existing) {
-								const existingLinks = new Set(existing.items.map(i => i.link));
-								const newItems = (rf.items || []).filter(i => !existingLinks.has(i.link));
-								existing.items = [...newItems, ...existing.items];
-							} else {
-								this.feeds.push(rf);
-							}
-						});
+				if (remainingFeeds.length) {
+					remainingFeeds.forEach(appendFeed);
+					this.postProcessFeeds({ limit, auto_fetch_content: true });
+				}
 
-						let finalFeeds = [];
-						urls.forEach(u => {
-							let found = this.feeds.find(f => f.rss_url === u);
-							if (found) finalFeeds.push(found);
-						});
+				return [...criticalResults, ...remainingResults];
+			};
 
-						this.feeds = finalFeeds;
-						this.postProcessFeeds({limit, auto_fetch_content: true});
+			if (urls.length) {
+				const meta = await streamFeeds(urls);
+				if (meta == null) {
+					console.warn('NDJSON stream unavailable; falling back to legacy fetchBatch');
+					await legacyFetch();
+				}
 
-						if (!this.params.topic) {
-							const storageKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
-							this.storageSet(storageKey, this.feeds);
-						}
-					}
+				// Reorder this.feeds to match the user's URL order, then persist.
+				const finalFeeds = urls.map(u => this.feeds.find(f => f.rss_url === u)).filter(Boolean);
+				if (finalFeeds.length) this.feeds = finalFeeds;
 
-					this.tasks = urls.map((u, i) => ({url: u, order: i, checked: false}));
-					if (!this.params.topic) {
-						this.storageSet(this.params.x ? this.K.tasks + this.params.x : this.K.tasks, this.tasks);
-					}
+				this.tasks = urls.map((u, i) => ({ url: u, order: i, checked: false }));
+				if (!this.params.topic) {
+					const tasksKey = this.params.x ? this.K.tasks + this.params.x : this.K.tasks;
+					this.storageSet(tasksKey, this.tasks);
+					const feedsKey = this.params.x ? this.K.feeds + this.params.x : this.K.feeds;
+					this.storageSet(feedsKey, this.feeds);
+				}
 
-					let allResults = [...criticalResults, ...remainingResults];
-					let hash_server = allResults.find(p => p.status == 'fulfilled')?.value?.hash;
-					if (hash_server && !this.params.topic) {
-						const url = new URL(location);
-						url.searchParams.delete("u");
-						url.searchParams.set("x", hash_server);
-						history.replaceState({}, "", url);
-						this.params.x = hash_server;
-						this.storageSet(this.K.hash, this.params.x);
-					}
+				if (meta?.hash && !this.params.topic) {
+					const url = new URL(location);
+					url.searchParams.delete("u");
+					url.searchParams.set("x", meta.hash);
+					history.replaceState({}, "", url);
+					this.params.x = meta.hash;
+					this.storageSet(this.K.hash, this.params.x);
+				}
+			}
 
-					this.loadingPercent = 1;
-					this.loading = false;
-					toast('All feeds loaded');
-				})();
-			});
-
+			this.loadingPercent = 1;
+			this.loading = false;
 			this.pioneer = false;
+			toast('All feeds loaded');
 			return;
 		} catch (error) {
 			console.error("Error fetching feeds:", error);
@@ -1146,7 +1260,15 @@ function alpineRSS() { return {
 			feed.postProcessItems = (is_load_more) => {
 				// console.log('viewed_0.1', feed.items.length, limit)
 
-				feed.items.forEach((item, idx) => {
+				if (!feed.items?.length) return;
+
+				const items = feed.items;
+				const self = this;
+
+				// Per-item processing — extracted so we can chunk it across idle callbacks.
+				// `is_load_more` mirrors the original `forEach` semantics: skip items already
+				// marked processed unless we're re-running on a loadMore.
+				const processOne = (item) => {
 					if (item.processed && !is_load_more) return;
 
 					item.read_more = false;
@@ -1154,8 +1276,8 @@ function alpineRSS() { return {
 					item.read_later = false;
 					item.show_ldjson = false;
 
-					this.linkToItemMap.set(item.link, item);
-					item.viewed = this._viewedMap ? (this._viewedMap.get(item.link) ?? null) : this.storageGet(this.K.viewed + item.link);
+					self.linkToItemMap.set(item.link, item);
+					item.viewed = self._viewedMap ? (self._viewedMap.get(item.link) ?? null) : self.storageGet(self.K.viewed + item.link);
 
 					if (item.description?.includes('<') || ~item.description?.search(/\&\w+\;/)) {
 						item.description = new DOMParser().parseFromString(item.description, "text/html")?.documentElement.textContent;
@@ -1171,23 +1293,26 @@ function alpineRSS() { return {
 
 					item.image_thumb = item.images?.[0];
 
-					item.published_formatted = (this.timeSince(new Date(item.published)) + ' ago')
+					item.published_formatted = (self.timeSince(new Date(item.published)) + ' ago')
 											|| new Date(item.published).toString().split(' GMT').shift()
 											|| (item.categories?.join(', ') || item.statistics || feed.short).substr(0, 30).trim();
-					item.title_formatted = this.decodeHTML(item.title).substr(0, 150);
-					item.description_formatted = (item.description ? this.decodeHTML(item.description) : '').substr(0, 300);
+					item.title_formatted = self.decodeHTML(item.title).substr(0, 150);
+					item.description_formatted = (item.description ? self.decodeHTML(item.description) : '').substr(0, 300);
 					item.author_formatted = item.author?.toString().substr(0, 20).trim();
 					item.anchor = anchorling(item?.link);
 
 					item.processed = true;
 
-					const cacheKey = this.K.embedding + item.link;
-					item.vector = this.storageGet(cacheKey);
+					const cacheKey = self.K.embedding + item.link;
+					item.vector = self.storageGet(cacheKey);
 					if (!item.vector && window.embedSentence) {
-						this.embedSentence(`${item.title} - ${item.description}`).then(vector => {
-							if (!vector) return;
+						// Route through the bounded-concurrency embedding queue. The
+						// closure captures `item` + `cacheKey` so the resolved vector
+						// still writes back to the right item.
+						const text = `${item.title} - ${item.description}`;
+						enqueueEmbedding(window.embedSentence, text, (vector) => {
 							item.vector = vector;
-							this.storageSet(cacheKey, vector);
+							self.storageSet(cacheKey, vector);
 						});
 					}
 
@@ -1203,7 +1328,7 @@ function alpineRSS() { return {
 
 							item.viewed = new Date().toString().split(' GMT').shift();
 
-							this.storageSet(this.K.viewed + item.link, item.viewed);
+							self.storageSet(self.K.viewed + item.link, item.viewed);
 
 							setTimeout(() => {
 								let fa = document.querySelector('#rss-feed-article-' + feedIdx);
@@ -1241,7 +1366,7 @@ function alpineRSS() { return {
 					}).catch(_ => null);
 
 					item.prefetchContent = async () => {
-						if (!this.style()?.preview) return;
+						if (!self.style()?.preview) return;
 
 						// console.log('prefetchContent', item.title);
 
@@ -1251,20 +1376,20 @@ function alpineRSS() { return {
 
 						let resp = null;
 						let opts = {redirect: 'follow'};
-						let key_nofetch = this.K.noClientFetch + new URL(item.link).hostname;
+						let key_nofetch = self.K.noClientFetch + new URL(item.link).hostname;
 
-						let noClientFetch = this.storageGet(key_nofetch);
+						let noClientFetch = self.storageGet(key_nofetch);
 						// console.time('>> fetch.html.' + item.link);
 						try {
 
 							resp = noClientFetch
 									? await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null)
 									: await fetch(item.link, opts).catch(() => {
-										this.storageSet(key_nofetch, true);
+										self.storageSet(key_nofetch, true);
 										return null;
 									});
 						} catch (ex) {
-							this.storageSet(key_nofetch, true);
+							self.storageSet(key_nofetch, true);
 							resp = await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null);
 						}
 						// console.timeEnd('>> fetch.html.' + item.link);
@@ -1308,30 +1433,30 @@ function alpineRSS() { return {
 
 					// if (feedIdx <= 1) {
 					// 	item.prefetchContent();
-					// 	this.triggerIntersect('full', item.link);
+					// 	self.triggerIntersect('full', item.link);
 					// }
 
 					item.updatePersona = async () => {
-						item.vector = item.vector || await this.embedSentence(item.title);
+						item.vector = item.vector || await self.embedSentence(item.title);
 
 						// console.log('updatePersona', item.vector)
 
 						if (item.vector) {
 							// console.log('currentPersona', this.persona);
 
-							if (!Array.isArray(this.persona?.vector) || (item.vector.length != this.persona.vector.length)) {
-								this.persona = {vector: item.vector, count: 1};
-								this.storageSet(this.K.persona, this.persona);
+							if (!Array.isArray(self.persona?.vector) || (item.vector.length != self.persona.vector.length)) {
+								self.persona = {vector: item.vector, count: 1};
+								self.storageSet(self.K.persona, self.persona);
 							} else {
-								let similarity = this.similarity(item.vector, this.persona.vector);
+								let similarity = self.similarity(item.vector, self.persona.vector);
 								console.log('similarity', similarity);
 
-								let newVector = this.updateMeanVector(this.persona.vector, this.persona.count, item.vector);
+								let newVector = self.updateMeanVector(self.persona.vector, self.persona.count, item.vector);
 								// console.log('newVector', newVector);
 
 								if (newVector) {
-									this.persona = 	{vector: newVector, count: this.persona.count + 1};
-									this.storageSet(this.K.persona, this.persona);
+									self.persona = 	{vector: newVector, count: self.persona.count + 1};
+									self.storageSet(self.K.persona, self.persona);
 								}
 							}
 
@@ -1339,49 +1464,92 @@ function alpineRSS() { return {
 						}
 					};
 
-					if (window.embedder && Array.isArray(this.persona?.vector)) {
+					if (window.embedder && Array.isArray(self.persona?.vector)) {
 						if (!item.vector) {
-							const cacheKey = this.K.embedding + item.link;
-							item.vector = this.storageGet(cacheKey);
+							const cacheKey = self.K.embedding + item.link;
+							item.vector = self.storageGet(cacheKey);
 						}
 						if (!item.vector) {
-							this.embedSentence(item.title).then(v => {
+							// Same queueing pattern as above — caps concurrent inference.
+							enqueueEmbedding(self.embedSentence.bind(self), item.title, (v) => {
 								if (!v) return;
 								item.vector = v;
-								const cacheKey = this.K.embedding + item.link;
-								this.storageSet(cacheKey, v);
-								let similarity = this.similarity(item.vector, this.persona.vector);
+								const cacheKey = self.K.embedding + item.link;
+								self.storageSet(cacheKey, v);
+								let similarity = self.similarity(item.vector, self.persona.vector);
 								item.author = similarity ? Number(similarity).toFixed(2) : item.author;
 							});
 						} else {
 							// Reuse cached vector for persona scoring
-							let similarity = this.similarity(item.vector, this.persona.vector);
+							let similarity = self.similarity(item.vector, self.persona.vector);
 							item.author = similarity ? Number(similarity).toFixed(2) : item.author;
 						}
 					}
-				});
+				};
 
-				// console.log('viewed_0', feed.items.length, limit)
-				if ((feed.items.length > limit) && !show_viewed) {
-					// console.log('viewed_1', feed.items.length)
-					let unviewed_items = feed.items.filter(item => {
-						let viewed = this.storageGet(this.K.viewed + item.link);
-						if (viewed) return false;
+				const finalize = () => {
+					// console.log('viewed_0', feed.items.length, limit)
+					if ((feed.items.length > limit) && !show_viewed) {
+						// console.log('viewed_1', feed.items.length)
+						let unviewed_items = feed.items.filter(item => {
+							let viewed = self.storageGet(self.K.viewed + item.link);
+							if (viewed) return false;
 
-						return true;
+							return true;
+						});
+
+						if (unviewed_items.length > limit) feed.items = unviewed_items;
+
+						// console.log('viewed_2', feed.items.length)
+					}
+
+					// feed.items = feed.items.slice(0, limit);
+					feed.items.forEach((item, idx) => {
+						// console.log('is_load_more', is_load_more, idx, limit);
+
+						item.disable = (!is_load_more) && (idx >= limit);
 					});
+				};
 
-					if (unviewed_items.length > limit) feed.items = unviewed_items;
+				// Chunked scheduling: process the first viewport synchronously so the
+				// first paint has fully-formatted data, then yield to requestIdleCallback.
+				// `is_load_more` re-runs only over newly appended items; otherwise we
+				// resume from `_processedThrough` so partial progress survives mid-loop
+				// interruptions (e.g. user clicks refresh).
+				const SYNC_CHUNK = 24;
+				const IDLE_BATCH = 16;
+				const ric = window.requestIdleCallback || ((cb) => setTimeout(() => cb({ timeRemaining: () => 50 }), 0));
 
-					// console.log('viewed_2', feed.items.length)
+				let i = is_load_more ? (feed._processedThrough || 0) : 0;
+				if (!is_load_more) feed._processedThrough = 0;
+
+				const syncEnd = Math.min(items.length, i + SYNC_CHUNK);
+				while (i < syncEnd) {
+					const item = items[i++];
+					if (!item.processed) processOne(item);
+				}
+				feed._processedThrough = i;
+
+				if (i >= items.length) {
+					finalize();
+					return;
 				}
 
-				// feed.items = feed.items.slice(0, limit);
-				feed.items.forEach((item, idx) => {
-					// console.log('is_load_more', is_load_more, idx, limit);
-
-					item.disable = (!is_load_more) && (idx >= limit);
-				});
+				const step = (deadline) => {
+					const remaining = (deadline && typeof deadline.timeRemaining === 'function') ? deadline.timeRemaining() : 50;
+					let budget = IDLE_BATCH;
+					while (i < items.length && budget-- > 0 && remaining > 1) {
+						const item = items[i++];
+						if (!item.processed) processOne(item);
+					}
+					feed._processedThrough = i;
+					if (i < items.length) {
+						ric(step);
+					} else {
+						finalize();
+					}
+				};
+				ric(step);
 			};
 
 			feed.loadMore = () => {

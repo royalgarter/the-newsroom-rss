@@ -224,6 +224,89 @@ export async function handleFeeds(req: Request) {
         }
     }
 
+    // NDJSON streaming path — enabled with `?stream=1`. Each parsed feed is emitted
+    // as a single JSON line the moment it's ready (cached or freshly fetched), so
+    // the client can render the first feed in ~200ms instead of waiting for the
+    // slowest in a critical group. Falls back to a {type:'error'} line on per-feed
+    // failure so a single bad URL doesn't break the whole stream.
+    if (params.stream == '1' && keys?.length && req.method == 'POST') {
+        const encoder = new TextEncoder();
+        const safeEnqueue = (controller: ReadableStreamDefaultController, line: string) => {
+            try { controller.enqueue(encoder.encode(line + '\n')); } catch {}
+        };
+
+        const stream = new ReadableStream({
+            async start(controller) {
+                safeEnqueue(controller, JSON.stringify({ type: 'meta', hash, settings: userSettings }));
+
+                const perUrlLimit = limit;
+
+                // Fire each URL in parallel. Each task consults the per-URL cache,
+                // serves cached data immediately if available, and emits one line
+                // per parsed feed as it becomes ready. Errors are surfaced inline.
+                await Promise.allSettled(keys.map(async (k) => {
+                    if (!k?.url) return;
+                    const u = k.url;
+                    const cacheKey = 'CACHE_FEEDS:' + u + ':' + perUrlLimit;
+                    const cachePermKey = 'PERMANENT_' + cacheKey;
+                    const oneUrl = [{ url: u, content: k.content }];
+
+                    const emitFeed = (feed: any) => {
+                        safeEnqueue(controller, JSON.stringify({ type: 'feed', feed }));
+                    };
+
+                    try {
+                        const cached = CACHE.get(cacheKey);
+                        const cachedPerm = CACHE.get(cachePermKey);
+                        let feedResult: any = null;
+
+                        if (cached?.length) {
+                            feedResult = cached;
+                            // Background refresh; emit cached feed immediately.
+                            fetchRSSLinks({ urls: oneUrl, limit: perUrlLimit, pioneer })
+                                .then((fs) => saveFeedCache({ limit: perUrlLimit, feeds: fs, key_feeds: cacheKey, key_feeds_permanent: cachePermKey }))
+                                .catch((e) => console.dir({ cacheKey, e }));
+                        } else if (cachedPerm?.length) {
+                            feedResult = cachedPerm;
+                            fetchRSSLinks({ urls: oneUrl, limit: perUrlLimit, pioneer })
+                                .then((fs) => saveFeedCache({ limit: perUrlLimit, feeds: fs, key_feeds: cacheKey, key_feeds_permanent: cachePermKey }))
+                                .catch((e) => console.dir({ cacheKey, e }));
+                        } else {
+                            const fs = await fetchRSSLinks({ urls: oneUrl, limit: perUrlLimit, pioneer });
+                            if (fs?.length) {
+                                saveFeedCache({ limit: perUrlLimit, feeds: fs, key_feeds: cacheKey, key_feeds_permanent: cachePermKey });
+                            }
+                            feedResult = fs;
+                        }
+
+                        const out = feedResult?.length ? feedResult : [{ rss_url: u, items: [] }];
+                        for (const feed of out) emitFeed(feed);
+                    } catch (e: any) {
+                        console.error('stream feed error', u, e);
+                        safeEnqueue(controller, JSON.stringify({ type: 'error', url: u, error: String(e?.message || e) }));
+                        emitFeed({ rss_url: u, items: [] });
+                    }
+                }));
+
+                safeEnqueue(controller, JSON.stringify({ type: 'done', hash, settings: userSettings }));
+                try { controller.close(); } catch {}
+            },
+            cancel() {
+                // Client disconnected — nothing to clean up; the per-task awaits above
+                // will resolve and their enqueue calls hit the safeEnqueue guard.
+            }
+        });
+
+        return new Response(stream, {
+            headers: {
+                ...cors,
+                "Content-Type": "application/x-ndjson; charset=utf-8",
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no", // disable proxy buffering if fronted by nginx
+            },
+        });
+    }
+
     return response(JSON.stringify({ feeds, hash, settings: userSettings }), {
         headers: {
             ...cors, ...head_json,

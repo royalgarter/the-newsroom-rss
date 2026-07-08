@@ -1,3 +1,17 @@
+## 2026-07-08 — feed/image perf enhancements (proposal round)
+Tracked from proposal for slow feed loading + slow image rendering.
+
+### Already in code (verified)
+- [x] **#5 Memoize `unifiedItems`** — `_unifiedCache` / `_unifiedSig` + signature-based invalidation in `alpineRSS`. *(frontend/index.js:85)*
+- [x] **#6 Memoize `decodeHTML`** — module-level `_DECODE_CACHE` (Map, LRU-ish, cap 1000) backing `decodeHTMLMemo`. *(frontend/index.js:6)*
+
+### To-do
+- [ ] **#1 Stop re-sending the full URL list per batch** in `fetchBatch` (frontend/index.js). Today each of the N parallel POSTs to `/api/feeds` carries `keys: allUrls.map(u => ({url:u}))` — backend re-parses the same N keys N times. Switch to one-per-feed: `keys: [{url:item.url}]`.
+- [ ] **#7 Chunk `postProcessFeeds`** via `requestIdleCallback` (fallback `setTimeout`) so first paint isn't blocked on synchronous `DOMParser` + `decodeHTML` over hundreds of items; coalesce embedding lookups via a queue with max 2 in-flight `embedSentence` calls (frontend/index.js).
+- [ ] **#A `#2 decoding="async"` + `#4 fetchpriority="high"` on the first visible images** (frontend/index.html:248-260, 553-562, 873-879). Removes main-thread decode jank and starts network fetch in parallel with HTML parsing.
+- [ ] **#B `#3` Reserve image dimensions** — wrap the `<img>` thumbnails in an aspect-ratio container (16/9) in CSS, so layout doesn't shift as images decode (frontend/index.html + style.css / index.css).
+- [ ] **#11 Streaming NDJSON for `/api/feeds`** — replace the two-phase critical/remaining waterfall with a single request that streams one parsed feed per line as it's ready; client appends to `this.feeds` immediately so users see the first feed in ~200ms instead of waiting for the slowest in the critical group. Backend: `backend/src/handlers.ts` `handleFeeds`. Frontend: `frontend/index.js` `loadFeedsWithContent`. Keep the existing JSON response path behind a `?stream=1` flag for back-compat.
+
 [x] https://github.com/jinglescode/textual-similarity-universal-sentence-encoder/tree/master
 [x] https://www.jsdelivr.com/package/npm/@tensorflow-models/universal-sentence-encoder
 [x] https://github.com/huggingface/transformers.js-examples?tab=readme-ov-file
