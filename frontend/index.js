@@ -41,12 +41,10 @@ function alpineRSS() { return {
 	feeds: [],
 	is_hide_feeds: false,
 	visibleFeedsLimit: 6,
+	hasMore: false,
 	_loadingMore: false,
 	get visibleFeeds() {
 		return this.feeds.slice(0, this.visibleFeedsLimit);
-	},
-	get hasMore() {
-		return this.visibleFeedsLimit < this.feeds.length;
 	},
 	loadMoreFeeds() {
 		if (this._loadingMore) return;
@@ -2490,6 +2488,15 @@ function alpineRSS() { return {
 			} else {
 				try { this._viewedMap?.set(link, JSON.parse(e.newValue)); } catch {}
 			}
+		});
+
+		// Keep hasMore in sync with virtualization window
+		this.hasMore = this.visibleFeedsLimit < this.feeds.length;
+		this.$watch('visibleFeedsLimit', () => {
+			this.hasMore = this.visibleFeedsLimit < this.feeds.length;
+		});
+		this.$watch('feeds', () => {
+			this.hasMore = this.visibleFeedsLimit < this.feeds.length;
 		});
 
 		// Flush viewed items when tab is hidden or closed
