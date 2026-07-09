@@ -32,10 +32,10 @@ if (workbox.navigationPreload.isSupported()) {
 	workbox.navigationPreload.enable();
 }
 
-// 1. Static Assets (JS, CSS) - StaleWhileRevalidate for fast loading + background update
+// 1. Static Assets (JS, CSS) - NetworkFirst to always serve latest
 workbox.routing.registerRoute(
 	({request}) => request.destination === 'script' || request.destination === 'style',
-	new workbox.strategies.StaleWhileRevalidate({
+	new workbox.strategies.NetworkFirst({
 		cacheName: 'static-assets',
 		plugins: [
 			new workbox.expiration.ExpirationPlugin({
