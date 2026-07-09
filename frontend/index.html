@@ -81,15 +81,14 @@
 							{href: '/?topic=crypto', text: 'Crypto'},
 							{href: '/?topic=ai', text: 'AI'},
 						],
-						anchors: [],
-						refresh: function() {
-							this.anchors = [...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
-								href: '#' + a.name,
-								text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
+						get anchors() {
+							const _alBody = Alpine.$data(document.querySelector('body'));
+							return (_alBody?.visibleFeeds || []).map((feed, i) => ({
+								href: '#' + feed.anchor,
+								text: '# [' + (i + 1) + '] ' + (feed.title || feed.short_title || feed.rss_url || '').toLowerCase().substr(0, 100).trim() + (feed.short_title ? (' - ' + feed.short_title) : ''),
 							}));
 						}
 					}"
-					x-init="refresh()"
 				>
 					<button @click="burger_open = !burger_open" class="focus:outline-none cursor-pointer pb-1 text-xl">
 						[≡]
@@ -1122,19 +1121,16 @@
 			_alSettings: Alpine.$data(document.querySelector('#expander_settings')),
 
 			is_open: false,
-			anchors: [],
-			refresh: function() {
-				this.anchors = [
+			get anchors() {
+				return [
 					{href: '#home', text: '# [Home]'},
-					...[...document.querySelectorAll('a.rss-feed-anchor')].map((a, i) => ({
-						href: '#' + a.name,
-						text: '# [' + (i + 1) + '] ' + (a.textContent || a.name || a.href).toLowerCase().substr(0, 100).trim() + (a.title ? (' - ' + a.title) : ''),
-						})),
-						{href: '#settings', text: '# [Settings]'},
-						];
-						} }"
-
-			x-init="refresh()"
+					...(this._alBody?.visibleFeeds || []).map((feed, i) => ({
+						href: '#' + feed.anchor,
+						text: '# [' + (i + 1) + '] ' + (feed.title || feed.short_title || feed.rss_url || '').toLowerCase().substr(0, 100).trim() + (feed.short_title ? (' - ' + feed.short_title) : ''),
+					})),
+					{href: '#settings', text: '# [Settings]'},
+				];
+			} }"
 		>
 			<div x-show="is_open" @click.away="is_open = false" class="border overflow-y-auto max-h-128" :class="isDark() ? 'bg-black' : 'bg-white'">
 				<template x-for="(anchor, index) in anchors" :key="index">

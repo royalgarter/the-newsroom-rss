@@ -1035,8 +1035,7 @@ function alpineRSS() { return {
 								appendFeed(msg.feed);
 								feedsEmitted++;
 								this.postProcessFeeds({ limit, auto_fetch_content: true });
-								setTimeout(() => Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.(), 100);
-								if (!firstFeedSeen) {
+																if (!firstFeedSeen) {
 									firstFeedSeen = true;
 									toast('First feed loaded');
 								}
@@ -1071,8 +1070,7 @@ function alpineRSS() { return {
 				if (respFeeds.length) {
 					respFeeds.forEach(appendFeed);
 					this.postProcessFeeds({ limit, auto_fetch_content: true });
-					setTimeout(() => Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.(), 100);
-					toast('Critical feeds loaded');
+										toast('Critical feeds loaded');
 				}
 
 				const remainingResultsPrefetch = await Promise.allSettled(remainingUrls.map(prefetch));
@@ -1083,8 +1081,7 @@ function alpineRSS() { return {
 				if (remainingFeeds.length) {
 					remainingFeeds.forEach(appendFeed);
 					this.postProcessFeeds({ limit, auto_fetch_content: true });
-					setTimeout(() => Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.(), 100);
-				}
+									}
 
 				return [...criticalResults, ...remainingResults];
 			};
@@ -1130,8 +1127,7 @@ function alpineRSS() { return {
 			this.loadingPercent = 1;
 		} finally {
 			console.log('loadFeedsWithContent.done');
-			setTimeout(() => Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.(), 100);
-		}
+					}
 	},
 
 	async digest(txt, algo='SHA-256') {
@@ -2330,8 +2326,6 @@ function alpineRSS() { return {
 			// console.log('$watch.feeds', oldValue?.length, value?.length)
 
 			if (oldValue.length != value.length) {
-				setTimeout(() => Alpine.$data(document.querySelector('#anchor_jump'))?.refresh?.(), 100);
-				Alpine.$data(document.querySelector('#menu_burger'))?.refresh?.();
 				this.clusterByCountry();
 			}
 		})
