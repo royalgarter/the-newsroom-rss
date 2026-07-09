@@ -75,6 +75,10 @@ function alpineRSS() { return {
 	visibleFeedsLimit: 6,
 	hasMore: false,
 	_loadingMore: false,
+	_lastActivity: Date.now(),
+	_autoLoadTimer: null,
+	AUTOLOAD_IDLE_MS: 2000,
+	AUTOLOAD_ACTIVITY_WINDOW_MS: 300_000,
 	get visibleFeeds() {
 		return this.feeds.slice(0, this.visibleFeedsLimit);
 	},
@@ -86,9 +90,26 @@ function alpineRSS() { return {
 			requestAnimationFrame(() => {
 				this.visibleFeedsLimit = Math.min(this.visibleFeedsLimit + 10, this.feeds.length);
 				// Clear guard after Alpine has rendered the new batch
-				this.$nextTick(() => { this._loadingMore = false; });
+				this.$nextTick(() => {
+					this._loadingMore = false;
+					this.scheduleAutoLoad();
+				});
 			});
 		}
+	},
+	scheduleAutoLoad() {
+		if (this._autoLoadTimer) return;
+		if (!this.hasMore) return;
+		const delay = this.AUTOLOAD_IDLE_MS;
+		const schedule = typeof requestIdleCallback !== 'undefined'
+			? (cb) => requestIdleCallback(cb, { timeout: delay + 500 })
+			: (cb) => setTimeout(cb, delay);
+		this._autoLoadTimer = schedule(() => {
+			this._autoLoadTimer = null;
+			if (Date.now() - this._lastActivity > this.AUTOLOAD_ACTIVITY_WINDOW_MS) return;
+			if (!this.hasMore) return;
+			this.loadMoreFeeds();
+		});
 	},
 
 	loading: false,
@@ -1127,6 +1148,7 @@ function alpineRSS() { return {
 			this.loadingPercent = 1;
 		} finally {
 			console.log('loadFeedsWithContent.done');
+			this.scheduleAutoLoad();
 					}
 	},
 
@@ -2663,6 +2685,11 @@ function alpineRSS() { return {
 		this.$watch('feeds', () => {
 			this.hasMore = this.visibleFeedsLimit < this.feeds.length;
 		});
+
+		// Track user activity for auto-load idle window
+		['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt =>
+			document.addEventListener(evt, () => { this._lastActivity = Date.now(); }, { passive: true })
+		);
 
 		// Flush viewed items when tab is hidden or closed
 		const flushViewed = () => this.saveViewedItemsCache?.();
