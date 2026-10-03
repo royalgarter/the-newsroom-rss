@@ -100,11 +100,40 @@ sw.js (registered on load)
   ├─ StaleWhileRevalidate: scripts + styles
   ├─ CacheFirst: images
   ├─ NetworkFirst: /api/ + navigations (5s timeout)
-  └─ periodicsync 'get-feeds' (every ~4h)
+  ├─ periodicsync 'get-feeds' (every ~4h)
+  └─ precache: index.html, index.js?v=1.32, index.css?v=1.32,
+     manifest.json, favicon.ico, default-profile-64x64.png,
+     js/{module,llm,hclust}.mjs
 ```
 
-Frontend assets are cache-busted via `?v=1.30` query strings on
-`index.js`, `index.css`, and `js/module.mjs`.
+Frontend assets are cache-busted via `?v=1.32` query strings on
+`index.js`, `index.css`, and `js/module.mjs`. `frontend/sw.js`
+precaches the same three under that version string
+(`CACHE_NAME = the-newsroom-rss-v1.32`); the precache list and the
+page's query strings must be bumped together or the precache warms
+URLs nothing requests.
+
+### Script load order
+
+`index.js` is `defer`red and must stay **first** in the head's
+deferred-script order, ahead of Alpine:
+
+```html
+<script id="version" defer src="index.js?v=1.32"></script>
+<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+```
+
+Deferred scripts execute in document order, and Alpine auto-starts
+the moment it loads — by the time the defer queue runs,
+`document.readyState` is already `"interactive"`, so Alpine does not
+wait for `DOMContentLoaded`. If Alpine is listed first it boots
+before `alpineHead` / `alpineRSS` exist, and the page renders only
+the Quick Note shell. The symptom in the console is
+`Alpine Expression Error: alpineHead is not defined`.
+
+Keeping `index.js` deferred lets the browser parse and paint the
+HTML shell while the 89KB bundle is still downloading.
 
 ---
 
@@ -252,6 +281,25 @@ calls `loadMoreFeeds()` via `x-intersect`, which is guarded by
 `_loadingMore` and coalesced with `requestAnimationFrame` +
 `$nextTick`. The new limit is `Math.min(visibleFeedsLimit + 10, feeds.length)`.
 A `[Load all]` button sets `visibleFeedsLimit = feeds.length` directly.
+
+### Thumbnail loading priority
+
+Each feed thumbnail binds its priority to the **item** index, not
+the feed index:
+
+```html
+:loading="(itemIndex <= 1) ? 'eager' : 'lazy'"
+:fetchpriority="(itemIndex <= 1) ? 'high' : 'low'"
+```
+
+`itemIndex` is the second binding variable of the inner
+`x-for="(item, itemIndex) in feed.items"`. The outer feed loop at
+the top of the template binds its index to plain `index`, which is
+still in scope here. Binding to `index` therefore made every item
+in the first two feeds eager and high priority; measured on a cold
+load that fired 48 thumbnails at once for 16s of combined image
+time. With `itemIndex`, only the top two items per feed load
+eagerly.
 
 ### Viewed-state tracking
 
@@ -464,14 +512,20 @@ Fetches with a Chrome User-Agent, `redirect: 'follow'`, and
 ### `GET /`
 
 Serves the SPA shell (`frontend/index.html`) with
-`Cache-Control: public, max-age=604800`.
+`Cache-Control: no-cache` plus a weak `ETag` derived from the
+file's mtime and size. Browsers always revalidate, so deploys are
+picked up immediately while repeat visits cost a bodiless `304`
+instead of a 55KB re-download.
 
 ### Static assets
 
 `GET /<file>` is routed through `handleStatic`, which reads from
 `./frontend/<file>` first then `./data/<file>`. MIME types are
-mapped via `extname`. Static responses carry
-`Cache-Control: public, max-age=604800`.
+mapped via `extname`. Binary types (`.png`, `.jpg`, `.jpeg`,
+`.gif`, `.ico`) are served without a `charset` parameter; every
+other type is sent as `<mime>; charset=utf-8`. Static responses
+carry `Cache-Control: public, max-age=604800`, except `.html`,
+which uses the same `no-cache` + `ETag` scheme as the SPA shell.
 
 `GET /sw.js`, `/index.css`, `/index.js`, `/js/module.mjs`,
 `/manifest.json`, `/favicon.ico`, `/tos.html`, `/privacy.html`,

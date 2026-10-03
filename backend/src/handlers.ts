@@ -479,6 +479,16 @@ export async function handleHtml(req: Request) {
     }
 }
 
+const HTML_CACHE_CONTROL = "no-cache";
+const ASSET_CACHE_CONTROL = "public, max-age=604800";
+const BINARY_TYPES = new Set(['.png', '.jpg', '.jpeg', '.gif', '.ico']);
+
+// Cheap validator so repeat HTML hits cost a 304 instead of a full body.
+async function weakETag(path: string) {
+    const { mtime, size } = await Deno.stat(path);
+    return `W/"${size.toString(16)}-${(mtime?.getTime() ?? 0).toString(16)}"`;
+}
+
 export async function handleStatic(req: Request) {
     const { pathname } = new URL(req.url);
     const decodedPath = decodeURIComponent(pathname);
@@ -508,13 +518,21 @@ export async function handleStatic(req: Request) {
         '.ico': 'image/x-icon',
     };
     const ext = extname(path);
+    const mime = mimetypes[ext] ?? "text/plain";
+    const isHTML = ext === '.html';
+    const headers: Record<string, string> = {
+        "Content-Type": BINARY_TYPES.has(ext) ? mime : `${mime}; charset=utf-8`,
+        "Cache-Control": isHTML ? HTML_CACHE_CONTROL : ASSET_CACHE_CONTROL,
+    };
 
-    return response(await Deno.readFile(path), {
-        headers: {
-            "Content-Type": `${mimetypes[ext] ?? "text/plain"}; charset=utf-8`,
-            "Cache-Control": "public, max-age=604800",
+    if (isHTML) {
+        headers["ETag"] = await weakETag(path);
+        if (req.headers.get('if-none-match') === headers["ETag"]) {
+            return new Response(null, { status: 304, headers });
         }
-    })
+    }
+
+    return response(await Deno.readFile(path), { headers })
 }
 
 const APIKEYS = (Deno.env.get('GEMINI_API_KEY') || '').split(',').filter(x => x);
@@ -588,12 +606,17 @@ export async function handleLLM(req: Request) {
 export async function handleIndex(req: Request) {
     const { pathname } = new URL(req.url);
     if (pathname === "/") {
-        return response(await Deno.readTextFile("./frontend/index.html"), {
-            headers: {
-                "Content-Type": "text/html; charset=utf-8",
-                "Cache-Control": "public, max-age=604800",
-            }
-        });
+        const path = "./frontend/index.html";
+        const etag = await weakETag(path);
+        const headers = {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": HTML_CACHE_CONTROL,
+            "ETag": etag,
+        };
+        if (req.headers.get('if-none-match') === etag) {
+            return new Response(null, { status: 304, headers });
+        }
+        return response(await Deno.readTextFile(path), { headers });
     }
     return null;
 }

@@ -1,3 +1,32 @@
+## 2026-10-03 — cold-load perf round (browser-verified)
+
+Measured with `terminal-browser` against a local `deno task start`. Cold-load
+baseline: TTFB 89ms, FCP 440ms, load 1629ms, 48 images fetched consuming
+16,016ms combined.
+
+- [x] **#12 Thumbnail priority bound to the wrong loop variable** — `index.html:256` bound `:loading` / `:fetchpriority` to `index`, which is the *feed* index from the outer `x-for="(feed, index)"`, not the inner `itemIndex`. Every item in the first two feeds loaded eagerly at high priority. Verified in the live DOM: feed0 24/24 eager, feed1 24/24 eager, feeds 2-4 all 0. Now bound to `itemIndex`, so only the top two items per feed are eager. Result: eager thumbs 48 -> 10, images fetched 48 -> 32, image time 16,016ms -> 5,391ms, load 1629ms -> 578ms.
+- [x] **#13 sw.js precache version drift** — precached `index.js?v=1.16` / `index.css?v=1.16` under `CACHE_NAME = the-newsroom-rss-v1.16` while the page requests `?v=1.31`, so the precache warmed URLs nothing ever hit. Bumped to `1.31`. Verified the cache now holds exactly the URLs the page requests.
+- [x] **#14 HTML served with `max-age=604800`** — `handleIndex` and `handleStatic('.html')` served the shell with a 7-day cache, hiding deploys for a week and defeating the `?v=` busting scheme. Both now send `Cache-Control: no-cache` plus a weak `ETag` derived from file mtime+size, and answer `If-None-Match` with a bodiless `304`. Covered by `backend/test/handlers.test.ts`.
+- [x] **#15 `charset=utf-8` on binary mimetypes** — `handleStatic` appended `; charset=utf-8` to every response including `.png` / `.ico` / `.jpg`. Binary types are now sent bare.
+
+- [x] **#16 Defer `index.js`** — it was a synchronous 89KB `<script>` in `<head>`, render-blocking. Added `defer` and **reordered it ahead of Alpine**: deferred scripts run in document order and Alpine auto-starts as soon as it loads (`document.readyState` is already `"interactive"` inside the defer queue), so Alpine must not boot before `alpineHead`/`alpineRSS` exist. Naively adding `defer` while leaving Alpine first broke the page — it rendered only the Quick Note shell with `Alpine Expression Error: alpineHead is not defined` (0 thumbnails vs 106). Bumped the cache-bust string to `1.32` in `index.html` and the `sw.js` precache to match.
+
+  Measured over a CDP-emulated Slow 4G profile (1.6 Mbps / 150ms RTT) with the service worker bypassed and the HTTP cache disabled, 3 runs each:
+
+  | | before | after |
+  |---|---|---|
+  | FCP median | 6072ms | **2704ms** (-55%) |
+  | DOMContentLoaded median | 18575ms | **3112ms** (-83%) |
+  | `load` | never fired within 34s | **~12750ms** |
+  | FCP spread | 4944-8192ms | 2680-2748ms |
+
+  On loopback the win is small (FCP 464ms -> 412ms median); it only shows up once the bundle is actually slow to arrive. Verified after the fix: Alpine booted, `x-cloak` fully cleared, 105 thumbnails with 10 eager, header/burger/profile present, `About v1.32` resolving, and no new console errors.
+
+### Deliberately deferred
+- [ ] **Streaming NDJSON for `/api/feeds`** — still the largest remaining structural lever (see the 2026-07-08 section, #11).
+
+---
+
 ## 2026-07-08 — feed/image perf enhancements (proposal round)
 Tracked from proposal for slow feed loading + slow image rendering.
 
@@ -8,7 +37,7 @@ Tracked from proposal for slow feed loading + slow image rendering.
 ### To-do
 - [ ] **#1 Stop re-sending the full URL list per batch** in `fetchBatch` (frontend/index.js). Today each of the N parallel POSTs to `/api/feeds` carries `keys: allUrls.map(u => ({url:u}))` — backend re-parses the same N keys N times. Switch to one-per-feed: `keys: [{url:item.url}]`.
 - [ ] **#7 Chunk `postProcessFeeds`** via `requestIdleCallback` (fallback `setTimeout`) so first paint isn't blocked on synchronous `DOMParser` + `decodeHTML` over hundreds of items; coalesce embedding lookups via a queue with max 2 in-flight `embedSentence` calls (frontend/index.js).
-- [ ] **#A `#2 decoding="async"` + `#4 fetchpriority="high"` on the first visible images** (frontend/index.html:248-260, 553-562, 873-879). Removes main-thread decode jank and starts network fetch in parallel with HTML parsing.
+- [x] **#A `#2 decoding="async"` + `#4 fetchpriority="high"` on the first visible images** (frontend/index.html:248-260, 553-562, 873-879). Removes main-thread decode jank and starts network fetch in parallel with HTML parsing. *(Done in the 2026-10-03 round as #12 — the attribute was present but bound to the outer feed index, so "first visible" meant "first two feeds".)*
 - [ ] **#B `#3` Reserve image dimensions** — wrap the `<img>` thumbnails in an aspect-ratio container (16/9) in CSS, so layout doesn't shift as images decode (frontend/index.html + style.css / index.css).
 - [ ] **#11 Streaming NDJSON for `/api/feeds`** — replace the two-phase critical/remaining waterfall with a single request that streams one parsed feed per line as it's ready; client appends to `this.feeds` immediately so users see the first feed in ~200ms instead of waiting for the slowest in the critical group. Backend: `backend/src/handlers.ts` `handleFeeds`. Frontend: `frontend/index.js` `loadFeedsWithContent`. Keep the existing JSON response path behind a `?stream=1` flag for back-compat.
 
