@@ -39,9 +39,20 @@ pipeline that ranks items against a per-user persona.
   `#refresh_bar` (2px, overlaying the header top edge) fills 0 → 100%
   left to right over `REFRESH_INTERVAL_MS` (15m), hidden until
   `REFRESH_BAR_DELAY_MS` (30s) after first load. A deadline hit while a
-  load is in flight is queued, never dropped. The countdown keeps
-  running while the tab is hidden, so returning past the deadline
-  refreshes immediately.
+  load is in flight is queued, never dropped — `_onLoadSettled` re-arms
+  `_refreshAt` *before* running the queued refresh, so the countdown
+  always restarts and a queued load can never re-queue itself.
+  ([2026-10-03] Fixed a runaway loop: `_refreshAt` used to be re-armed only on
+  the non-queued branch, so once a deadline was missed — which a sleeping
+  laptop guarantees, since `setInterval` is suspended but `Date.now()` is
+  not — every queued refresh re-queued itself on the next 1s tick and
+  `/api/feeds` was hit roughly once per load for the rest of the session.
+  Tripwire: `tests/refresh-scheduler.test.ts`.) A load would return early —
+  without ever setting `loading` — while the feeds are hidden
+  (bookmarks / share-target), so `_tickRefresh` re-arms and skips rather
+  than calling a no-op load at 1Hz. A refresh also leaves showcase alone:
+  it does not reset `visibleFeedsLimit` and re-shuffles `_showcaseOrder`
+  after reordering `feeds` to URL order.
 - IndexedDB + service worker (`frontend/sw.js`) with `StaleWhileRevalidate`
   for static assets, `CacheFirst` for images, `NetworkFirst` for `/api/`
   + navigations, and a Workbox `ExpirationPlugin` budget.

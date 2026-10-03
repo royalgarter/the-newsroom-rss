@@ -254,6 +254,47 @@ function alpineRSS() { return {
 		}, SHOWCASE_IDLE_MS);
 	},
 
+	// Deadline tick of the refresh scheduler. Fires a refresh only when no load is
+	// in flight, otherwise queues exactly one for when the current one settles.
+	_tickRefresh(now = Date.now()) {
+		const remain = this._refreshAt - now;
+		const elapsed = 1 - Math.min(1, Math.max(0, remain / REFRESH_INTERVAL_MS));
+		this.refreshCountdownPct = elapsed * 100;
+		this._tickShowcaseCountdown();
+
+		if (remain > 0) return;
+
+		// Bookmarks / share-target view hides the feeds, so a load would return
+		// without ever touching `loading` — nothing would re-arm the deadline and
+		// this branch would spin at 1Hz for the rest of the session. Re-arm here.
+		if (this.is_hide_feeds) {
+			this._refreshAt = now + REFRESH_INTERVAL_MS;
+			return;
+		}
+
+		if (this.loading) {
+			this._refreshPending = true;
+			return;
+		}
+
+		this.loadFeedsWithContent({}).catch(console.error);
+	},
+
+	// Any completed load re-arms the countdown, so the bar stays truthful no matter
+	// what triggered it (scheduler, manual refresh, scroll loader, settings change).
+	// A refresh that hit its deadline mid-flight runs here instead of being dropped.
+	_onLoadSettled() {
+		const pending = this._refreshPending;
+		this._refreshPending = false;
+
+		// Re-arm BEFORE running the queued refresh. Re-arming only on the non-pending
+		// path left `_refreshAt` stale, so a queued load re-queued itself on its next
+		// tick and the tab refreshed in a tight loop for the rest of the session.
+		this._refreshAt = Date.now() + REFRESH_INTERVAL_MS;
+
+		if (pending) this.loadFeedsWithContent({}).catch(console.error);
+	},
+
 	scheduleAutoLoad() {
 		if (this._autoLoadTimer) return;
 		if (!this.hasMore) return;
@@ -1036,7 +1077,9 @@ function alpineRSS() { return {
 
 		if (this.loading && !force_update) return;
 
-		this.visibleFeedsLimit = 6;
+		// Showcase owns the render window while it rotates: resetting it to 6 here
+		// would unmount the feed it is parked on mid-dwell.
+		if (!this.showcase) this.visibleFeedsLimit = 6;
 		this.linkToItemMap = new Map();
 
 		this.loading = true;
@@ -1279,6 +1322,13 @@ function alpineRSS() { return {
 				// Reorder this.feeds to match the user's URL order, then persist.
 				const finalFeeds = urls.map(u => this.feeds.find(f => f.rss_url === u)).filter(Boolean);
 				if (finalFeeds.length) this.feeds = finalFeeds;
+
+				// Reordering to URL order invalidates the index buffer showcase walks,
+				// which would otherwise rotate through the wrong feeds from here on.
+				if (this.showcase) {
+					this._showcaseOrder = this._shuffleFeeds();
+					this._showcasePos = 0;
+				}
 
 				this.tasks = urls.map((u, i) => ({ url: u, order: i, checked: false }));
 				if (!this.params.topic) {
@@ -2506,18 +2556,9 @@ function alpineRSS() { return {
 			}
 		});
 
-		// Any completed load re-arms the countdown, so the bar stays truthful no matter
-		// what triggered it (scheduler, manual refresh, scroll loader, settings change).
-		// A refresh that hit its deadline mid-flight runs here instead of being dropped.
 		this.$watch('loading', isLoading => {
 			if (isLoading) return;
-
-			if (this._refreshPending) {
-				this._refreshPending = false;
-				return this.loadFeedsWithContent({});
-			}
-
-			this._refreshAt = Date.now() + REFRESH_INTERVAL_MS;
+			this._onLoadSettled();
 		});
 
 		this.$watch('feeds', (value, oldValue) => {
@@ -2935,23 +2976,7 @@ function alpineRSS() { return {
 		this._armShowcaseIdle();
 
 		this._refreshAt = Date.now() + REFRESH_INTERVAL_MS;
-		setInterval(() => {
-			const remain = this._refreshAt - Date.now();
-			const elapsed = 1 - Math.min(1, Math.max(0, remain / REFRESH_INTERVAL_MS));
-			this.refreshCountdownPct = elapsed * 100;
-			this._tickShowcaseCountdown();
-
-			if (remain > 0) return;
-
-			// Deadline reached. Queue rather than drop it if a load is still in flight,
-			// so 100% is never a no-op.
-			if (this.loading) {
-				this._refreshPending = true;
-				return;
-			}
-
-			this.loadFeedsWithContent({});
-		}, 1000);
+		setInterval(() => this._tickRefresh(), 1000);
 
 		setTimeout(() => {
 			this._refreshBarUnlocked = true;

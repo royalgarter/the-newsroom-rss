@@ -1,3 +1,83 @@
+## 2026-10-03 — `loadFeedsWithContent` review (loading / showcase / refresh)
+
+Follow-up pass over the loading flag, the refresh scheduler and the
+showcase mode, looking for anything unsound that the runaway-loop fix
+did not already cover.
+
+- [x] **#6 1Hz spin while the feeds are hidden** — `is_hide_feeds`
+  (bookmarks / share-target view) makes `loadFeedsWithContent` return
+  *before* `this.loading = true`, so the `loading` watcher — the only
+  other re-arm path — never ran. Once the deadline passed, `_tickRefresh`
+  called a no-op load every second for the rest of the session.
+  Measured: **24 calls in 24s**, countdown pinned at 100%. `_tickRefresh`
+  now re-arms and skips. Measured after: **0 calls in 26s**.
+- [x] **#7 Showcase window clobbered by a refresh** —
+  `loadFeedsWithContent` reset `visibleFeedsLimit = 6`, unmounting the
+  feed showcase was parked on mid-dwell, and reordered `this.feeds` to
+  URL order, which silently invalidates the index buffer
+  `_showcaseOrder` walks (rotation continues, through the wrong feeds,
+  and dwells on an anchor that is no longer rendered). The window reset
+  is now skipped while showcase runs, and the buffer is re-shuffled
+  after the reorder.
+- [x] **#8 Unhandled rejection on the scheduler call sites** — both
+  `loadFeedsWithContent({})` calls in `_tickRefresh` / `_onLoadSettled`
+  are now `.catch(console.error)`d. The method's own try/catch does not
+  cover its `finally` block, so a throw there would reject unobserved.
+
+Measured after all three: missed deadline + 2.5s load → 2 `/api/feeds`
+requests in 50s (one cycle), then idle, deadline re-armed +14m. Showcase
+survives a refresh: `visibleFeedsLimit` held at 5 instead of resetting to
+6, `_showcaseOrder` re-shuffled, `showcase` still true. Tripwire extended
+to `tests/refresh-scheduler.test.ts` (11 passed; backend 9 passed).
+
+Reviewed and left alone (design, not defects):
+- `loading` is one global flag shared by `digestNews`, `saveTasks` and
+  `loadFeedsWithContent`. A long digest therefore queues one feed
+  refresh. Re-entrancy is safe (`this.loading` guard, one-shot queue);
+  only the coupling is surprising.
+- `force_update: true` bypasses the re-entrancy guard, so `saveTasks`
+  can overlap an in-flight load. Intended for that call site.
+- `pioneer` is reset on the success path only, not in `catch`.
+- `scheduleAutoLoad` is reached from `finally`, so an early return skips
+  it; the chain restarts from `loadMoreFeeds`' `$nextTick` anyway.
+
+## 2026-10-03 — runaway feed refresh after idle/sleep  (DONE)
+
+Reported: after a while of idle (or a sleeping laptop) and refocusing the
+tab, the client hammered `/api/feeds` with an unbounded request stream.
+
+Not a Chrome bug — a scheduler self-feeding loop in `frontend/index.js`:
+`_refreshAt` was re-armed only on the *non*-queued branch of the
+`loading` watcher, so once a deadline was missed the queued refresh
+re-queued itself on the next 1s tick, forever.
+
+- [x] **#1 Extract the scheduler** — `_tickRefresh()` + `_onLoadSettled()`
+  off `init()`, so the deadline/queue logic is reachable from a test.
+- [x] **#2 Re-arm `_refreshAt` before running the queued refresh**, so a
+  queued load can never re-queue itself.
+- [x] **#3 Tripwire** — `tests/refresh-scheduler.test.ts`. Verified it fails
+  against the pre-fix body (62 refreshes in 60 ticks) and passes after.
+- [x] **#4 README** — refresh-scheduler bullet documents the re-arm rule.
+
+Verified in-memory: pre-fix logic issues ~1 refresh per load duration
+indefinitely; fixed logic issues exactly one, then waits out the interval.
+
+- [x] **#5 Confirm in a real browser** — verified with `terminal-browser`
+  against the live dev server (`localhost:17385`). Missed deadline simulated
+  with `d._refreshAt = Date.now() - 1` (what waking from sleep produces) and
+  a 2.5s artificial load duration (what a cold cache / stalled mid-sleep
+  request produces), counting real `/api/feeds` requests via a `fetch` wrapper:
+
+  | build | load duration | window | `/api/feeds` requests | end state |
+  | --- | --- | --- | --- | --- |
+  | pre-fix | 2.5s | 82s | **34** | still loading, pending, deadline past |
+  | fixed | 2.5s | 90s | **4** | idle, deadline re-armed +13.7m |
+
+  4 requests = 2 refresh cycles (the missed-deadline refresh plus the one it
+  queued mid-flight, 2 requests each), then quiet. Warm-cache runs (load<1s)
+  cannot enter the loop at all under either build. Also confirmed the app
+  still renders (6 feeds / 109 items) with no console errors.
+
 ## 2026-10-03 — `/showcase` ambient rotation mode  (DONE)
 
 Second-monitor mode: the PWA runs fullscreen on a second display while the
