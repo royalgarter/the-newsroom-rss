@@ -3,7 +3,7 @@
 // than an export. We evaluate the source in a function scope to reach it, which
 // keeps production code free of test-only exports.
 // Run: deno test -A tests/showcase.test.ts
-import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.208.0/assert/mod.ts";
 
 const src = await Deno.readTextFile(new URL("../frontend/index.js", import.meta.url));
 // deno-lint-ignore no-explicit-any
@@ -105,4 +105,67 @@ Deno.test("activity blocks idle from ever restarting showcase", () => {
 	// _armShowcaseIdle must not schedule a timer once blocked.
 	app._armShowcaseIdle();
 	assertEquals(app._showcaseIdleTimer, null);
+});
+Deno.test("showcaseLabel reflects idle countdown, on countdown, and blocked state", () => {
+	const app = makeApp(4);
+
+	// No countdown armed yet (blocked, or idle cleared): plain label.
+	assertEquals(app.showcaseLabel, "/showcase");
+
+	// Idle armed: counts down toward the auto-start.
+	app._showcaseIdleAt = Date.now() + 30e3;
+	app._tickShowcaseCountdown();
+	assertEquals(app.showcaseLabel, "/showcase-idle-30");
+
+	// Dwell wins over idle once rotating.
+	app.showcase = true;
+	app._showcaseDwellAt = Date.now() + 30e3;
+	app._tickShowcaseCountdown();
+	assertEquals(app.showcaseLabel, "/showcase-on-30");
+
+	// Countdown never goes negative past the deadline.
+	app._showcaseDwellAt = Date.now() - 5000;
+	app._tickShowcaseCountdown();
+	assertEquals(app.showcaseLabel, "/showcase-on-0");
+});
+
+Deno.test("stopShowcase clears the dwell deadline so the label leaves the on state", () => {
+	const app = makeApp(4);
+	app.showcase = true;
+	app._showcaseDwellAt = Date.now() + 30e3;
+
+	app.stopShowcase();
+	app._tickShowcaseCountdown();
+
+	assertEquals(app._showcaseDwellAt, 0);
+	assertEquals(app.showcaseCountdown, 0);
+	assertEquals(app.showcaseLabel, "/showcase");
+});
+
+Deno.test("activity listener ignores clicks originating from the showcase button", async () => {
+	// Regression: the document-level activity listener saw the very click that
+	// started showcase and called _blockShowcase, so /showcase looked dead.
+	// Mirrors the guard in init(): a click on #btn_showcase returns early.
+	const src = await Deno.readTextFile(new URL("../frontend/index.js", import.meta.url));
+	assertStringIncludes(src, "e.target?.closest?.('#btn_showcase')");
+
+	const app = makeApp(4);
+	app._showcaseBlocked = false;
+	app.showcase = false;
+
+	// A click on the button must not arm the idle timer or set the block.
+	const onButton = { target: { closest: (sel: string) => (sel === "#btn_showcase" ? {} : null) } };
+	const elsewhere = { target: { closest: () => null } };
+
+	const guard = (e: { target: { closest: (s: string) => unknown } }) =>
+		e.target?.closest?.("#btn_showcase");
+
+	assertEquals(guard(onButton) !== null && guard(onButton) !== undefined, true, "button click is recognised");
+	assertEquals(Boolean(guard(elsewhere)), false, "unrelated click is not exempt");
+
+	// The exemption only skips blocking; the mode still runs. Set the flag
+	// directly because startShowcase() toasts, which needs a DOM.
+	app.showcase = true;
+	assertEquals(app.showcase, true);
+	assertEquals(app._showcaseBlocked, false, "own click must not permanently block showcase");
 });

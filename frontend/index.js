@@ -116,6 +116,25 @@ function alpineRSS() { return {
 	_showcaseScrolling: false,
 	_showcaseSettleTimer: null,
 
+	// Absolute deadlines (ms epoch) backing the button's countdown label, plus the
+	// reactive seconds-left it renders. A 0 deadline means no countdown in flight.
+	_showcaseIdleAt: 0,
+	_showcaseDwellAt: 0,
+	showcaseCountdown: 0,
+
+	// /showcase-on-<s> while rotating, /showcase-idle-<s> while the auto-start
+	// countdown runs, /showcase once activity has permanently blocked idle.
+	get showcaseLabel() {
+		if (this.showcase) return '/showcase-on-' + this.showcaseCountdown;
+		if (this._showcaseIdleAt) return '/showcase-idle-' + this.showcaseCountdown;
+		return '/showcase';
+	},
+
+	_tickShowcaseCountdown() {
+		const deadline = this.showcase ? this._showcaseDwellAt : this._showcaseIdleAt;
+		this.showcaseCountdown = deadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 0;
+	},
+
 	// Fisher-Yates over feed indices. Order changes each cycle so consecutive
 	// rotations don't walk feeds in the same sequence.
 	_shuffleFeeds() {
@@ -147,6 +166,7 @@ function alpineRSS() { return {
 		this._showcasePos = 0;
 		this._showcaseBlocked = false;
 		this._clearShowcaseIdle();
+		this._showcaseDwellAt = Date.now() + SHOWCASE_DWELL_MS;
 
 		toast('Showcase: ' + this.feeds.length + ' feeds, ' + (SHOWCASE_DWELL_MS / 1000) + 's each');
 		this._showcaseAdvance();
@@ -161,6 +181,8 @@ function alpineRSS() { return {
 		}
 		this._showcaseOrder = [];
 		this._showcasePos = 0;
+		this._showcaseDwellAt = 0;
+		this.showcaseCountdown = 0;
 		this._showcaseScrolling = false;
 		if (this._showcaseSettleTimer) {
 			clearTimeout(this._showcaseSettleTimer);
@@ -198,6 +220,7 @@ function alpineRSS() { return {
 		}
 
 		this._showcaseTimer = setTimeout(() => this._showcaseAdvance(), SHOWCASE_DWELL_MS);
+		this._showcaseDwellAt = Date.now() + SHOWCASE_DWELL_MS;
 	},
 
 	// Each scroll event pushes the settle deadline out, so the flag clears only once
@@ -212,6 +235,7 @@ function alpineRSS() { return {
 	},
 
 	_clearShowcaseIdle() {
+		this._showcaseIdleAt = 0;
 		if (this._showcaseIdleTimer) {
 			clearTimeout(this._showcaseIdleTimer);
 			this._showcaseIdleTimer = null;
@@ -222,6 +246,7 @@ function alpineRSS() { return {
 	_armShowcaseIdle() {
 		this._clearShowcaseIdle();
 		if (this._showcaseBlocked || this.showcase) return;
+		this._showcaseIdleAt = Date.now() + SHOWCASE_IDLE_MS;
 		this._showcaseIdleTimer = setTimeout(() => {
 			this._showcaseIdleTimer = null;
 			if (this._showcaseBlocked || this.showcase) return;
@@ -2839,8 +2864,11 @@ function alpineRSS() { return {
 
 		// Track user activity for auto-load idle window, and drive showcase's idle trigger.
 		['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt =>
-			document.addEventListener(evt, () => {
+			document.addEventListener(evt, (e) => {
 				this._lastActivity = Date.now();
+				// The showcase button's own click starts showcase; treating it as user
+				// activity would make the listener below block the mode it just began.
+				if (evt === 'click' && e.target?.closest?.('#btn_showcase')) return;
 				this._armShowcaseIdle();
 				if (!this.showcase) return;
 				// Our own scrollIntoView in flight: refresh the settle timer instead
@@ -2911,6 +2939,7 @@ function alpineRSS() { return {
 			const remain = this._refreshAt - Date.now();
 			const elapsed = 1 - Math.min(1, Math.max(0, remain / REFRESH_INTERVAL_MS));
 			this.refreshCountdownPct = elapsed * 100;
+			this._tickShowcaseCountdown();
 
 			if (remain > 0) return;
 
