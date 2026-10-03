@@ -1,5 +1,7 @@
 const VERSION = 'v2';
 const STALE_THRESHOLD_HOUR = 4;
+const REFRESH_INTERVAL_MS = 15 * 60e3;
+const REFRESH_BAR_DELAY_MS = 10e3;
 
 const _DECODE_CACHE = new Map();
 const _DECODE_CACHE_MAX = 1000;
@@ -116,6 +118,11 @@ function alpineRSS() { return {
 	loadingPercent: 0,
 	loadingFraction: '1/10',
 	loadingBookmarks: false,
+
+	refreshCountdownPct: 0,
+	_refreshAt: 0,
+	_refreshPending: false,
+	_refreshBarUnlocked: false,
 
 	linkToItemMap: new Map(),
 	viewedItemsCache: {},
@@ -2344,6 +2351,20 @@ function alpineRSS() { return {
 			}
 		});
 
+		// Any completed load re-arms the countdown, so the bar stays truthful no matter
+		// what triggered it (scheduler, manual refresh, scroll loader, settings change).
+		// A refresh that hit its deadline mid-flight runs here instead of being dropped.
+		this.$watch('loading', isLoading => {
+			if (isLoading) return;
+
+			if (this._refreshPending) {
+				this._refreshPending = false;
+				return this.loadFeedsWithContent({});
+			}
+
+			this._refreshAt = Date.now() + REFRESH_INTERVAL_MS;
+		});
+
 		this.$watch('feeds', (value, oldValue) => {
 			// console.log('$watch.feeds', oldValue?.length, value?.length)
 
@@ -2733,23 +2754,46 @@ function alpineRSS() { return {
 			THIS.syncSWConfig();
 		});
 
+		// Single auto-refresh scheduler. Drives the header countdown bar and is the
+		// ONLY recurring refresh trigger, so the bar reaching 100% always refreshes.
+		// The countdown keeps running while the tab is hidden (background tabs throttle
+		// setInterval to ~1/min), so returning to a tab past its deadline refreshes at once.
+		this._refreshAt = Date.now() + REFRESH_INTERVAL_MS;
 		setInterval(() => {
-			if (document.hasFocus()) return;
+			const remain = this._refreshAt - Date.now();
+			const elapsed = 1 - Math.min(1, Math.max(0, remain / REFRESH_INTERVAL_MS));
+			this.refreshCountdownPct = elapsed * 100;
 
-			this.loadFeedsWithContent({limit});
-		}, 60 * 60e3);
+			if (remain > 0) return;
 
-		setIdle(
-			30 * 60e3,
-			() => {
-				toast("Idling...");
-				this.loadFeedsWithContent({limit});
-			},
-			() => {
-				toast("Reactive...");
-				this.loadFeedsWithContent({limit});
+			// Deadline reached. Queue rather than drop it if a load is still in flight,
+			// so 100% is never a no-op.
+			if (this.loading) {
+				this._refreshPending = true;
+				return;
 			}
-		);
+
+			this.loadFeedsWithContent({});
+		}, 1000);
+
+		setTimeout(() => {
+			this._refreshBarUnlocked = true;
+		}, REFRESH_BAR_DELAY_MS);
+
+		// DEPRECATED: activity-based refresh replaced by the scheduler above.
+		// setIdle fired on 30m idleness and again on the first interaction afterwards,
+		// which desynced the countdown and refreshed on every tab switch.
+		// setIdle(
+		// 	30 * 60e3,
+		// 	() => {
+		// 		toast("Idling...");
+		// 		this.loadFeedsWithContent({limit});
+		// 	},
+		// 	() => {
+		// 		toast("Reactive...");
+		// 		this.loadFeedsWithContent({limit});
+		// 	}
+		// );
 
 		// this.modalShow('Hello', 'World')
 

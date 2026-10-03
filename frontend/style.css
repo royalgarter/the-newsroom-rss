@@ -10,7 +10,7 @@
 
 img {
 	max-width: 100%;
-	height: auto;
+	/*height: auto;*/
 }
 
 img.rss-favicon {
@@ -20,7 +20,7 @@ img.rss-favicon {
 
 img.rss-thumb {
 	object-fit: cover;
-	height: 14rem;
+	/*height: 14rem;*/
 }
 
 p [id*="readability-page"] svg {
@@ -62,4 +62,27 @@ p.rss-article-content img {
 #modal-text .a {
 	font-size: 0.8rem;
 	font-style: normal;
+}
+
+/* Render containment for the feed list.
+   A full page can hold 50 feeds x 48 items (the backend over-fetches by
+   `limit_adjust`), which is ~2,400 item subtrees and ~85,000 nodes. Without
+   containment the browser styles, lays out and paints every one of them even
+   though only ~20 are ever on screen.
+
+   `content-visibility: auto` skips that work for off-screen subtrees only —
+   anything scrolled into view renders normally, so no behaviour changes.
+
+   The `auto` keyword on `contain-intrinsic-size` is load-bearing: it makes the
+   browser remember each element's last measured size. Without it a skipped
+   subtree is treated as zero-height, the document collapses, the scrollbar
+   jumps, and the `x-intersect` load-more sentinel fires immediately. */
+.rss-feed {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 2400px;
+}
+
+.rss-item {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 320px;
 }

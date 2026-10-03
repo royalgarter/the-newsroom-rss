@@ -27,8 +27,15 @@ pipeline that ranks items against a per-user persona.
 - Readability-based article preview fetched on hover / scroll-into-view.
 - Embedding-based persona scoring: per-item cosine similarity against
   a running mean of vectors from articles the user actually opened.
-- Idle + hot reload: refresh on focus loss (1h `setInterval`) and on
-  idleness (`setIdle`, 30m).
+- Auto refresh while the tab is open: a single scheduler owns every
+  recurring refresh and re-arms on *any* completed load, so the header
+  countdown bar never desyncs from what actually triggers a fetch.
+  `#refresh_bar` (2px, overlaying the header top edge) fills 0 → 100%
+  left to right over `REFRESH_INTERVAL_MS` (15m), hidden until
+  `REFRESH_BAR_DELAY_MS` (30s) after first load. A deadline hit while a
+  load is in flight is queued, never dropped. The countdown keeps
+  running while the tab is hidden, so returning past the deadline
+  refreshes immediately.
 - IndexedDB + service worker (`frontend/sw.js`) with `StaleWhileRevalidate`
   for static assets, `CacheFirst` for images, `NetworkFirst` for `/api/`
   + navigations, and a Workbox `ExpirationPlugin` budget.
