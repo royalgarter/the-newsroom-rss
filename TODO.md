@@ -1,3 +1,68 @@
+## 2026-10-03 — `/showcase` ambient rotation mode  (DONE)
+
+Second-monitor mode: the PWA runs fullscreen on a second display while the
+user works elsewhere. Showcase cycles the viewport through a shuffled
+rotation of feeds, one feed per dwell interval, landing on each feed's
+title. Triggered either by the `/showcase` button in `.rss-util`, or
+automatically after `SHOWCASE_IDLE_MS` of no user activity.
+
+Decisions (confirmed with user):
+- Idle trigger: **30s** with no `mousemove`/`keydown`/`touchstart`/`scroll`/`click`.
+- Dwell per feed: **30s**.
+- Any activity while running: **stops showcase permanently** (no auto-resume).
+- Persistence: **none** — session only, reload drops the mode.
+
+Design notes:
+- Reuses the existing activity listeners registered in `init()`, so there is
+  no second tracking layer.
+- Shuffle is a Fisher-Yates over feed indices into a `_showcaseOrder` buffer,
+  walked one entry at a time and wrapped, then reshuffled for the next cycle.
+- Rotation is `setTimeout`-chained, not `setInterval`, so a slow scroll cannot
+  stack ticks. `visibilitychange` to hidden stops the mode.
+- Advancing to feed `i` bumps `visibleFeedsLimit` to `i + 2` before scrolling,
+  mirroring the existing `?a=` anchor-jump path.
+- `params.u` (Unified View) has one synthetic feed and no per-feed title
+  anchors, so showcase refuses to start there.
+
+- [x] **#1 Constants + state** — `SHOWCASE_IDLE_MS` / `SHOWCASE_DWELL_MS` /
+  `SHOWCASE_SCROLL_SETTLE_MS` and the `_showcase*` fields.
+- [x] **#2 `toggleShowcase` / `startShowcase` / `stopShowcase` / `_showcaseAdvance`**.
+- [x] **#3 Idle watcher** — re-armed on every activity event.
+- [x] **#4 `/showcase` button** in `.rss-util`, label flips to `/stop`.
+  Cache-bust `1.32` -> `1.35` in `index.html` + `sw.js`.
+- [x] **#5 README** — feature + constants documented.
+- [x] **#6 Tests** — `tests/showcase.test.ts`, 6 passing.
+- [x] **#7 Browser-verified** with `terminal-browser` against `deno task start`.
+
+### The self-scroll bug, and why the flag ended up a boolean
+
+First attempt guarded programmatic scrolls with a fixed 1500ms window.
+**Wrong:** a 2600px smooth scroll outruns it, so showcase killed itself.
+Second attempt recorded the scroll destination (`_showcaseScrollTarget`) and
+ignored events while more than 2px away. **Also wrong:** `_showcaseAdvance`
+bumps `visibleFeedsLimit` *before* measuring, so the re-render can shift the
+anchor and the recorded offset no longer matches where the browser stops; and
+Chrome's smooth scroll can overshoot and settle back, crossing within 2px
+mid-flight and clearing the guard early. Reproduced live: blocked mid-scroll
+going from feed 4 (y=7519) to feed 1 (y=2653).
+
+Final design is the boolean: `_showcaseScrolling` is set when `scrollIntoView`
+is issued and each in-flight scroll event pushes a 400ms settle deadline out.
+It asks only *is it still moving* and never predicts where it lands, so
+interrupted, overshooting and layout-shifted scrolls are all tolerated.
+
+Verification, one passive in-page sampler, 158s with zero browser contact:
+auto-started at t=31s, then advanced at exactly 30s intervals through 5 feeds
+(y 5843 -> 10735 -> 4485 -> 5202 -> 647), never blocked, scrolling in both
+directions. A single synthetic `mousemove` then stopped it permanently with
+the rotation timer cleared and the idle timer not re-armed.
+
+> Note for future testing: polling the browser with repeated `eval` injects
+> real mouse events into the page, which legitimately stops showcase. Sample
+> from inside the page instead of polling from outside.
+
+---
+
 ## 2026-10-03 — cold-load perf round (browser-verified)
 
 Measured with `terminal-browser` against a local `deno task start`. Cold-load

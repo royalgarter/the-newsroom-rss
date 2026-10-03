@@ -24,6 +24,12 @@ pipeline that ranks items against a per-user persona.
 - **Unified View** (`?u=`): flatten all feeds' items, sort by `published`
   desc, with source favicon + per-feed badge.
 - Deep-link anchors (`?a=`): jump to a feed or item on load.
+- **Showcase mode** (`/showcase` in `.rss-util`): ambient rotation for a
+  second-monitor display. Auto-starts after `SHOWCASE_IDLE_MS` (30s) of no
+  user activity, or on an explicit click. Builds a Fisher-Yates shuffled
+  index buffer over `feeds` and walks it one entry at a time, scrolling to
+  the top of each feed's title anchor every `SHOWCASE_DWELL_MS` (30s).
+  Any user activity stops it permanently; state is session-only.
 - Readability-based article preview fetched on hover / scroll-into-view.
 - Embedding-based persona scoring: per-item cosine similarity against
   a running mean of vectors from articles the user actually opened.

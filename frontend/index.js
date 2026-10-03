@@ -2,6 +2,9 @@ const VERSION = 'v2';
 const STALE_THRESHOLD_HOUR = 4;
 const REFRESH_INTERVAL_MS = 15 * 60e3;
 const REFRESH_BAR_DELAY_MS = 10e3;
+const SHOWCASE_IDLE_MS = 30e3;
+const SHOWCASE_DWELL_MS = 30e3;
+const SHOWCASE_SCROLL_SETTLE_MS = 400;
 
 const _DECODE_CACHE = new Map();
 const _DECODE_CACHE_MAX = 1000;
@@ -99,6 +102,133 @@ function alpineRSS() { return {
 			});
 		}
 	},
+	// --- showcase mode (second-monitor ambient rotation) ---
+
+	showcase: false,
+	_showcaseOrder: [],
+	_showcasePos: 0,
+	_showcaseTimer: null,
+	_showcaseIdleTimer: null,
+	_showcaseBlocked: false,
+	// True while our own scrollIntoView is still moving. A long smooth scroll runs
+	// for seconds and can be shifted by layout changes or interrupted, so we track
+	// "is it still moving" rather than trying to predict where it lands.
+	_showcaseScrolling: false,
+	_showcaseSettleTimer: null,
+
+	// Fisher-Yates over feed indices. Order changes each cycle so consecutive
+	// rotations don't walk feeds in the same sequence.
+	_shuffleFeeds() {
+		const order = this.feeds.map((_, i) => i);
+		for (let i = order.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[order[i], order[j]] = [order[j], order[i]];
+		}
+		return order;
+	},
+
+	toggleShowcase() {
+		this.showcase ? this.stopShowcase() : this.startShowcase();
+	},
+
+	startShowcase() {
+		if (this.showcase) return;
+
+		// Unified View renders one synthetic feed with no per-feed title anchors,
+		// so there is nothing to rotate between.
+		if (this.params.u) return toast('Showcase needs /uni off');
+
+		if (!this.feeds?.length) return toast('No feeds to showcase');
+
+		if (this.is_hide_feeds) this.is_hide_feeds = false;
+
+		this.showcase = true;
+		this._showcaseOrder = this._shuffleFeeds();
+		this._showcasePos = 0;
+		this._showcaseBlocked = false;
+		this._clearShowcaseIdle();
+
+		toast('Showcase: ' + this.feeds.length + ' feeds, ' + (SHOWCASE_DWELL_MS / 1000) + 's each');
+		this._showcaseAdvance();
+	},
+
+	stopShowcase() {
+		if (!this.showcase) return;
+		this.showcase = false;
+		if (this._showcaseTimer) {
+			clearTimeout(this._showcaseTimer);
+			this._showcaseTimer = null;
+		}
+		this._showcaseOrder = [];
+		this._showcasePos = 0;
+		this._showcaseScrolling = false;
+		if (this._showcaseSettleTimer) {
+			clearTimeout(this._showcaseSettleTimer);
+			this._showcaseSettleTimer = null;
+		}
+	},
+
+	// Any activity kills the mode for the rest of the session, per spec.
+	_blockShowcase() {
+		this._showcaseBlocked = true;
+		this.stopShowcase();
+	},
+
+	_showcaseAdvance() {
+		if (!this.showcase) return;
+
+		if (!this._showcaseOrder.length) {
+			this._showcaseOrder = this._shuffleFeeds();
+			this._showcasePos = 0;
+		}
+
+		const idx = this._showcaseOrder[this._showcasePos];
+		this._showcasePos = (this._showcasePos + 1) % this._showcaseOrder.length;
+
+		const feed = this.feeds[idx];
+		if (feed?.anchor) {
+			// Mirror the ?a= anchor jump: the feed must be rendered before we scroll.
+			if (idx >= this.visibleFeedsLimit) this.visibleFeedsLimit = idx + 2;
+			this.$nextTick(() => {
+				const el = document.querySelector('[name="' + feed.anchor + '"]');
+				if (!el) return;
+				this._markShowcaseScrolling();
+				el.scrollIntoView({ behavior: 'smooth' });
+			});
+		}
+
+		this._showcaseTimer = setTimeout(() => this._showcaseAdvance(), SHOWCASE_DWELL_MS);
+	},
+
+	// Each scroll event pushes the settle deadline out, so the flag clears only once
+	// the browser has actually stopped moving.
+	_markShowcaseScrolling() {
+		this._showcaseScrolling = true;
+		if (this._showcaseSettleTimer) clearTimeout(this._showcaseSettleTimer);
+		this._showcaseSettleTimer = setTimeout(() => {
+			this._showcaseSettleTimer = null;
+			this._showcaseScrolling = false;
+		}, SHOWCASE_SCROLL_SETTLE_MS);
+	},
+
+	_clearShowcaseIdle() {
+		if (this._showcaseIdleTimer) {
+			clearTimeout(this._showcaseIdleTimer);
+			this._showcaseIdleTimer = null;
+		}
+	},
+
+	// Armed on every activity event; fires once the user has been idle long enough.
+	_armShowcaseIdle() {
+		this._clearShowcaseIdle();
+		if (this._showcaseBlocked || this.showcase) return;
+		this._showcaseIdleTimer = setTimeout(() => {
+			this._showcaseIdleTimer = null;
+			if (this._showcaseBlocked || this.showcase) return;
+			this.startShowcase();
+		}, SHOWCASE_IDLE_MS);
+	},
+
 	scheduleAutoLoad() {
 		if (this._autoLoadTimer) return;
 		if (!this.hasMore) return;
@@ -2707,10 +2837,26 @@ function alpineRSS() { return {
 			this.hasMore = this.visibleFeedsLimit < this.feeds.length;
 		});
 
-		// Track user activity for auto-load idle window
+		// Track user activity for auto-load idle window, and drive showcase's idle trigger.
 		['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt =>
-			document.addEventListener(evt, () => { this._lastActivity = Date.now(); }, { passive: true })
+			document.addEventListener(evt, () => {
+				this._lastActivity = Date.now();
+				this._armShowcaseIdle();
+				if (!this.showcase) return;
+				// Our own scrollIntoView in flight: refresh the settle timer instead
+				// of reading as user activity.
+				if (this._showcaseScrolling) {
+					if (evt === 'scroll') this._markShowcaseScrolling();
+					return;
+				}
+				this._blockShowcase();
+			}, { passive: true })
 		);
+
+		// Switching tabs ends the ambient rotation; nobody is watching it anyway.
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'hidden') this.stopShowcase();
+		});
 
 		// Flush viewed items when tab is hidden or closed
 		const flushViewed = () => this.saveViewedItemsCache?.();
@@ -2758,6 +2904,8 @@ function alpineRSS() { return {
 		// ONLY recurring refresh trigger, so the bar reaching 100% always refreshes.
 		// The countdown keeps running while the tab is hidden (background tabs throttle
 		// setInterval to ~1/min), so returning to a tab past its deadline refreshes at once.
+		this._armShowcaseIdle();
+
 		this._refreshAt = Date.now() + REFRESH_INTERVAL_MS;
 		setInterval(() => {
 			const remain = this._refreshAt - Date.now();

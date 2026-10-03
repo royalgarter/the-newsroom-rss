@@ -49,23 +49,23 @@
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
 		<!-- Critical CSS -->
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.32">
+		<link rel="stylesheet" type="text/css" href="index.css?v=1.35">
 
 		<!-- Preload Critical Scripts -->
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" />
-		<link rel="preload" as="script" href="index.js?v=1.32" />
+		<link rel="preload" as="script" href="index.js?v=1.35" />
 
 		<!-- Deferred Scripts.
 		     index.js must come first: deferred scripts execute in document
 		     order, and Alpine auto-starts the moment it loads (document.readyState
 		     is already "interactive" by the time the defer queue runs), so the
 		     alpineHead/alpineRSS factories have to exist before Alpine boots. -->
-		<script id="version" defer src="index.js?v=1.32"></script>
+		<script id="version" defer src="index.js?v=1.35"></script>
 		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-		<script type="module" src="./js/module.mjs?v=1.32"></script>
+		<script type="module" src="./js/module.mjs?v=1.35"></script>
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden font-mono">
 		<template id="tpl_header" x-if="ready">
@@ -1166,7 +1166,7 @@
 					</a>
 				</template>
 			</div>
-			<div class="flex flex-row items-center border gap-2 pr-4" :class="isDark() ? 'bg-black' : 'bg-white'">
+			<div class="rss-util flex flex-row items-center border gap-2 pr-4" :class="isDark() ? 'bg-black' : 'bg-white'">
 				<button @click="is_open = !is_open" class="font-bold flex items-center justify-center h-10 w-10 cursor-pointer" >
 					<span x-text="is_open ? '▼' : '▲'"></span>
 				</button>
@@ -1178,6 +1178,9 @@
 				</button>
 				<button @click="_alBody.digestNews()" class="font-bold flex items-center hover:underline justify-center h-10 cursor-pointer" x-show="!loading">
 					<span>/dig</span>
+				</button>
+				<button @click="_alBody.toggleShowcase()" class="font-bold flex items-center hover:underline justify-center h-10 cursor-pointer" x-show="!loading">
+					<span x-text="_alBody.showcase ? '/stop' : '/showcase'">/showcase</span>
 				</button>
 			</div>
 		</div>
