@@ -194,7 +194,7 @@
 						:alt="profile?.picture ? 'Back to Anonymous' : 'Sync with Google'"
 						:title="profile?.picture ? 'Back to Anonymous' : 'Sync with Google'"
 						class="self-center w-8 h-8 pb-1 cursor-pointer"
-						onerror="this.src = '/default-profile-64x64.png';">
+						onerror="this.style.display='none';">
 				</div>
 
 			</header>
@@ -226,7 +226,7 @@
 							<img width="24" height="24" class="rss-favicon self-center w-6 h-6 mr-2 md:mr-4 cursor-pointer" loading="lazy" decoding="async"
 								:alt="feed.rss_url || feed.title"
 								:src="feed.favicon_url"
-								onerror="this.src = '/icon-128x128.png';"
+								onerror="this.style.display='none';"
 								@click="window.open(feed.rss_url)"
 							/>
 							<h2 class="text-base font-bold mx-auto text-gray-500"
@@ -265,7 +265,7 @@
 													:alt="item.title"
 													:domain="new URL(feed.link || location.origin).hostname"
 													:src="item?.image_thumb || ('https://static.photos/640x360/' + encodeURIComponent(item.title))"
-													onerror="this.src = 'https://static.photos/640x360' || 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
+													onerror="this.style.display='none';"
 												/>
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
@@ -295,7 +295,7 @@
 											<div x-show="params.u" class="mb-1 flex items-center gap-1 opacity-70">
 												<img width="16" height="16" class="w-3 h-3" loading="lazy" decoding="async"
 													:src="item.feed_favicon"
-													onerror="this.src = '/favicon-16x16.png';"
+													onerror="this.style.display='none';"
 												/>
 												<span class="text-xs uppercase font-bold" x-text="item.feed_title"></span>
 											</div>
@@ -488,7 +488,7 @@
 			<div class="divide-y px-2 bottom-0">
 
 				<!-- readlater -->
-				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds || !!~location.hash.search(/\#.*note/)) }" class="py-2">
+				<div id="expander_readlater" x-data="{ expanded: (readlater?.items?.length || is_hide_feeds) }" class="py-2">
 					<a id="anchor_bookmarks" href="#bookmarks" name="bookmarks" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
@@ -519,37 +519,8 @@
 						aria-labelledby="collapse-title-03"
 						class="grid text-sm overflow-hidden w-full"
 						:class="expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] hidden'"
-						>
-						<a id="anchor_bookmarks_note" href="#bookmarks_note" name="bookmarks_note" class="scroll-smooth"></a>
-						<div x-data="{ expanded: !!~location.hash.search(/\#.*note/) }" class="m-auto p-4 sm:px-8 md:px-10 max-w-auto w-full mt-2">
-							<h4 class="text-lg font-semibold cursor-pointer">
-								<button class="flex items-center justify-between w-full text-left cursor-pointer"
-									@click="
-										expanded = !expanded;
-										if (expanded) {
-											location.hash = '#bookmarks_note';
-
-											Alpine.$data(document.querySelector('#expander_settings')).expanded = false;
-
-											const url = new URL(location);
-											url.searchParams.delete('a');
-											history.pushState({}, '', url.toString());
-										};
-										noteTitle = noteTitle || ('note_at_' + new Date().toLocaleString().replace(/\W+/g, '-'));
-									"
-								>
-									<span>Quick Note</span>
-									<span class="font-bold" x-text="expanded ? '▲' : '▼'"></span>
-								</button>
-							</h4>
-							<div x-show="expanded" class="mt-2">
-								<input type="text" x-model="noteTitle" placeholder="Add a quick note" class="w-full p-2 mb-2 focus:outline-none">
-								<textarea id="noteContent" x-model="noteContent" placeholder="with supported Markdown syntax" class="w-full p-2 mb-2 focus:outline-none" rows="8"></textarea>
-								<button @click="addNoteMarkdown()" class="border px-4 py-2 font-bold cursor-pointer">[Markdown]</button>
-								<button @click="addNote()" class="border px-4 py-2 font-bold cursor-pointer">[Save]</button>
-							</div>
-						</div>
-						<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+						><a id="anchor_bookmarks_note" href="#bookmarks_note" name="bookmarks_note" class="scroll-smooth"></a>
+					<div id="readlater_items" x-show="readlater?.items?.length" class="m-auto my-4 p-3 sm:p-8 md:p-10 max-w-auto w-full grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
 							<!-- readlater item -->
 							<template x-for="(item, itemIndex) in readlater.items" :key="itemIndex">
 								<div class="rss-item p-2 relative pb-8"
@@ -571,7 +542,7 @@
 													:alt="item.title"
 													:domain="new URL(item.link).hostname"
 													:src="item.image_thumb"
-													onerror="this.src = 'https://www.google.com/s2/favicons?domain=' + this.getAttribute('domain') +'&sz=256';"
+													onerror="this.style.display='none';"
 												/>
 											</a>
 											<a class="rss-tags" rel="author" x-show="item.author?.length" :href="item.link_author || item.link" target="_blank">
@@ -682,7 +653,7 @@
 				</div>
 
 				<!-- settings -->
-				<div id="expander_settings" x-data="{ expanded: false }" class="py-2">
+				<div id="expander_settings" x-data="{ expanded: !!~location.hash.search('/#settings') }" class="py-2">
 					<a id="anchor_settings" href="#settings" name="settings" class="scroll-smooth"></a>
 					<h3 class="text-xl">
 						<button
