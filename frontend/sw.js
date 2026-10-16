@@ -1,7 +1,7 @@
 // Service Worker for The Newsroom RSS
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.4.1/workbox-sw.js');
 
-const CACHE_NAME = 'the-newsroom-rss-v1.37';
+const CACHE_NAME = 'the-newsroom-rss-v1.38';
 const OFFLINE_PAGE = 'index.html';
 
 self.addEventListener('message', (event) => {
@@ -15,12 +15,12 @@ self.addEventListener('install', (event) => {
 		caches.open(CACHE_NAME).then((cache) => {
 			return cache.addAll([
 				OFFLINE_PAGE,
-			'index.js?v=1.37',
-			'index.css?v=1.37',
+			'index.js?v=1.38',
+			'index.css?v=1.38',
 				'manifest.json',
 				'favicon.ico',
 				'default-profile-64x64.png',
-				'/js/module.mjs',
+				'/js/module.mjs?v=1.38',
 				'/js/llm.mjs',
 				'/js/hclust.mjs'
 			]);
