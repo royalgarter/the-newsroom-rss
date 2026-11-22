@@ -80,40 +80,50 @@ export async function handleProxyImage(req: Request) {
             return new Response(JSON.stringify({ error: 'Not an image' }), { status: 415, headers: { ...head_json, ...cors } });
         }
 
-        // Cap what the server buffers; images are downscaled below before reaching the tab.
-        const MAX_BYTES = 5 * 1024 * 1024;
-        if (Number(resp.headers.get('Content-Length') || 0) > MAX_BYTES) {
-            await resp.body?.cancel();
-            return new Response(JSON.stringify({ error: 'Image too large' }), { status: 413, headers: { ...head_json, ...cors } });
-        }
-        const chunks: Uint8Array[] = [];
-        let total = 0;
-        const reader = resp.body!.getReader();
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            total += value.length;
-            if (total > MAX_BYTES) {
-                await reader.cancel();
-                return new Response(JSON.stringify({ error: 'Image too large' }), { status: 413, headers: { ...head_json, ...cors } });
-            }
-            chunks.push(value);
-        }
-        const buffer = new Uint8Array(total);
-        let off = 0;
-        for (const c of chunks) { buffer.set(c, off); off += c.length; }
-
-        // Downscale to a thumbnail-sized WebP (skip if ?raw=1 or format unsupported, e.g. gif/svg).
-        const resized = searchParams.get('raw') ? null : await resizeThumb(buffer, contentType || 'image/jpeg');
-        const useResized = resized && resized.length < buffer.length;
-
-        return new Response(useResized ? resized : buffer, {
+        // TODO: resize/size cap temporarily disabled (CPU load); pure streaming proxy.
+        return new Response(resp.body, {
             headers: {
-                'Content-Type': useResized ? 'image/webp' : (contentType || 'image/jpeg'),
+                'Content-Type': contentType || 'image/jpeg',
                 'Cache-Control': 'public, max-age=604800, immutable',
                 ...cors
             }
         });
+
+        // DEPRECATED (resize + MAX_BYTES cap, re-enable when CPU allows):
+        // // Cap what the server buffers; images are downscaled below before reaching the tab.
+        // const MAX_BYTES = 5 * 1024 * 1024;
+        // if (Number(resp.headers.get('Content-Length') || 0) > MAX_BYTES) {
+        // await resp.body?.cancel();
+        // return new Response(JSON.stringify({ error: 'Image too large' }), { status: 413, headers: { ...head_json, ...cors } });
+        // }
+        // const chunks: Uint8Array[] = [];
+        // let total = 0;
+        // const reader = resp.body!.getReader();
+        // while (true) {
+        // const { done, value } = await reader.read();
+        // if (done) break;
+        // total += value.length;
+        // if (total > MAX_BYTES) {
+        // await reader.cancel();
+        // return new Response(JSON.stringify({ error: 'Image too large' }), { status: 413, headers: { ...head_json, ...cors } });
+        // }
+        // chunks.push(value);
+        // }
+        // const buffer = new Uint8Array(total);
+        // let off = 0;
+        // for (const c of chunks) { buffer.set(c, off); off += c.length; }
+
+        // // Downscale to a thumbnail-sized WebP (skip if ?raw=1 or format unsupported, e.g. gif/svg).
+        // const resized = searchParams.get('raw') ? null : await resizeThumb(buffer, contentType || 'image/jpeg');
+        // const useResized = resized && resized.length < buffer.length;
+
+        // return new Response(useResized ? resized : buffer, {
+        // headers: {
+        // 'Content-Type': useResized ? 'image/webp' : (contentType || 'image/jpeg'),
+        // 'Cache-Control': 'public, max-age=604800, immutable',
+        // ...cors
+        // }
+        // });
     } catch (error) {
         console.error('Proxy image error:', error);
         return new Response(JSON.stringify({ error: 'Internal server error' }), {
