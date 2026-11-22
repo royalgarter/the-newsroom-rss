@@ -2646,35 +2646,47 @@ function alpineRSS() { return {
 
 		// Single View
 		if ('single_view' == this.params.f  && this.params.u) {
-			let url = new URL(this.params.u);
-
-			this.feeds = [{
-				link: `${url.protocol}//${url.hostname}`,
-				rss_url: `${url.protocol}//${url.hostname}`,
-				title: url.hostname,
-				items: [{
-					link: this.params.u,
-					author: url.hostname,
-					title: url.pathname,
-					description: this.params.u,
-				}],
-			}];
-
-			await this.postProcessFeeds({limit: 1, auto_fetch_content: true});
-
-			let item0 = this.feeds[0].items[0];
-
-			await item0.prefetchContent?.();
-
-			if (item0.article?.content) {
-				item0.title = item0.article.title || item0.title;
-				item0.toggleReadmore(true);
-			} else {
+			const original = safeHttpUrl(this.params.u);
+			const openOriginal = () => {
+				if (!original) return;
 				toast('Article unavailable, opening original');
-				setTimeout(() => location.replace(this.params.u), 1500);
-			}
+				setTimeout(() => location.replace(original), 1500);
+			};
 
-			this.loading = false;
+			try {
+				if (!original) throw new Error('invalid single_view url');
+				let url = new URL(original);
+
+				this.feeds = [{
+					link: `${url.protocol}//${url.hostname}`,
+					rss_url: `${url.protocol}//${url.hostname}`,
+					title: url.hostname,
+					items: [{
+						link: original,
+						author: url.hostname,
+						title: url.pathname,
+						description: original,
+					}],
+				}];
+
+				await this.postProcessFeeds({limit: 1, auto_fetch_content: true});
+
+				let item0 = this.feeds[0].items[0];
+
+				await item0.prefetchContent?.();
+
+				if (!item0.article?.content) return openOriginal();
+
+				item0.title = item0.article.title || item0.title;
+				await item0.toggleReadmore(true);
+
+				if (!item0.read_more) openOriginal();
+			} catch (ex) {
+				console.error('single_view failed', ex);
+				openOriginal();
+			} finally {
+				this.loading = false;
+			}
 			return;
 		}
 
