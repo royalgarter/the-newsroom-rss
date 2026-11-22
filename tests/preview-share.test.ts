@@ -64,3 +64,18 @@ Deno.test("shareItem toasts the real outcome and never opens a tab", async () =>
 	await app.shareItem({ link: "https://a.com/x", article: { content: "<p>x</p>" } });
 	assertStringIncludes(toasts[0], "Copied: https://newsrss.org/?f=single_view&u=");
 });
+
+Deno.test("fetchArticle falls back to /html proxy when direct fetch is blocked (CORS)", async () => {
+	const seen: string[] = [];
+	g.Readability = class { parse() { return { title: "T", content: "<p>body</p>" }; } };
+	g.fetch = (u: string) => {
+		seen.push(String(u));
+		return String(u).startsWith("/html") ? Promise.resolve(new Response("<html><body><p>x</p></body></html>")) : Promise.reject(new TypeError("CORS"));
+	};
+	const app = f.alpineRSS();
+	app.storageGet = () => undefined;
+	app.storageSet = () => {};
+	const art = await f.fetchArticle("https://www.theguardian.com/a", app);
+	assertEquals(art?.content, "<p>body</p>");
+	assert(seen.some((u) => u.startsWith("/html?u=")));
+});

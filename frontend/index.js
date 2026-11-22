@@ -2665,20 +2665,14 @@ function alpineRSS() { return {
 			let item0 = this.feeds[0].items[0];
 
 			await item0.prefetchContent?.();
-			let tried = 10;
-			let prefetched = setInterval(() => {
-				if (tried <= 0) clearInterval(prefetched);
-				tried--;
 
-				if (!item0.article.content) return;
-
+			if (item0.article?.content) {
 				item0.title = item0.article.title || item0.title;
-
 				item0.toggleReadmore(true);
-
-				clearInterval(prefetched);
-			}, 500);
-
+			} else {
+				toast('Article unavailable, opening original');
+				setTimeout(() => location.replace(this.params.u), 1500);
+			}
 
 			this.loading = false;
 			return;

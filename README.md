@@ -128,15 +128,15 @@ sw.js (registered on load)
   ├─ CacheFirst: images
   ├─ NetworkFirst: /api/ + navigations (5s timeout)
   ├─ periodicsync 'get-feeds' (every ~4h)
-  └─ precache: index.html, index.js?v=1.39, index.css?v=1.39,
+  └─ precache: index.html, index.js?v=1.40, index.css?v=1.40,
      manifest.json, favicon.ico, default-profile-64x64.png,
      js/{module,llm,hclust}.mjs
 ```
 
-Frontend assets are cache-busted via `?v=1.39` query strings on
+Frontend assets are cache-busted via `?v=1.40` query strings on
 `index.js`, `index.css`, and `js/module.mjs`. `frontend/sw.js`
 precaches the same three under that version string
-(`CACHE_NAME = the-newsroom-rss-v1.39`); the precache list and the
+(`CACHE_NAME = the-newsroom-rss-v1.40`); the precache list and the
 page's query strings must be bumped together or the precache warms
 URLs nothing requests.
 
@@ -146,7 +146,7 @@ URLs nothing requests.
 deferred-script order, ahead of Alpine:
 
 ```html
-<script id="version" defer src="index.js?v=1.39"></script>
+<script id="version" defer src="index.js?v=1.40"></script>
 <script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 <script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 ```
