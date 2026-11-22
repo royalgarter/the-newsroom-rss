@@ -845,6 +845,29 @@ function alpineRSS() { return {
 		this.viewedItemsCache = {};
 	},
 
+	async shareItem(item) {
+		const link = safeHttpUrl(item?.link);
+		if (!link) return toast('Share failed: invalid link');
+
+		const url = item.article?.content?.length ? location.origin + '/?f=single_view&u=' + encodeURIComponent(link) : link;
+
+		if (navigator.share) {
+			try {
+				await navigator.share({ title: item.title || url, text: item.description || url, url });
+				return;
+			} catch (ex) {
+				if (ex?.name == 'AbortError') return;
+			}
+		}
+
+		try {
+			await navigator.clipboard.writeText(url);
+			toast('Copied: ' + url);
+		} catch (_) {
+			toast('Copy failed, link: ' + url, 8e3);
+		}
+	},
+
 	async saveReadLater(item, is_remove) {
 		if (!item || !item.link) return;
 
@@ -1507,6 +1530,8 @@ function alpineRSS() { return {
 					}
 
 					item.toggleReadmore = (force_flag) => item.prefetchContent().then(_ => {
+						if (!item.read_more && !item.article?.content?.length) return;
+
 						item.read_more = force_flag || (!item.read_more);
 
 						if (item.read_more) {
@@ -1543,73 +1568,40 @@ function alpineRSS() { return {
 							item.updatePersona?.();
 						} else {
 							feed.read_more = false;
-							feed.read_more_item.read_more = false;
+							item.read_more = false;
+							if (feed.read_more_item) feed.read_more_item.read_more = false;
 
 							setTimeout(() => {
-								let ia = document.querySelector(`a[href="${item.link}"]`);
+								let ia = document.querySelector(`a[name="${CSS.escape(item.anchor || '')}"]`);
 
-								if (window.getComputedStyle(ia).display == 'none') return;
+								if (!ia || window.getComputedStyle(ia).display == 'none') return;
 
 								ia.scrollIntoView(true)
 							}, 0.1e3)
 						}
 					}).catch(_ => null);
 
-					item.prefetchContent = async () => {
-						if (!self.style()?.preview) return;
+					item.prefetchContent = () => {
+						if (!self.style()?.preview || !auto_fetch_content || item.article?.content) return Promise.resolve();
+						if (item._prefetch) return item._prefetch;
 
-						// console.log('prefetchContent', item.title);
-
-						if (!auto_fetch_content || item.article?.content || item.prefetching) return;
 						item.prefetching = true;
+						item.no_article = false;
 						feed.loading = true;
 
-						let resp = null;
-						let opts = {redirect: 'follow'};
-						let key_nofetch = self.K.noClientFetch + new URL(item.link).hostname;
+						item._prefetch = fetchArticle(item.link, self)
+							.catch(() => null)
+							.then(article => {
+								if (article) item.article = article;
+								else item.no_article = true;
+							})
+							.finally(() => {
+								item.prefetching = false;
+								item._prefetch = null;
+								feed.loading = false;
+							});
 
-						let noClientFetch = self.storageGet(key_nofetch);
-						// console.time('>> fetch.html.' + item.link);
-						try {
-
-							resp = noClientFetch
-									? await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null)
-									: await fetch(item.link, opts).catch(() => {
-										self.storageSet(key_nofetch, true);
-										return null;
-									});
-						} catch (ex) {
-							self.storageSet(key_nofetch, true);
-							resp = await fetch(`/html?u=${encodeURIComponent(item.link)}`, opts).catch(null);
-						}
-						// console.timeEnd('>> fetch.html.' + item.link);
-
-						// item.prefetching = false;
-
-						feed.loading = false;
-
-						if (!resp || resp?.status >= 400) {
-							item.no_article = true;
-							item.prefetching = false; // Reset prefetching flag on failure
-							return;
-						}
-
-						let html = await resp?.text?.().catch(null);
-
-						if (!html) {
-							item.no_article = true;
-							item.prefetching = false; // Reset prefetching flag on failure
-							return;
-						}
-
-						let doc = new DOMParser().parseFromString(html, "text/html");
-						item.article = new Readability(doc).parse();
-
-						let content = item.article?.content;
-						if (content?.length) {
-							item.article.content = cleanContent(content);
-						}
-						item.prefetching = false; // Reset prefetching flag on success
+						return item._prefetch;
 
 
 						// if (feed.items.filter(item => item.prefetching && item.article).length == feed.items.length) {
@@ -3033,7 +3025,87 @@ function setIdle(idleTimeout, onIdle, onActive) {
 	};
 }
 
+const ARTICLE_TAGS = new Set(['P', 'BR', 'I', 'EM', 'B', 'STRONG', 'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD', 'IMG', 'A', 'BLOCKQUOTE', 'PRE', 'CODE', 'FIGURE', 'FIGCAPTION']);
+const ARTICLE_DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH', 'FORM', 'NOSCRIPT', 'TEMPLATE', 'VIDEO', 'AUDIO']);
+const ARTICLE_ATTRS = { IMG: ['src', 'alt'], A: ['href'] };
+
+function safeHttpUrl(raw) {
+	try {
+		const url = new URL(raw, location.href);
+		return /^https?:$/.test(url.protocol) ? url.href : null;
+	} catch (_) {
+		return null;
+	}
+}
+
+function _sanitizeNode(node) {
+	[...node.children].forEach(child => {
+		if (ARTICLE_DROP_TAGS.has(child.tagName)) return child.remove();
+
+		_sanitizeNode(child);
+
+		if (!ARTICLE_TAGS.has(child.tagName)) return child.replaceWith(...child.childNodes);
+
+		const keep = ARTICLE_ATTRS[child.tagName] || [];
+		[...child.attributes].forEach(a => keep.includes(a.name) || child.removeAttribute(a.name));
+
+		const urlAttr = keep.find(a => a == 'src' || a == 'href');
+		if (urlAttr && child.hasAttribute(urlAttr)) {
+			const safe = safeHttpUrl(child.getAttribute(urlAttr));
+			if (!safe) return child.tagName == 'IMG' ? child.remove() : child.removeAttribute(urlAttr);
+			child.setAttribute(urlAttr, safe);
+		}
+
+		if (child.tagName == 'A') {
+			child.setAttribute('target', '_blank');
+			child.setAttribute('rel', 'noopener noreferrer');
+		}
+	});
+}
+
+function sanitizeArticle(html = '') {
+	const body = new DOMParser().parseFromString(html, 'text/html').body;
+	_sanitizeNode(body);
+	return body.innerHTML;
+}
+
+async function fetchArticle(link, self) {
+	const url = safeHttpUrl(link);
+	if (!url) return null;
+
+	const key = self.K.noClientFetch + new URL(url).hostname;
+	const viaProxy = () => fetch(`/html?u=${encodeURIComponent(url)}`, {redirect: 'follow'}).catch(() => null);
+	const knownBlocked = self.storageGet(key);
+
+	let resp = knownBlocked ? null : await fetch(url, {redirect: 'follow'}).catch(() => null);
+
+	if (!resp) {
+		resp = await viaProxy();
+		if (resp?.ok && !knownBlocked) self.storageSet(key, true);
+	}
+
+	if (!resp?.ok) return null;
+
+	const html = await resp.text().catch(() => '');
+	if (!html) return null;
+
+	let article = null;
+	try {
+		article = new Readability(new DOMParser().parseFromString(html, 'text/html')).parse();
+	} catch (_) {
+		return null;
+	}
+
+	if (!article?.content) return null;
+	article.content = cleanContent(article.content);
+	return article.content.length ? article : null;
+}
+
 function cleanContent(content='') {
+	return sanitizeArticle(_cleanContentRaw(content));
+}
+
+function _cleanContentRaw(content='') {
 	return content.trim()
 		.replace(/<(?!img|table|th|td|tr|p|i|ul|li|h1|h2|h3|h4|h5|h6)[^>]+>/gi, '\n').replace(/<\s*\/\s*[^>]*>/gi, '\n')
 		.replace(/\n\n+/gi, '\n\n').trim().replace(/\n\n+/gi, '<br>')

@@ -31,6 +31,16 @@ pipeline that ranks items against a per-user persona.
   the top of each feed's title anchor every `SHOWCASE_DWELL_MS` (30s).
   Any user activity stops it permanently; state is session-only.
 - Readability-based article preview fetched on hover / scroll-into-view.
+  Hardened [2026-11-22]: article HTML is run through an allowlist sanitizer
+  (`sanitizeArticle`: no attributes except http(s) `src` / `href` / `alt`,
+  no `iframe` / `script` / `form`); `prefetchContent` shares one in-flight
+  promise and always clears `prefetching`, so a failed fetch ends in `[N/A]`
+  instead of a stuck `[Loading]`; `noClientFetch` is set only when the
+  `/html` proxy succeeds after a direct-fetch failure.
+- `[Share]` (`shareItem`): validates the link as http(s), uses the native
+  share sheet when present, else the clipboard; the toast reports the real
+  outcome and no tab is ever opened. Shares `/?f=single_view&u=<link>` when
+  the article is loaded, else the article link.
 - Embedding-based persona scoring: per-item cosine similarity against
   a running mean of vectors from articles the user actually opened.
 - Auto refresh while the tab is open: a single scheduler owns every
@@ -118,15 +128,15 @@ sw.js (registered on load)
   ├─ CacheFirst: images
   ├─ NetworkFirst: /api/ + navigations (5s timeout)
   ├─ periodicsync 'get-feeds' (every ~4h)
-  └─ precache: index.html, index.js?v=1.32, index.css?v=1.32,
+  └─ precache: index.html, index.js?v=1.39, index.css?v=1.39,
      manifest.json, favicon.ico, default-profile-64x64.png,
      js/{module,llm,hclust}.mjs
 ```
 
-Frontend assets are cache-busted via `?v=1.32` query strings on
+Frontend assets are cache-busted via `?v=1.39` query strings on
 `index.js`, `index.css`, and `js/module.mjs`. `frontend/sw.js`
 precaches the same three under that version string
-(`CACHE_NAME = the-newsroom-rss-v1.32`); the precache list and the
+(`CACHE_NAME = the-newsroom-rss-v1.39`); the precache list and the
 page's query strings must be bumped together or the precache warms
 URLs nothing requests.
 
@@ -136,7 +146,7 @@ URLs nothing requests.
 deferred-script order, ahead of Alpine:
 
 ```html
-<script id="version" defer src="index.js?v=1.32"></script>
+<script id="version" defer src="index.js?v=1.39"></script>
 <script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 <script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 ```

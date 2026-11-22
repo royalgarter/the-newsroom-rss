@@ -1,3 +1,18 @@
+## 2026-11-22 — harden `[Preview]` and `[Share]`
+
+Decisions (confirmed with user): Share = native sheet, else clipboard, never opens a tab; copies single-view link when article is loaded, else the article link.
+
+- [x] **#1 Sanitize article HTML** — `cleanContent` output passed attributes (`onerror`, `iframe srcdoc`) into `x-html`. Allowlist sanitizer, http(s) only.
+- [x] **#2 `prefetchContent` cannot stick** — one in-flight promise, `finally` clears `prefetching` / `feed.loading`; malformed link, network error, Readability throw all end in `no_article`.
+- [x] **#3 `noClientFetch` only after proxy succeeds** — a transient direct-fetch failure no longer downgrades the host forever.
+- [x] **#4 `toggleReadmore` awaits the fetch, null-safe collapse** — no empty open, no `querySelector('a[href=...]')` crash.
+- [x] **#5 `shareItem(item)`** — validated URL, honest toast, no surprise tab.
+- [x] **#6 Buttons** — `[Preview]` / `[Share]` are `<button>` with `aria-expanded`; `[N/A]` disabled.
+- [x] **#7 Tripwire** — `tests/preview-share.test.ts`.
+- [x] **#8 README + cache-bust 1.38 -> 1.39** (`index.html`, `sw.js`).
+
+---
+
 ## 2026-10-03 — `loadFeedsWithContent` review (loading / showcase / refresh)
 
 Follow-up pass over the loading flag, the refresh scheduler and the

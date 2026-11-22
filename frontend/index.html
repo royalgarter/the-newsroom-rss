@@ -49,23 +49,23 @@
 		<!-- <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript> -->
 
 		<!-- Critical CSS -->
-		<link rel="stylesheet" type="text/css" href="index.css?v=1.38">
+		<link rel="stylesheet" type="text/css" href="index.css?v=1.39">
 
 		<!-- Preload Critical Scripts -->
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js" />
 		<link rel="preload" as="script" href="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" />
-		<link rel="preload" as="script" href="index.js?v=1.38" />
+		<link rel="preload" as="script" href="index.js?v=1.39" />
 
 		<!-- Deferred Scripts.
 		     index.js must come first: deferred scripts execute in document
 		     order, and Alpine auto-starts the moment it loads (document.readyState
 		     is already "interactive" by the time the defer queue runs), so the
 		     alpineHead/alpineRSS factories have to exist before Alpine boots. -->
-		<script id="version" defer src="index.js?v=1.38"></script>
+		<script id="version" defer src="index.js?v=1.39"></script>
 		<script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 		<script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-		<script type="module" src="./js/module.mjs?v=1.38"></script>
+		<script type="module" src="./js/module.mjs?v=1.39"></script>
 	</head>
 	<body x-cloak x-data="alpineRSS()" class="min-h-screen flex flex-col overflow-x-hidden font-mono">
 		<template id="tpl_header" x-if="ready">
@@ -346,13 +346,16 @@
 									<template x-if="style()?.preview">
 										<div :id="'rss-item-article-' + index + '-' + itemIndex">
 											<div class="px-2 py-1 flex flex-row items-center absolute bottom-0 left-0 w-full">
-												<span class="cursor-pointer py-1 text-xs flex flex-row items-center px-1"
+												<button type="button" class="cursor-pointer py-1 text-xs flex flex-row items-center px-1"
 													@click="item?.toggleReadmore?.()"
 													@mouseover="item?.prefetchContent?.()"
-													:class="item.article ? 'visible' : 'disable__invisible'"
+													@focus="item?.prefetchContent?.()"
+													:aria-expanded="item.read_more ? 'true' : 'false'"
+													:disabled="item.no_article && !item.read_more"
+													:class="item.no_article && !item.read_more ? 'opacity-50' : ''"
 												>
-												<span x-text="item.read_more ? '[Collapse]' : (item.no_article ? '[N/A]' : (item.prefetching && !item.no_article && !item.article?.content ? '[Loading]' : '[Preview]'))"></span>
-												</span>
+													<span x-text="item.read_more ? '[Collapse]' : (item.no_article ? '[N/A]' : (item.prefetching ? '[Loading]' : '[Preview]'))"></span>
+												</button>
 
 												<span class="hidden cursor-pointer py-1 text-xs flex flex-row items-center px-1"
 													x-show="item.ldjson"
@@ -361,25 +364,12 @@
 													<span x-text="item.show_ldjson ? '[Hide Meta]' : '[Metadata]'"></span>
 												</span>
 
-												<span class="py-1 text-xs flex items-center cursor-pointer px-1 ml-auto mr-3"
+												<button type="button" class="py-1 text-xs flex items-center cursor-pointer px-1 ml-auto mr-3"
 													@mouseover="item?.prefetchContent?.()"
-													@click="
-														let share_url = item.article?.content?.length ? (location.origin + '/?f=single_view&u=' + encodeURIComponent(item.link)) : item.link;
-														toast('Copied: ' + share_url);
-														navigator?.clipboard?.writeText?.(share_url);
-														( 
-															item.article?.content?.length 
-															&& navigator?.share?.({
-																title: item.title || share_url,
-																text: item.description || share_url,
-											url: share_url,
-										})?.catch?.(() => {})
-									) 
-									|| window.open(share_url, '_blank');
-													" 
+													@click="shareItem(item)"
 												>
 													[Share]
-												</span>
+												</button>
 
 												<span class="py-1 text-xs flex items-center cursor-pointer px-1"
 													@click="saveReadLater(item)"
