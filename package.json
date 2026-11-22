@@ -7,5 +7,11 @@
     "update-preset": "deno run --allow-read --allow-write backend/src/manage-presets.ts update",
     "check-preset": "deno run --allow-net --allow-read --allow-write backend/src/manage-presets.ts check",
     "check-preset-full": "cp data/preset.json data/preset-full.json && deno run --allow-net --allow-read --allow-write backend/src/manage-presets.ts check"
+  },
+  "dependencies": {
+    "@jsquash/jpeg": "1.5.0",
+    "@jsquash/png": "3.0.1",
+    "@jsquash/webp": "1.4.0",
+    "@jsquash/resize": "2.1.0"
   }
 }

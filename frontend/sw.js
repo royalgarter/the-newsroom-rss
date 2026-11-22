@@ -37,6 +37,7 @@ workbox.routing.registerRoute(
 	({request}) => request.destination === 'script' || request.destination === 'style',
 	new workbox.strategies.NetworkFirst({
 		cacheName: 'static-assets',
+		networkTimeoutSeconds: 3,
 		plugins: [
 			new workbox.expiration.ExpirationPlugin({
 				maxEntries: 50,

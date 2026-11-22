@@ -110,6 +110,7 @@ function alpineRSS() { return {
 	_showcaseTimer: null,
 	_showcaseIdleTimer: null,
 	_showcaseBlocked: false,
+	_showcaseArmedAt: 0,
 	// True while our own scrollIntoView is still moving. A long smooth scroll runs
 	// for seconds and can be shifted by layout changes or interrupted, so we track
 	// "is it still moving" rather than trying to predict where it lands.
@@ -150,14 +151,16 @@ function alpineRSS() { return {
 		this.showcase ? this.stopShowcase() : this.startShowcase();
 	},
 
-	startShowcase() {
+	startShowcase(auto = false) {
 		if (this.showcase) return;
+		if (auto && document.visibilityState === 'hidden') return;
+		const say = (m) => { if (!auto) toast(m); };
 
 		// Unified View renders one synthetic feed with no per-feed title anchors,
 		// so there is nothing to rotate between.
-		if (this.params.u) return toast('Showcase needs /uni off');
+		if (this.params.u) return say('Showcase needs /uni off');
 
-		if (!this.feeds?.length) return toast('No feeds to showcase');
+		if (!this.feeds?.length) return say('No feeds to showcase');
 
 		if (this.is_hide_feeds) this.is_hide_feeds = false;
 
@@ -212,13 +215,16 @@ function alpineRSS() { return {
 			// Mirror the ?a= anchor jump: the feed must be rendered before we scroll.
 			if (idx >= this.visibleFeedsLimit) this.visibleFeedsLimit = idx + 2;
 			this.$nextTick(() => {
+				if (!this.showcase) return;
 				const el = document.querySelector('[name="' + feed.anchor + '"]');
 				if (!el) return;
+				const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 				this._markShowcaseScrolling();
-				el.scrollIntoView({ behavior: 'smooth' });
+				el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
 			});
 		}
 
+		clearTimeout(this._showcaseTimer);
 		this._showcaseTimer = setTimeout(() => this._showcaseAdvance(), SHOWCASE_DWELL_MS);
 		this._showcaseDwellAt = Date.now() + SHOWCASE_DWELL_MS;
 	},
@@ -243,14 +249,19 @@ function alpineRSS() { return {
 	},
 
 	// Armed on every activity event; fires once the user has been idle long enough.
-	_armShowcaseIdle() {
+	_armShowcaseIdle(force = false) {
+		// mousemove/scroll fire at 60+Hz: re-arming each time churns timers and
+		// reactive state. A 1s granularity is plenty against a 30s idle window.
+		const now = Date.now();
+		if (!force && this._showcaseIdleTimer && now - this._showcaseArmedAt < 1000) return;
+		this._showcaseArmedAt = now;
 		this._clearShowcaseIdle();
 		if (this._showcaseBlocked || this.showcase) return;
 		this._showcaseIdleAt = Date.now() + SHOWCASE_IDLE_MS;
 		this._showcaseIdleTimer = setTimeout(() => {
 			this._showcaseIdleTimer = null;
 			if (this._showcaseBlocked || this.showcase) return;
-			this.startShowcase();
+			this.startShowcase(true);
 		}, SHOWCASE_IDLE_MS);
 	},
 
@@ -779,61 +790,7 @@ function alpineRSS() { return {
 		return updatedMean;
 	},
 
-	initializeIntersectionObservers() {
-		return console.log('initializeIntersectionObservers.disabled');
-
-		// const feedObserver = new IntersectionObserver((entries, observer) => {
-		// 	entries.forEach(entry => {
-		// 		if (entry.isIntersecting) {
-		// 			const feedIndex = parseInt(entry.target.dataset.feedIndex, 10);
-		// 			const feed = this.feeds[feedIndex];
-		// 			if (feed) {
-		// 				feed.items.forEach(item => item.prefetchContent?.());
-		// 				if (this.feeds[feedIndex + 1]) {
-		// 					this.feeds[feedIndex + 1].items.forEach(item => item.prefetchContent?.());
-		// 				}
-		// 			}
-		// 			observer.unobserve(entry.target);
-		// 		}
-		// 	});
-		// }, { threshold: 0.1 });
-
-		const itemObserver = new IntersectionObserver((entries) => {
-			entries.forEach(entry => {
-				const link = entry.target.dataset.link;
-				if (entry.isIntersecting) {
-					if (entry.intersectionRatio >= 1.0) {
-						this.triggerIntersect('full', link);
-					} else {
-						this.triggerIntersect('enter', link);
-					}
-				} else {
-					this.triggerIntersect('leave', link);
-				}
-			});
-		}, { threshold: [0, 1.0], rootMargin: '-10% 0% -10% 0%' });
-
-		this.$watch('feeds', () => {
-			this.$nextTick(() => {
-				// document.querySelectorAll('.rss-feed').forEach((el, index) => {
-				// 	el.dataset.feedIndex = index;
-				// 	feedObserver.observe(el);
-				// });
-				document.querySelectorAll('.rss-item').forEach(el => {
-					const link = el.querySelector('a.rss-title')?.href;
-					if (link) {
-						el.dataset.link = link;
-						itemObserver.observe(el);
-					}
-				});
-			});
-		});
-
-		// Save viewed items every 5 seconds
-		setInterval(() => {
-			this.saveViewedItemsCache();
-		}, 5e3);
-	},
+	initializeIntersectionObservers() {},
 	triggerIntersect(type, link) {
 		if (!link) return console.log('ELINK');
 
@@ -2924,7 +2881,8 @@ function alpineRSS() { return {
 
 		// Switching tabs ends the ambient rotation; nobody is watching it anyway.
 		document.addEventListener('visibilitychange', () => {
-			if (document.visibilityState === 'hidden') this.stopShowcase();
+			if (document.visibilityState === 'hidden') { this.stopShowcase(); this._clearShowcaseIdle(); }
+			else this._armShowcaseIdle(true);
 		});
 
 		// Flush viewed items when tab is hidden or closed

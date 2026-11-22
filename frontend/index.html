@@ -260,11 +260,13 @@
 												<img width="320" height="180"
 													class="rss-thumb w-full h-full"
 													decoding="async"
-												:loading="(itemIndex <= 1) ? 'eager' : 'lazy'"
-												:fetchpriority="(itemIndex <= 1) ? 'high' : 'low'"
+												:loading="(index == 0 && itemIndex < 4) ? 'eager' : 'lazy'"
+												:fetchpriority="(index == 0 && itemIndex < 2) ? 'high' : 'low'"
 													:alt="item.title"
 													:domain="new URL(feed.link || location.origin).hostname"
-													:src="item?.image_thumb || ('https://static.photos/640x360/' + encodeURIComponent(item.title))"
+													:data-src="item?.image_thumb || ('https://static.photos/640x360/' + encodeURIComponent(item.title))"
+													:src="(index == 0 && itemIndex < 4) ? ($el.dataset.src || item?.image_thumb) : null"
+													x-intersect.once.margin.300px="$el.src = $el.dataset.src"
 													onerror="this.style.display='none';"
 												/>
 											</a>
