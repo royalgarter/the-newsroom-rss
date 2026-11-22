@@ -169,3 +169,32 @@ Deno.test("activity listener ignores clicks originating from the showcase button
 	assertEquals(app.showcase, true);
 	assertEquals(app._showcaseBlocked, false, "own click must not permanently block showcase");
 });
+
+Deno.test("_pickBackdropImage only picks loaded images >= SHOWCASE_BG_MIN_WIDTH, null when none", () => {
+	const app = makeApp(1);
+	const big = { complete: true, naturalWidth: 1600 };
+	const small = { complete: true, naturalWidth: 640 };
+	const pending = { complete: false, naturalWidth: 2000 };
+	assertEquals(app._pickBackdropImage([small, pending]), null);
+	for (let i = 0; i < 20; i++) assertEquals(app._pickBackdropImage([small, big, pending]), big);
+});
+
+Deno.test("postProcessFeeds skips feeds already processed with same inputs", () => {
+	const app = makeApp(0);
+	const mk = (n: number) => ({
+		rss_url: "https://h" + n + ".example/feed",
+		link: "https://h" + n + ".example/",
+		items: Array.from({ length: 3 }, (_, i) => ({ link: "https://h" + n + ".example/" + i, title: "t", description: "d", published: "2026-01-01" })),
+	});
+	app.feeds = [];
+	// deno-lint-ignore no-explicit-any
+	(globalThis as any).document ??= { getElementById: () => ({ style: {}, classList: { add() {}, remove() {} } }), querySelector: () => ({ style: {}, classList: { add() {}, remove() {} } }), querySelectorAll: () => [] };
+	let runs = 0;
+	for (let n = 0; n < 10; n++) {
+		const f = mk(n);
+		Object.defineProperty(f, "postProcessItems", { set() { runs++; }, get() { return () => {}; }, configurable: true });
+		app.feeds.push(f);
+		app.postProcessFeeds({ limit: 12 });
+	}
+	assertEquals(runs, 10);
+});

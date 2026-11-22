@@ -2,9 +2,14 @@ const VERSION = 'v2';
 const STALE_THRESHOLD_HOUR = 4;
 const REFRESH_INTERVAL_MS = 15 * 60e3;
 const REFRESH_BAR_DELAY_MS = 10e3;
+const _feedSignature = (feed, limit, showViewed) => [feed.items?.length, feed.items?.[0]?.link, limit, showViewed ? 1 : 0].join('|');
 const SHOWCASE_IDLE_MS = 30e3;
 const SHOWCASE_DWELL_MS = 30e3;
 const SHOWCASE_SCROLL_SETTLE_MS = 400;
+const SHOWCASE_BG_MIN_WIDTH = 1000;
+const SHOWCASE_BG_W = 32;
+const SHOWCASE_BG_H = 18;
+const SHOWCASE_BG_WASH = 'rgba(0,0,0,0.65)';
 
 const _DECODE_CACHE = new Map();
 const _DECODE_CACHE_MAX = 1000;
@@ -147,6 +152,25 @@ function alpineRSS() { return {
 		return order;
 	},
 
+	_pickBackdropImage(imgs) {
+		const pool = imgs.filter((img) => img.complete && img.naturalWidth >= SHOWCASE_BG_MIN_WIDTH);
+		return pool[Math.floor(Math.random() * pool.length)] || null;
+	},
+
+	// The blur is the downscale: 32x18 stretched by CSS, no filter cost.
+	_paintShowcaseBackdrop() {
+		const canvas = document.getElementById('showcase_bg');
+		const img = this._pickBackdropImage([...document.querySelectorAll('img.rss-thumb')]);
+		if (!canvas || !img) return;
+		const scale = Math.max(SHOWCASE_BG_W / img.naturalWidth, SHOWCASE_BG_H / img.naturalHeight);
+		const w = img.naturalWidth * scale;
+		const h = img.naturalHeight * scale;
+		const ctx = canvas.getContext('2d');
+		ctx.drawImage(img, (SHOWCASE_BG_W - w) / 2, (SHOWCASE_BG_H - h) / 2, w, h);
+		ctx.fillStyle = SHOWCASE_BG_WASH;
+		ctx.fillRect(0, 0, SHOWCASE_BG_W, SHOWCASE_BG_H);
+	},
+
 	toggleShowcase() {
 		this.showcase ? this.stopShowcase() : this.startShowcase();
 	},
@@ -210,6 +234,7 @@ function alpineRSS() { return {
 		const idx = this._showcaseOrder[this._showcasePos];
 		this._showcasePos = (this._showcasePos + 1) % this._showcaseOrder.length;
 
+		this._paintShowcaseBackdrop();
 		const feed = this.feeds[idx];
 		if (feed?.anchor) {
 			// Mirror the ?a= anchor jump: the feed must be rendered before we scroll.
@@ -1105,7 +1130,7 @@ function alpineRSS() { return {
 
 				if (resp_tasks.feeds_cached?.length) {
 					resp_tasks.feeds_cached.forEach(rf => {
-						let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
+						let existing = feedsByUrl.get(rf.rss_url);
 						if (existing) {
 							const existingLinks = new Set(existing.items.map(i => i.link));
 							const newItems = (rf.items || []).filter(i => !existingLinks.has(i.link));
@@ -1164,6 +1189,7 @@ function alpineRSS() { return {
 				);
 			};
 
+			const feedsByUrl = new Map((this.feeds || []).map(f => [f.rss_url, f]));
 			const appendFeed = (rf) => {
 				if (!rf?.rss_url) return;
 				let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
@@ -1173,6 +1199,7 @@ function alpineRSS() { return {
 					existing.items = [...newItems, ...existing.items];
 				} else {
 					this.feeds.push(rf);
+					feedsByUrl.set(rf.rss_url, this.feeds[this.feeds.length - 1]);
 				}
 			};
 
@@ -1417,6 +1444,10 @@ function alpineRSS() { return {
 		const anchorling = str => (str?.replace(/([^a-zA-Z0-9]|https?)/gi, '-').replace(/\-+/g, '-').replace(/(^\-|\-$)/g, '').toLowerCase() || '');
 
 		this.feeds.forEach((feed, feedIdx) => {
+			// Streaming calls this once per arriving feed; skip feeds already processed
+			// with the same inputs so N arrivals cost N feed passes, not N^2.
+			if (feed._processedSig && feed._processedSig === _feedSignature(feed, limit, show_viewed)) return;
+
 			// feed.anchor = feed.title?.replace(/[^a-zA-Z0-9]/gi,'').toLowerCase();
 			feed.short_title = new URL(feed.rss_url).host.split('.').slice(-3).filter(x => !x.includes('www')).sort((a,b) => b.length-a.length)[0];
 			feed.favicon_url = feed.link ? ('https://www.google.com/s2/favicons?domain=' + new URL(feed.link).hostname +'&sz=128') : '/favicon.ico';
@@ -1767,6 +1798,7 @@ function alpineRSS() { return {
 			};
 
 			feed.postProcessItems();
+			feed._processedSig = _feedSignature(feed, limit, show_viewed);
 
 			let len_filter = feed.items.length;
 			// console.dir({len_full, len_filter, limit})

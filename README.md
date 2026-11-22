@@ -30,6 +30,11 @@ pipeline that ranks items against a per-user persona.
   index buffer over `feeds` and walks it one entry at a time, scrolling to
   the top of each feed's title anchor every `SHOWCASE_DWELL_MS` (30s).
   Any user activity stops it permanently; state is session-only.
+  Each jump also paints a blurred backdrop: a random loaded thumbnail with
+  `naturalWidth >= SHOWCASE_BG_MIN_WIDTH` (1000) is drawn into a 32x18
+  `#showcase_bg` canvas (cover-fit, black wash) that CSS stretches behind
+  the page — the blur is the downscale, no `filter`. No hi-res thumbnail
+  loaded: previous backdrop stays, else none. Removed on stop.
 - Readability-based article preview fetched on hover / scroll-into-view.
   Hardened [2026-11-22]: article HTML is run through an allowlist sanitizer
   (`sanitizeArticle`: no attributes except http(s) `src` / `href` / `alt`,
@@ -128,15 +133,15 @@ sw.js (registered on load)
   ├─ CacheFirst: images
   ├─ NetworkFirst: /api/ + navigations (5s timeout)
   ├─ periodicsync 'get-feeds' (every ~4h)
-  └─ precache: index.html, index.js?v=1.41, index.css?v=1.41,
+  └─ precache: index.html, index.js?v=1.43, index.css?v=1.43,
      manifest.json, favicon.ico, default-profile-64x64.png,
      js/{module,llm,hclust}.mjs
 ```
 
-Frontend assets are cache-busted via `?v=1.41` query strings on
+Frontend assets are cache-busted via `?v=1.43` query strings on
 `index.js`, `index.css`, and `js/module.mjs`. `frontend/sw.js`
 precaches the same three under that version string
-(`CACHE_NAME = the-newsroom-rss-v1.41`); the precache list and the
+(`CACHE_NAME = the-newsroom-rss-v1.43`); the precache list and the
 page's query strings must be bumped together or the precache warms
 URLs nothing requests.
 
@@ -146,7 +151,7 @@ URLs nothing requests.
 deferred-script order, ahead of Alpine:
 
 ```html
-<script id="version" defer src="index.js?v=1.41"></script>
+<script id="version" defer src="index.js?v=1.43"></script>
 <script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 <script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 ```
@@ -293,6 +298,13 @@ per feed:
 - Filters out viewed items when `feed.items.length > limit` and
   `!show_viewed`, then sets `item.disable = (idx >= limit)` so
   Alpine `x-show` collapses them; `feed.loadMore()` clears `disable`.
+
+`postProcessFeeds` runs once per streamed feed arrival. A feed already
+processed with the same `(items.length, first link, limit, show_viewed)`
+signature (`_feedSignature`, stored as `feed._processedSig`) is skipped, so
+N arrivals cost N feed passes, not N². `appendFeed` finds existing feeds via
+a `rss_url` Map. [2026-11-22] Tripwire: `tests/showcase.test.ts` (10 feeds:
+10 runs; was 55 without the skip).
 
 ### Lazy rendering
 
