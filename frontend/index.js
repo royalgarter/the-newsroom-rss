@@ -7,6 +7,8 @@ const SHOWCASE_IDLE_MS = 30e3;
 const SHOWCASE_DWELL_MS = 30e3;
 const SHOWCASE_SCROLL_SETTLE_MS = 400;
 const SHOWCASE_BG_MIN_WIDTH = 1000;
+const SHOWCASE_ALIGN_PX = 2;
+const SHOWCASE_MAX_FIXES = 3;
 const SHOWCASE_BG_W = 32;
 const SHOWCASE_BG_H = 18;
 const SHOWCASE_BG_WASH = 'rgba(0,0,0,0.65)';
@@ -115,6 +117,8 @@ function alpineRSS() { return {
 	_showcaseTimer: null,
 	_showcaseIdleTimer: null,
 	_showcaseBlocked: false,
+	_showcaseTarget: null,
+	_showcaseFixes: 0,
 	_showcaseArmedAt: 0,
 	// True while our own scrollIntoView is still moving. A long smooth scroll runs
 	// for seconds and can be shifted by layout changes or interrupted, so we track
@@ -244,6 +248,8 @@ function alpineRSS() { return {
 				const el = document.querySelector('[name="' + feed.anchor + '"]');
 				if (!el) return;
 				const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+				this._showcaseTarget = el;
+				this._showcaseFixes = 0;
 				this._markShowcaseScrolling();
 				el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
 			});
@@ -261,6 +267,16 @@ function alpineRSS() { return {
 		if (this._showcaseSettleTimer) clearTimeout(this._showcaseSettleTimer);
 		this._showcaseSettleTimer = setTimeout(() => {
 			this._showcaseSettleTimer = null;
+			// Thumbnails loading mid-scroll shift layout, so the smooth scroll lands off the
+			// feed title. Snap to it instantly (html is scroll-smooth, so 'auto' would animate).
+			const el = this._showcaseTarget;
+			if (this.showcase && el?.isConnected && this._showcaseFixes < SHOWCASE_MAX_FIXES
+				&& Math.abs(el.getBoundingClientRect().top) > SHOWCASE_ALIGN_PX) {
+				this._showcaseFixes++;
+				this._markShowcaseScrolling();
+				el.scrollIntoView({ behavior: 'instant' });
+				return;
+			}
 			this._showcaseScrolling = false;
 		}, SHOWCASE_SCROLL_SETTLE_MS);
 	},

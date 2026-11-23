@@ -35,6 +35,10 @@ pipeline that ranks items against a per-user persona.
   `#showcase_bg` canvas (cover-fit, black wash) that CSS stretches behind
   the page — the blur is the downscale, no `filter`. No hi-res thumbnail
   loaded: previous backdrop stays, else none. Removed on stop.
+  [2026-11-23] Scroll lands exactly on the feed title: once the smooth scroll settles,
+  if the anchor is more than `SHOWCASE_ALIGN_PX` (2) off the viewport top (thumbnails
+  shifted layout mid-scroll), it snaps with an instant `scrollIntoView`, up to
+  `SHOWCASE_MAX_FIXES` (3) times.
 - Readability-based article preview fetched on hover / scroll-into-view.
   Hardened [2026-11-22]: article HTML is run through an allowlist sanitizer
   (`sanitizeArticle`: no attributes except http(s) `src` / `href` / `alt`,
