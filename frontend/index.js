@@ -1140,6 +1140,7 @@ function alpineRSS() { return {
 				}
 			}
 
+			const feedsByUrl = new Map((this.feeds || []).map(f => [f.rss_url, f]));
 			if (resp_tasks?.feeds?.length) {
 				this.tasks = resp_tasks?.feeds;
 				urls = resp_tasks?.feeds?.map?.(x => x.url) || urls;
@@ -1205,7 +1206,6 @@ function alpineRSS() { return {
 				);
 			};
 
-			const feedsByUrl = new Map((this.feeds || []).map(f => [f.rss_url, f]));
 			const appendFeed = (rf) => {
 				if (!rf?.rss_url) return;
 				let existing = this.feeds.find(f => f.rss_url === rf.rss_url);
