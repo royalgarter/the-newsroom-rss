@@ -39,6 +39,9 @@ pipeline that ranks items against a per-user persona.
   if the anchor is more than `SHOWCASE_ALIGN_PX` (2) off the viewport top (thumbnails
   shifted layout mid-scroll), it snaps with an instant `scrollIntoView`, up to
   `SHOWCASE_MAX_FIXES` (3) times.
+- [2026-11-26] Fixed `ReferenceError: Cannot access 'feedsByUrl' before initialization` in
+  `loadFeedsWithContent`: the Map is now declared before the cached-feeds merge loop that reads it.
+  Cache-bust bumped to 1.44.
 - Readability-based article preview fetched on hover / scroll-into-view.
   Hardened [2026-11-22]: article HTML is run through an allowlist sanitizer
   (`sanitizeArticle`: no attributes except http(s) `src` / `href` / `alt`,
@@ -137,15 +140,15 @@ sw.js (registered on load)
   ├─ CacheFirst: images
   ├─ NetworkFirst: /api/ + navigations (5s timeout)
   ├─ periodicsync 'get-feeds' (every ~4h)
-  └─ precache: index.html, index.js?v=1.43, index.css?v=1.43,
+  └─ precache: index.html, index.js?v=1.44, index.css?v=1.44,
      manifest.json, favicon.ico, default-profile-64x64.png,
      js/{module,llm,hclust}.mjs
 ```
 
-Frontend assets are cache-busted via `?v=1.43` query strings on
+Frontend assets are cache-busted via `?v=1.44` query strings on
 `index.js`, `index.css`, and `js/module.mjs`. `frontend/sw.js`
 precaches the same three under that version string
-(`CACHE_NAME = the-newsroom-rss-v1.43`); the precache list and the
+(`CACHE_NAME = the-newsroom-rss-v1.44`); the precache list and the
 page's query strings must be bumped together or the precache warms
 URLs nothing requests.
 
@@ -155,7 +158,7 @@ URLs nothing requests.
 deferred-script order, ahead of Alpine:
 
 ```html
-<script id="version" defer src="index.js?v=1.43"></script>
+<script id="version" defer src="index.js?v=1.44"></script>
 <script defer src="//cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
 <script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 ```

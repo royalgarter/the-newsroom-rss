@@ -1,3 +1,10 @@
+## 2026-11-26 — fix feedsByUrl TDZ crash
+
+- [x] **#1 `feedsByUrl` declared before use** — `const` sat after the cached-feeds loop that read it, so every load threw `ReferenceError` and feeds never rendered.
+- [x] **#2 README + cache-bust 1.43 -> 1.44** (`index.html`, `sw.js`).
+
+---
+
 ## 2026-11-22 — render perf with many feeds
 
 Decisions (confirmed with user): minimal plan; deep-reactivity change deferred.
